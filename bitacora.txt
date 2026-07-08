@@ -43,5 +43,5 @@ Explicación de columnas hidro:
     CONDUCTIVITY full			
 
 
-    Me interesan b, c y l
+    Me interesan c, d y l
     Preguntar distintas curvas de gasto
