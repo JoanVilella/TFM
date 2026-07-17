@@ -12,36 +12,38 @@ Predecir el **nivel de agua** (caudal / *discharge*, proxy del nivel) en la esta
 
 | Estación | Nombre | Tipo | Variable objetivo | Período | Frecuencia |
 |---|---|---|---|---|---|
-| STM08 | Sa Marjal | Hidrológica | `DISCHARGE_m3s` | 2013-03-04 → 2026-02-17 | 15 min (→ 10 min desde 2022-05-05) |
+| STM08 | Sa Marjal | Hidrológica | `HEIGHT_m` / `DISCHARGE_m3s` | 2013-03-04 → 2026-07-15 | 15 min (→ 10 min desde 2022-05-05; → 5 min desde 2026-02-17) |
 
-> **Nota sobre la variable objetivo**: Los CSVs limpios exportan `DISCHARGE_m3s`, `VOLUME_m3` y `LOAD_kg`, pero **no** exportan la altura de lámina de agua (`HEIGHT`) directamente. `DISCHARGE_m3s` es una transformación monotónica de `HEIGHT` vía la curva de aforo, por lo que predecir caudal es equivalente a predecir nivel. Valorar si merece la pena re-extraer `HEIGHT` del Excel original para trabajar directamente en unidades de nivel (m).
+> **Nota sobre la variable objetivo**: Los CSVs limpios exportan `HEIGHT_m`, `DISCHARGE_m3s`, `VOLUME_m3` y `LOAD_kg`. Para el período extendido (2026-02-17 → 2026-07-15), procedente de la BD interna, **solo `HEIGHT_m` está disponible**; `DISCHARGE_m3s`, `VOLUME_m3` y `LOAD_kg` quedan vacíos. `HEIGHT_m` es la variable a usar como objetivo (nivel de agua directamente medido); `DISCHARGE_m3s` es una transformación monotónica vía curva de aforo y puede usarse como complemento en el período histórico.
 
 ### 1.2 Estaciones predictoras
 
-#### Hidrológicas (DISCHARGE_m3s, VOLUME_m3, LOAD_kg)
+#### Hidrológicas (HEIGHT_m / DISCHARGE_m3s / VOLUME_m3 / LOAD_kg)
 
 | Estación | Nombre | T0 | T_end | Frecuencia |
 |---|---|---|---|---|
-| STM03 | Es Fangar | 2012-10-01 | 2025-07-23 | 15 min → 10 min (2022) |
-| STM04 | Gabelli | 2012-12-06 | 2025-09-18 | 15 min → 10 min (2022) |
-| STM05 | Monnàber | 2012-10-01 | 2025-09-18 | 15 min → 10 min (2022) |
-| STM06 | Sant Miquel | 2012-10-01 | 2025-09-18 | 15 min → 10 min (2022) |
-| STM07 | Búger | 2012-10-01 | 2026-02-20 | 15 min → 10 min (2022) |
+| STM03 | Es Fangar | 2012-10-01 | 2026-07-15 | 15 min → 10 min (2022) → 5 min (2025-07-23+) |
+| STM04 | Gabelli | 2012-12-06 | 2026-07-15 | 15 min → 10 min (2022) → 5 min (2025-09-18+) |
+| STM05 | Monnàber | 2012-10-01 | 2026-07-15 | 15 min → 10 min (2022) → 5 min (2025-09-18+) |
+| STM06 | Sant Miquel | 2012-10-01 | 2026-07-15 | 15 min → 10 min (2022) → 5 min (2025-09-18+) |
+| STM07 | Búger | 2012-10-01 | 2026-07-15 | 15 min → 10 min (2022) → 5 min (2026-02-20+) |
+
+> **Nota extensión BD**: El tramo extendido desde la BD interna solo contiene `HEIGHT_m` (nivel de agua); `DISCHARGE_m3s`, `VOLUME_m3` y `LOAD_kg` quedan vacíos. STM03 tiene ~45 k registros con `quality != 0` en el tramo extendido; STM05 tiene ~3 k.
 
 #### Meteorológicas STM (PRECIP_mm, TEMP_C)
 
 | Estación | Nombre | T0 | T_end | Frecuencia |
 |---|---|---|---|---|
-| STM01 | Coll des Telègraf | 2012-11-30 | 2025-09-25 | 15 min → 10 min (2022) |
-| STM02 | Míner Gran | 2014-09-26 | 2025-08-12 | 15 min → 10 min (2022) |
+| STM01 | Coll des Telègraf | 2012-11-30 | 2026-07-15 | 15 min → 10 min (2022) |
+| STM02 | Míner Gran | 2014-09-26 | 2026-07-15 | 15 min → 10 min (2022) |
 
 #### Meteorológicas AEMET (PRECIP_mm, horaria)
 
 | Estación | Nombre | T0 | T_end | Frecuencia |
 |---|---|---|---|---|
-| B013X | Lluc | 1993-04-16 | 2026-07-14 | 60 min |
-| B605X | Muro-S'albufera | 2005-04-12 | 2026-07-14 | 60 min |
-| B691Y | Sa Pobla-Sa Canova | 2011-04-19 | 2026-07-14 | 60 min |
+| B013X | Lluc | 1993-04-16 | 2026-07-02 | 60 min |
+| B605X | Muro-S'albufera | 2005-04-12 | 2026-07-02 | 60 min |
+| B691Y | Sa Pobla-Sa Canova | 2011-04-19 | 2026-07-02 | 60 min |
 
 > **Fuentes**: hasta 2023-01-01 proceden de UIB-Estrany (formato phor, décimas de mm → mm); desde 2023-01-01 se extienden con datos de la BD interna (`Rain60m`, ya en mm). Se detectaron ~582–584 registros con `quality != 0` por estación en el tramo BD (incluidos en el CSV, pendiente de revisar si deben filtrarse).
 
@@ -49,24 +51,27 @@ Predecir el **nivel de agua** (caudal / *discharge*, proxy del nivel) en la esta
 
 ## 2. Ventana temporal común
 
-Tras extender las series AEMET con datos de la BD interna, la intersección de todos los conjuntos es:
+Tras extender las series STM03–STM08 con datos de la BD interna, la intersección de todos los conjuntos es:
 
 ```
 Inicio:  2014-09-26  (STM02 arranca en sept-2014)
-Fin:     ~2025-07    (límite del conjunto más corto: STM03, hasta 2025-07-23)
+Fin:     2026-07-02  (límite AEMET; el resto de estaciones llegan a 2026-07-15)
 ```
 
-Esto da **~11 años** de datos solapados con todas las fuentes activas. Las series AEMET ahora llegan a 2026-07-14, por lo que **ya no limitan la ventana**.
+Esto da **~12 años** de datos solapados con todas las fuentes activas. Todas las series STM (hidrológicas y meteorológicas) llegan ahora a **2026-07-15**; las AEMET hasta **2026-07-02**.
+
+> **Nota**: En el tramo extendido de las estaciones hidrológicas (desde ~2025-07 / 2026-02 según estación), solo `HEIGHT_m` está disponible; `DISCHARGE_m3s`, `VOLUME_m3` y `LOAD_kg` quedan vacíos.
 
 ---
 
 ## 3. Retos principales
 
-1. **Frecuencias mixtas**: 10 min / 15 min (STM) vs 60 min (AEMET). Necesario remuestrear a frecuencia común.
-2. **Datos faltantes**: Algunas estaciones tienen miles de celdas nulas (p.ej. STM03 tiene >130 k nulos en `LOAD_kg`). `LOAD_kg` es la variable con más nulos en todas las estaciones.
-3. **Sin `HEIGHT` en los CSV limpios**: Considerar si re-extraerlo de los Excels crudos para STM08.
+1. **Frecuencias mixtas**: 5 min / 10 min / 15 min (STM según período) vs 60 min (AEMET). Necesario remuestrear a frecuencia común.
+2. **Datos faltantes**: Algunas estaciones tienen miles de celdas nulas (p.ej. STM03 tiene >130 k nulos en `LOAD_kg`). `LOAD_kg` es la variable con más nulos; el tramo extendido solo tiene `HEIGHT_m`.
+3. **Heterogeneidad del tramo extendido**: Desde ~2025-07/2026-02 solo está disponible `HEIGHT_m` (sin caudal ni volumen); el split de train/val/test debe tener esto en cuenta.
 4. **Leakage temporal**: En series temporales es crítico hacer el split cronológico estricto.
 5. **Eventos de crecida esporádicos**: El caudal es cero la mayor parte del tiempo; el modelo debe capturar bien los picos.
+6. **Quality != 0 en BD**: STM03 (~45 k registros) y STM05 (~3 k registros) tienen datos con calidad no validada en el tramo extendido; revisar si deben filtrarse.
 
 ---
 
@@ -74,8 +79,8 @@ Esto da **~11 años** de datos solapados con todas las fuentes activas. Las seri
 
 ### Fase 0 — Revisión y decisiones previas
 
-- [ ] Decidir variable objetivo: `DISCHARGE_m3s` vs `HEIGHT` (re-extraer del Excel crudo de STM08).
-- [x] ~~Decidir si incluir estaciones AEMET~~ — Series AEMET extendidas hasta 2026-07-14 con datos de BD; se incluyen todas.
+- [x] ~~Decidir variable objetivo~~: `HEIGHT_m` es la variable objetivo (nivel de agua, disponible en todo el período incluido el tramo extendido). `DISCHARGE_m3s` complementario para el período histórico.
+- [x] ~~Decidir si incluir estaciones AEMET~~ — Series AEMET extendidas hasta 2026-07-02 con datos de BD; se incluyen todas.
 - [ ] Confirmar la topología de la cuenca: qué estaciones son aguas arriba de STM08 y cuál es el tiempo de concentración aproximado (importante para definir el horizonte de predicción y los lags).
 
 ### Fase 1 — Análisis exploratorio (EDA)
