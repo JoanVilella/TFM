@@ -2,11 +2,19 @@
 
 ## Objetivo
 
-Este TFM tiene un **doble objetivo**:
+Este TFM tiene **tres objetivos complementarios**:
 
 1. **Modelo físico (HEC-HMS)**: Construir un modelo hidrológico de base física de la cuenca de Sant Miquel con el software **HEC-HMS** (Hydrologic Engineering Center – Hydrologic Modeling System), calibrado y validado con las series observadas en las estaciones STM03–STM08.
-2. **Modelos basados en datos (ML/IA)**: Desarrollar modelos de aprendizaje automático e inteligencia artificial para predecir el **nivel de agua** (`HEIGHT_m`) en la estación hidrológica **STM08 - Sa Marjal**, utilizando como predictores las series temporales del resto de estaciones meteorológicas e hidrológicas disponibles.
-3. **Comparación**: Evaluar y comparar el rendimiento de ambas familias de modelos (físico vs. datos) bajo las métricas estándar en hidrología (NSE, KGE, RMSE, PBIAS), analizando sus ventajas, limitaciones y contextos de aplicación.
+2. **Modelos basados en datos (ML/IA)**: Desarrollar modelos de aprendizaje automático e inteligencia artificial para predecir el **nivel de agua** (`HEIGHT_m`) en la estación hidrológica **STM08 - Sa Marjal** en horizontes de predicción de **t+1h, t+6h y t+24h**, utilizando como predictores las series temporales del resto de estaciones meteorológicas e hidrológicas disponibles.
+3. **Comparación**: Evaluar y comparar el rendimiento de ambas familias de modelos (físico vs. datos) bajo las métricas estándar en hidrología (NSE, KGE, RMSE, PBIAS), desglosada por horizonte de predicción y por tipo de evento (crecida/estiaje), analizando sus ventajas, limitaciones y contextos de aplicación.
+
+### Preguntas de investigación
+
+- **RQ1**: ¿Con qué precisión reproduce un modelo físico calibrado (HEC-HMS) los niveles y eventos de crecida observados en STM08?
+- **RQ2**: ¿Hasta qué punto los modelos basados en datos (baselines → RF/XGBoost → LSTM/GRU → TFT) mejoran esa precisión, en particular en los picos de crecida y en los horizontes t+1h, t+6h y t+24h?
+- **RQ3**: ¿Cómo afectan al rendimiento las decisiones de preprocesado (resolución temporal, lags, tratamiento de la intermitencia) y qué predictores dominan la predicción?
+
+> **Contexto y novedad**: La literatura comparativa HEC-HMS vs. ML usa mayoritariamente datos diarios y cuencas perennes. Este TFM estudia una **cuenca de torrente mediterráneo** con régimen intermitente (serie mayoritariamente nula y crecidas relámpago), con datos **sub-horarios** de una red densa de estaciones, y con objetivo el **nivel de agua en un humedal** (Sa Marjal, junto a s'Albufera).
 
 ---
 
@@ -85,6 +93,10 @@ Esto da **~12 años** de datos solapados con todas las fuentes activas. Todas la
 
 - [x] ~~Decidir variable objetivo~~: `HEIGHT_m` es la variable objetivo (nivel de agua, disponible en todo el período incluido el tramo extendido). `DISCHARGE_m3s` complementario para el período histórico.
 - [x] ~~Decidir si incluir estaciones AEMET~~ — Series AEMET extendidas hasta 2026-07-02 con datos de BD; se incluyen todas.
+- [x] ~~Datos para HEC-HMS~~ — MDT, cartografía de usos del suelo y tipos de suelo **disponibles**; el modelo físico es un pilar completo del TFM.
+- [x] ~~Horizonte de predicción~~ — **Multi-horizonte: t+1h, t+6h y t+24h** (arquitecturas multi-step: LSTM/GRU encoder-decoder y TFT).
+- [x] ~~Modelo híbrido (ML corrigiendo HEC-HMS)~~ — Descartado como contribución propia; queda como trabajo futuro. El TFM es una comparación estricta físico vs. datos.
+- [x] ~~Idioma de la memoria~~ — Inglés.
 - [ ] Confirmar la topología de la cuenca: qué estaciones son aguas arriba de STM08 y cuál es el tiempo de concentración aproximado (importante para definir el horizonte de predicción y los lags).
 
 ### Fase 1 — Análisis exploratorio (EDA)
@@ -156,11 +168,12 @@ Esto da **~12 años** de datos solapados con todas las fuentes activas. Todas la
 
 ### Fase 5 — Modelos secuenciales
 
-**Objetivo**: Capturar las dependencias temporales de largo alcance.
+**Objetivo**: Capturar las dependencias temporales de largo alcance y producir predicciones **multi-horizonte (t+1h, t+6h, t+24h)**.
 
-- [ ] **LSTM / GRU**: arquitectura encoder-decoder para predicción multi-step.
-- [ ] **Temporal Fusion Transformer (TFT)**: estado del arte en series temporales multivariables, maneja covariables conocidas (meteo) y pasadas (hidro).
+- [ ] **LSTM / GRU**: arquitectura encoder-decoder para predicción multi-step (salida simultánea a t+1/6/24h).
+- [ ] **Temporal Fusion Transformer (TFT)**: estado del arte en series temporales multivariables, maneja covariables conocidas (meteo) y pasadas (hidro); multi-horizonte de forma nativa.
 - [ ] Ajuste de hiperparámetros con *Optuna* o *Ray Tune*.
+- [ ] Evaluación desglosada por horizonte de predicción (cuantificar la degradación de las métricas al aumentar el horizonte).
 
 **Entregable**: `05_deep_learning.ipynb`
 
@@ -177,7 +190,7 @@ Esto da **~12 años** de datos solapados con todas las fuentes activas. Todas la
 
 **Objetivo**: Confrontar el modelo físico con los modelos basados en datos sobre los mismos eventos y períodos.
 
-- [ ] Evaluar ambas familias con las métricas comunes (NSE, KGE, RMSE, MAE, PBIAS) en train/val/test.
+- [ ] Evaluar ambas familias con las métricas comunes (NSE, KGE, RMSE, MAE, PBIAS) en train/val/test, desglosadas por horizonte de predicción (t+1/6/24h) en el caso de los modelos ML.
 - [ ] Análisis por tipo de evento: crecidas, estiajes y condiciones ordinarias.
 - [ ] Discutir los requisitos de datos de cada enfoque (datos de entrada, esfuerzo de calibración, transferibilidad).
 - [ ] Identificar en qué escenarios el modelo físico supera a los datos y viceversa.
@@ -215,8 +228,8 @@ Esto da **~12 años** de datos solapados con todas las fuentes activas. Todas la
 
 ### Específicas de HEC-HMS
 
-- ¿Está disponible un MDT de alta resolución (LiDAR o similar) para la cuenca de Sant Miquel?
-- ¿Existe cartografía de usos del suelo y tipos de suelo para calcular el CN (Curve Number)?
+- ~~¿Está disponible un MDT de alta resolución (LiDAR o similar) para la cuenca de Sant Miquel?~~ — **Resuelto: disponible.**
+- ~~¿Existe cartografía de usos del suelo y tipos de suelo para calcular el CN (Curve Number)?~~ — **Resuelto: disponible.**
 - ¿Se dispone de aforos de caudales punta en eventos históricos para calibrar el modelo?
 - ¿Las estaciones aguas arriba (STM03–STM07) actúan como puntos de control internos en la cuenca?
 
@@ -225,4 +238,17 @@ Esto da **~12 años** de datos solapados con todas las fuentes activas. Todas la
 - Curvas de aforo de STM08: ¿están calibradas para todo el período o cambian con el tiempo?
 - Confirmación de la topología de la cuenca: ¿todas las STM drenan hacia Sa Marjal?
 - STM09, STM10, STM11 (mencionadas en la bitácora): ¿están disponibles? Podrían añadir información.
-- Horizonte de predicción deseado: ¿nowcasting (t+1h) o previsión a t+6h, t+24h?
+- ~~Horizonte de predicción deseado: ¿nowcasting (t+1h) o previsión a t+6h, t+24h?~~ — **Resuelto: multi-horizonte t+1h, t+6h y t+24h.**
+
+---
+
+## 7. Referencias clave (estado del arte)
+
+- Kratzert, F., et al. (2018). *Rainfall–runoff modelling using Long Short-Term Memory (LSTM) networks*. Hydrol. Earth Syst. Sci., 22, 6005–6022. — LSTM supera al modelo conceptual SAC-SMA en 241 cuencas (CAMELS).
+- Lim, B., et al. (2021). *Temporal Fusion Transformers for interpretable multi-horizon time series forecasting*. International Journal of Forecasting. — Arquitectura TFT: multi-horizonte nativo e interpretable.
+- Marasini, U. & Pokhrel, M. (2024). *Comparative analysis of rainfall-runoff simulation using an LSTM deep learning model and HEC-HMS: mountainous basin of Nepal*. Discover Civil Engineering. — LSTM > HEC-HMS en cuenca montañosa.
+- Manjitha, H.H.U. & Perera, D. (2025). *HEC-HMS and machine learning approaches for streamflow forecasting: a comparative study* (Sri Lanka). — LSTM gana en cuencas húmeda y seca; HEC-HMS cae a NSE 0.49 en régimen seco.
+- Belina, Y., et al. (2024). *Comparative analysis of HEC-HMS and machine learning models for rainfall-runoff prediction in the upper Baro watershed, Ethiopia*. Hydrology Research. — ANN NSE 0.98 vs HEC-HMS 0.85 en cuenca con datos escasos.
+- Khan, I. (2026). *Comparative Analysis of HEC-HMS and Temporal Fusion Transformer for Streamflow Prediction under Climate Change Scenarios (Swat River Basin)*. — HEC-HMS subestima picos de crecida; TFT captura eventos extremos.
+- Cho, M., et al. (2022). *Water Level Prediction Model Applying an LSTM–GRU Method for Flood Prediction*. Water, 14(14). — NSE 0.94 prediciendo nivel de agua.
+- Trabajo futuro (híbridos): Makhloufi, N. (2026) — XGBoost como corrector de errores de HEC-HMS (KGE 0.65 → 0.83); Solanki, H., et al. (2025, Water Resources Research) — post-procesado de modelos hidrológicos con ML.
