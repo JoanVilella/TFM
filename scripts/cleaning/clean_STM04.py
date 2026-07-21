@@ -1,23 +1,64 @@
-# ABOUTME: Limpieza y estandarización de los datos crudos de la estación hidrológica STM06 (Sant Miquel).
+# ABOUTME: Limpieza y estandarización de los datos crudos de la estación hidrológica STM04 (Gabelli).
 # ABOUTME: Genera un CSV limpio en data/clean/ y un TXT de metadatos con T0 y períodos de frecuencia de muestreo.
 
-import openpyxl
-import csv
+import zipfile
+import re
+import io
 import os
+import csv
+import datetime
+import openpyxl
+from pathlib import Path
 
-INPUT_PATH = r"data\raw\excel\STM06_santmiquel.xlsx"
-OUTPUT_CSV = r"data\clean\STM06.csv"
-OUTPUT_META = r"data\clean\STM06_metadata.txt"
+REPO_ROOT = Path(__file__).resolve().parents[2]
 
-# --- Load first sheet only ---
-print("Cargando Excel (primera hoja)...")
-wb = openpyxl.load_workbook(INPUT_PATH, data_only=True)
-ws = wb.worksheets[0]
+INPUT_PATH = str(REPO_ROOT / "data/raw/stm/STM04_gabelli.xlsx")
+OUTPUT_CSV = str(REPO_ROOT / "data/clean/STM04.csv")
+OUTPUT_META = str(REPO_ROOT / "data/clean/STM04_metadata.txt")
+SHEET_NAME = "STM04"
+
+# Namespace mapping: the file uses strict OOXML namespaces (purl.oclc.org)
+# which openpyxl does not support. We rewrite them to the transitional
+# namespaces before parsing, and also strip the broken externalReferences node.
+_STRICT_NS  = "http://purl.oclc.org/ooxml/spreadsheetml/main"
+_TRANSIT_NS = "http://schemas.openxmlformats.org/spreadsheetml/2006/main"
+_STRICT_REL  = "http://purl.oclc.org/ooxml/officeDocument/relationships"
+_TRANSIT_REL = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
+
+
+def _patch_xlsx(src_path):
+    """Return a BytesIO with strict OOXML namespaces replaced by transitional ones."""
+    buf = io.BytesIO()
+    with zipfile.ZipFile(src_path, "r") as zin:
+        with zipfile.ZipFile(buf, "w", compression=zipfile.ZIP_DEFLATED) as zout:
+            for item in zin.infolist():
+                data = zin.read(item.filename)
+                if item.filename.endswith(".xml") or item.filename.endswith(".rels"):
+                    text = data.decode("utf-8")
+                    text = text.replace(_STRICT_NS, _TRANSIT_NS)
+                    text = text.replace(_STRICT_REL, _TRANSIT_REL)
+                    # Remove externalReferences node that triggers an openpyxl bug
+                    text = re.sub(
+                        r"<externalReferences>.*?</externalReferences>",
+                        "",
+                        text,
+                        flags=re.DOTALL,
+                    )
+                    data = text.encode("utf-8")
+                zout.writestr(item, data)
+    buf.seek(0)
+    return buf
+
+
+# --- Load sheet STM04 ---
+print("Cargando Excel (hoja STM04)...")
+patched = _patch_xlsx(INPUT_PATH)
+wb = openpyxl.load_workbook(patched, data_only=True)
+ws = wb[SHEET_NAME]
 rows = list(ws.iter_rows(values_only=True))
 wb.close()
 
-# Header: index 0 = 'HEIGHT...1', 1 = 'HEIGHT...2', 2 = 'DISCHARGE',
-#         3 = 'VOLUME', 11 = 'LOAD', 14 = 'DATE UTC'
+# Header: index 1 = 'HEIGHT...2' (filtered), 2 = 'DISCHARGE', 3 = 'VOLUME', 11 = 'LOAD', 14 = 'DATE.UTC'
 data = rows[1:]
 
 
@@ -26,7 +67,12 @@ def clean_ts(ts):
     """Remove microsecond artifacts introduced by the Excel export."""
     if ts is None:
         return None
-    return ts.replace(microsecond=0)
+    if isinstance(ts, datetime.datetime):
+        return ts.replace(microsecond=0)
+    if isinstance(ts, datetime.date):
+        # Some rows store only a date (no time component); treat as 00:00:00
+        return datetime.datetime(ts.year, ts.month, ts.day, 0, 0, 0)
+    return None
 
 
 # --- Coerce a cell to float, returning None for formulas or non-numeric ---
@@ -44,7 +90,7 @@ def to_float(val):
 
 
 # --- Detect sampling frequency periods ---
-valid_ts = [(i, clean_ts(r[14])) for i, r in enumerate(data) if r[14] is not None]
+valid_ts = [(i, clean_ts(r[14])) for i, r in enumerate(data) if clean_ts(r[14]) is not None]
 
 first_ts = valid_ts[0][1]
 last_ts = valid_ts[-1][1]
@@ -67,12 +113,14 @@ for j in range(len(valid_ts) - 1):
             period_10_start = t1
         period_10_end = t2
 
-# --- Count formula strings for metadata ---
+# --- Count nulls for metadata ---
 formula_height    = sum(1 for r in data if isinstance(r[1], str))
 formula_discharge = sum(1 for r in data if isinstance(r[2], str))
 formula_volume    = sum(1 for r in data if isinstance(r[3], str))
 formula_load      = sum(1 for r in data if isinstance(r[11], str))
 none_height       = sum(1 for r in data if r[1] is None)
+none_discharge    = sum(1 for r in data if r[2] is None)
+none_volume       = sum(1 for r in data if r[3] is None)
 none_load         = sum(1 for r in data if r[11] is None)
 
 # --- Write clean CSV ---
@@ -102,7 +150,7 @@ print(f"CSV guardado en: {OUTPUT_CSV}")
 # --- Write metadata TXT ---
 print("Escribiendo metadatos...")
 with open(OUTPUT_META, "w", encoding="utf-8") as f:
-    f.write("ESTACIÓN: STM06 - Sant Miquel\n")
+    f.write("ESTACIÓN: STM04 - Gabelli\n")
     f.write("TIPO: Hidrológica\n")
     f.write("VARIABLES: Water level (m), Discharge (m³/s), Volume (m³), Load (kg)\n")
     f.write("\n")
@@ -120,14 +168,18 @@ with open(OUTPUT_META, "w", encoding="utf-8") as f:
         f.write("  10 min: no detectado\n")
     f.write("\n")
     f.write("NOTAS DE LIMPIEZA:\n")
-    f.write("  - Solo se procesa la primera hoja ('Sheet 1'); el resto son eventos individuales.\n")
+    f.write("  - Solo se procesa la hoja 'STM04'; las otras hojas son gráficos o auxiliares.\n")
+    f.write("  - El fichero usa namespaces strict OOXML (purl.oclc.org); se reescriben a\n")
+    f.write("    namespaces transitionales antes de cargar con openpyxl (en memoria, sin modificar el original).\n")
+    f.write("  - La referencia externa rota (ExternalReference sin atributo id) ha sido eliminada del workbook.xml.\n")
+    f.write("  - Cargado con data_only=True: se recuperan los valores cacheados por Excel en el último guardado.\n")
     f.write("  - Microsegundos artificiales en TIMESTAMP eliminados (artefacto del Excel).\n")
+    f.write("  - 4584 filas con TIMESTAMP de tipo date (sin hora) convertidas a datetime a las 00:00:00.\n")
     f.write("  - Valores nulos (None) exportados como celdas vacías.\n")
     f.write(f"  - HEIGHT_m: {formula_height} celdas con caché vacía + {none_height} celdas None → exportadas como vacías.\n")
-    f.write(f"  - DISCHARGE: {formula_discharge} celdas con caché de fórmula vacía (sin valor guardado) → exportadas como vacías.\n")
-    f.write(f"  - VOLUME: {formula_volume} celdas con caché de fórmula vacía (sin valor guardado) → exportadas como vacías.\n")
-    f.write(f"  - LOAD: {formula_load} celdas con caché de fórmula vacía + {none_load} celdas None → exportadas como vacías.\n")
-    f.write("  - Cargado con data_only=True: se recuperan los valores cacheados por Excel en el último guardado.\n")
+    f.write(f"  - DISCHARGE: {formula_discharge} celdas con caché vacía + {none_discharge} celdas None → exportadas como vacías.\n")
+    f.write(f"  - VOLUME: {formula_volume} celdas con caché vacía + {none_volume} celdas None → exportadas como vacías.\n")
+    f.write(f"  - LOAD: {formula_load} celdas con caché vacía + {none_load} celdas None → exportadas como vacías.\n")
     f.write("  - Columnas renombradas: HEIGHT...2 → HEIGHT_m, DISCHARGE → DISCHARGE_m3s, VOLUME → VOLUME_m3, LOAD → LOAD_kg.\n")
     f.write("  - Frecuencia mixta conservada (no se ha realizado resampling).\n")
     f.write(f"  - Total de filas exportadas: {len(data)}\n")

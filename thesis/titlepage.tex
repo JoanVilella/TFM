@@ -1,0 +1,162 @@
+\thispagestyle{empty}
+
+\makeatletter
+\begin{titlepage}
+
+    %%%%
+    % COBERTA
+    %%%%
+    
+    \bfseries 
+
+    {
+    \includegraphics[height=30mm]{figures/logos/UIB_UniversitasBalearica_horizontal.png}
+    \ifedisslogo
+        \hfill
+        \raisebox{-10mm}{
+            \includegraphics[height=40mm]{figures/logos/EDISS.jpeg}
+        }
+    \fi
+    }
+	
+    \vspace{20mm}
+	{
+        \LARGE 
+        
+	    \iflanguage{spanish}{TRABAJO DE FIN DE MÁSTER}{%
+        \iflanguage{catalan}{TREBALL DE FI DE MÀSTER}{%
+                             MASTER'S THESIS%
+        }}
+        \vspace{20mm}
+        
+        \hfill%
+        \begin{minipage}{130mm}
+            \begin{flushright}\scshape \bfseries \@title\end{flushright}
+        \end{minipage}
+        \vspace{20mm}
+        
+	    \@author
+        \vspace{20mm}
+    }
+    {
+        \large
+        
+	    \iflanguage{spanish}{Máster Universitario en Sistemas Inteligentes (MUSI)}{%
+        \iflanguage{catalan}{Màster Universitari en Sistemes Intel·ligents (MUSI)}{%
+                             Master's Degree in Intelligent Systems (MUSI)}}
+        \vspace{0mm}
+        
+	    \iflanguage{spanish}{Especialización en \@specialization.}{%
+        \iflanguage{catalan}{Especialització en \@specialization.}{%
+                             Specialization in \@specialization.}}
+        \vspace{5mm}
+
+	    \iflanguage{spanish}{Centro de Estudios de Postgrado}{%
+        \iflanguage{catalan}{Centre d'Estudis de Postgrau}{%
+                             Centre for Postgraduate Studies}}
+        \vspace{15mm}
+
+	    \iflanguage{spanish}{Año académico {\@academicyear}}{%
+        \iflanguage{catalan}{Any acadèmic {\@academicyear}}{%
+                             Academic year \@academicyear}}
+    }
+    \thispagestyle{empty}
+    \newpage
+
+    %%%%
+    % PORTADA
+    %%%%
+    
+	
+    \vspace*{20mm}
+	{
+        \Huge 
+        \bfseries 
+        
+        {\scshape \@title}
+        \vspace{10mm}
+        
+        \@author
+        \vspace{20mm}
+    }
+    {
+        \LARGE
+        \bfseries
+        
+	    \iflanguage{spanish}{TRABAJO DE FIN DE MÁSTER}{%
+        \iflanguage{catalan}{TREBALL DE FI DE MÀSTER}{%
+                             MASTER'S THESIS}}
+        \vspace{5mm}
+
+	    \iflanguage{spanish}{Centro de Estudios de Postgrado}{%
+        \iflanguage{catalan}{Centre d'Estudis de Postgrau}{%
+                             Centre for Postgraduate Studies}}
+        \vspace{5mm}
+
+	    \iflanguage{spanish}{Universidad de las Islas Baleares}{%
+        \iflanguage{catalan}{Universitat de les Illes Balears}{%
+                             University of the Balearic Islands}}
+        \vspace{10mm}   
+    }
+    {
+        \bfseries
+   
+	    \iflanguage{spanish}{Año académico {\@academicyear}}{%
+        \iflanguage{catalan}{Any acadèmic {\@academicyear}}{%
+                             Academic year \@academicyear}} 
+        \vspace{20mm}
+        
+    }
+    {
+	    \iflanguage{spanish}{Palabras clave:}{%
+        \iflanguage{catalan}{Paraules clau:}{%
+                             Keywords:}}
+        \vspace{5mm}   
+        
+        \@keywords
+        \vspace{30mm}
+    }
+    {
+        \itshape
+
+        Tutor(s): \@tutors.
+    }
+    \thispagestyle{empty}
+    \newpage
+
+    %%%%
+    % LLICENCIA
+    %%%%
+    
+	\strut \vfill
+    
+    \noindent\makebox[\linewidth]{\rule{0.8\paperwidth}{0.4pt}}
+    
+    {
+        \mdseries
+        \vspace*{5mm}
+        \begin{center}
+    	    \iflanguage{spanish}{
+                Este trabajo de fin de máster está sujeto a la licencia
+                \href{https://creativecommons.org/licenses/\@license}{\itshape Creative Commons \@license}. 
+                }{%
+            \iflanguage{catalan}{
+                Aquest treball de fi de màster està subjecte a la llicència
+                \href{https://creativecommons.org/licenses/\@license}{\itshape Creative Commons \@license}. 
+                }{%
+                This master’s thesis is licensed under a
+                \href{https://creativecommons.org/licenses/\@license}{\itshape Creative Commons \@license}
+                license.
+                }}%
+        \end{center}
+    }
+    {
+        \vspace*{5mm} 
+        \begin{center}
+            \includegraphics{figures/licenses/\@license.png}
+        \end{center}
+    }
+    \thispagestyle{empty}
+    
+\end{titlepage}
+\makeatother

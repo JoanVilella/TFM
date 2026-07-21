@@ -1,31 +1,26 @@
-# ABOUTME: Limpieza y estandarización de los datos crudos de la estación hidrológica STM08 (Sa Marjal).
+# ABOUTME: Limpieza y estandarización de los datos crudos de la estación hidrológica STM06 (Sant Miquel).
 # ABOUTME: Genera un CSV limpio en data/clean/ y un TXT de metadatos con T0 y períodos de frecuencia de muestreo.
 
-import os
-import csv
-import datetime
 import openpyxl
+import csv
+import os
+from pathlib import Path
 
-INPUT_PATH = r"data\raw\excel\STM08_samarjal.xlsx"
-OUTPUT_CSV = r"data\clean\STM08.csv"
-OUTPUT_META = r"data\clean\STM08_metadata.txt"
-SHEET_NAME = "data"
+REPO_ROOT = Path(__file__).resolve().parents[2]
 
-# Column indices (0-based) in the 'data' sheet:
-#   1 = HEIGHT (filtered/validated), 2 = DISCHARGE, 3 = VOLUME, 11 = LOAD, 14 = DATE.UTC
-COL_HEIGHT    = 1
-COL_DISCHARGE = 2
-COL_VOLUME    = 3
-COL_LOAD      = 11
-COL_DATE      = 14
+INPUT_PATH = str(REPO_ROOT / "data/raw/stm/STM06_santmiquel.xlsx")
+OUTPUT_CSV = str(REPO_ROOT / "data/clean/STM06.csv")
+OUTPUT_META = str(REPO_ROOT / "data/clean/STM06_metadata.txt")
 
-# --- Load sheet ---
-print("Cargando Excel (hoja data)...")
+# --- Load first sheet only ---
+print("Cargando Excel (primera hoja)...")
 wb = openpyxl.load_workbook(INPUT_PATH, data_only=True)
-ws = wb[SHEET_NAME]
+ws = wb.worksheets[0]
 rows = list(ws.iter_rows(values_only=True))
 wb.close()
 
+# Header: index 0 = 'HEIGHT...1', 1 = 'HEIGHT...2', 2 = 'DISCHARGE',
+#         3 = 'VOLUME', 11 = 'LOAD', 14 = 'DATE UTC'
 data = rows[1:]
 
 
@@ -34,12 +29,7 @@ def clean_ts(ts):
     """Remove microsecond artifacts introduced by the Excel export."""
     if ts is None:
         return None
-    if isinstance(ts, datetime.datetime):
-        return ts.replace(microsecond=0)
-    if isinstance(ts, datetime.date):
-        # Some rows store only a date (no time component); treat as 00:00:00
-        return datetime.datetime(ts.year, ts.month, ts.day, 0, 0, 0)
-    return None
+    return ts.replace(microsecond=0)
 
 
 # --- Coerce a cell to float, returning None for formulas or non-numeric ---
@@ -48,7 +38,7 @@ def to_float(val):
     if val is None:
         return None
     if isinstance(val, str):
-        # Cell contains an unresolved Excel formula or empty string; treat as missing
+        # Cell contains an unresolved Excel formula; treat as missing
         return None
     try:
         return float(val)
@@ -57,7 +47,7 @@ def to_float(val):
 
 
 # --- Detect sampling frequency periods ---
-valid_ts = [(i, clean_ts(r[COL_DATE])) for i, r in enumerate(data) if clean_ts(r[COL_DATE]) is not None]
+valid_ts = [(i, clean_ts(r[14])) for i, r in enumerate(data) if r[14] is not None]
 
 first_ts = valid_ts[0][1]
 last_ts = valid_ts[-1][1]
@@ -80,18 +70,13 @@ for j in range(len(valid_ts) - 1):
             period_10_start = t1
         period_10_end = t2
 
-# --- Count nulls for metadata ---
-formula_height    = sum(1 for r in data if isinstance(r[COL_HEIGHT], str))
-formula_discharge = sum(1 for r in data if isinstance(r[COL_DISCHARGE], str))
-formula_volume    = sum(1 for r in data if isinstance(r[COL_VOLUME], str))
-formula_load      = sum(1 for r in data if isinstance(r[COL_LOAD], str))
-none_height       = sum(1 for r in data if r[COL_HEIGHT] is None)
-none_discharge    = sum(1 for r in data if r[COL_DISCHARGE] is None)
-none_volume       = sum(1 for r in data if r[COL_VOLUME] is None)
-none_load         = sum(1 for r in data if r[COL_LOAD] is None)
-date_only_ts      = sum(1 for r in data if r[COL_DATE] is not None
-                        and isinstance(r[COL_DATE], datetime.date)
-                        and not isinstance(r[COL_DATE], datetime.datetime))
+# --- Count formula strings for metadata ---
+formula_height    = sum(1 for r in data if isinstance(r[1], str))
+formula_discharge = sum(1 for r in data if isinstance(r[2], str))
+formula_volume    = sum(1 for r in data if isinstance(r[3], str))
+formula_load      = sum(1 for r in data if isinstance(r[11], str))
+none_height       = sum(1 for r in data if r[1] is None)
+none_load         = sum(1 for r in data if r[11] is None)
 
 # --- Write clean CSV ---
 print("Escribiendo CSV limpio...")
@@ -101,11 +86,11 @@ with open(OUTPUT_CSV, "w", newline="", encoding="utf-8") as f:
     writer = csv.writer(f)
     writer.writerow(["TIMESTAMP", "HEIGHT_m", "DISCHARGE_m3s", "VOLUME_m3", "LOAD_kg"])
     for row in data:
-        ts        = clean_ts(row[COL_DATE])
-        height    = to_float(row[COL_HEIGHT])
-        discharge = to_float(row[COL_DISCHARGE])
-        volume    = to_float(row[COL_VOLUME])
-        load      = to_float(row[COL_LOAD])
+        ts        = clean_ts(row[14])
+        height    = to_float(row[1])
+        discharge = to_float(row[2])
+        volume    = to_float(row[3])
+        load      = to_float(row[11])
 
         ts_str        = ts.strftime("%Y-%m-%d %H:%M:%S") if ts is not None else ""
         height_str    = "" if height is None else str(round(height, 6))
@@ -120,7 +105,7 @@ print(f"CSV guardado en: {OUTPUT_CSV}")
 # --- Write metadata TXT ---
 print("Escribiendo metadatos...")
 with open(OUTPUT_META, "w", encoding="utf-8") as f:
-    f.write("ESTACIÓN: STM08 - Sa Marjal\n")
+    f.write("ESTACIÓN: STM06 - Sant Miquel\n")
     f.write("TIPO: Hidrológica\n")
     f.write("VARIABLES: Water level (m), Discharge (m³/s), Volume (m³), Load (kg)\n")
     f.write("\n")
@@ -138,16 +123,14 @@ with open(OUTPUT_META, "w", encoding="utf-8") as f:
         f.write("  10 min: no detectado\n")
     f.write("\n")
     f.write("NOTAS DE LIMPIEZA:\n")
-    f.write("  - Solo se procesa la hoja 'data' (única hoja del fichero).\n")
-    f.write("  - Cargado con data_only=True: se recuperan los valores cacheados por Excel en el último guardado.\n")
+    f.write("  - Solo se procesa la primera hoja ('Sheet 1'); el resto son eventos individuales.\n")
     f.write("  - Microsegundos artificiales en TIMESTAMP eliminados (artefacto del Excel).\n")
-    if date_only_ts:
-        f.write(f"  - {date_only_ts} filas con TIMESTAMP de tipo date (sin hora) convertidas a datetime a las 00:00:00.\n")
     f.write("  - Valores nulos (None) exportados como celdas vacías.\n")
     f.write(f"  - HEIGHT_m: {formula_height} celdas con caché vacía + {none_height} celdas None → exportadas como vacías.\n")
-    f.write(f"  - DISCHARGE: {formula_discharge} celdas con caché vacía + {none_discharge} celdas None → exportadas como vacías.\n")
-    f.write(f"  - VOLUME: {formula_volume} celdas con caché vacía + {none_volume} celdas None → exportadas como vacías.\n")
-    f.write(f"  - LOAD: {formula_load} celdas con caché vacía + {none_load} celdas None → exportadas como vacías.\n")
+    f.write(f"  - DISCHARGE: {formula_discharge} celdas con caché de fórmula vacía (sin valor guardado) → exportadas como vacías.\n")
+    f.write(f"  - VOLUME: {formula_volume} celdas con caché de fórmula vacía (sin valor guardado) → exportadas como vacías.\n")
+    f.write(f"  - LOAD: {formula_load} celdas con caché de fórmula vacía + {none_load} celdas None → exportadas como vacías.\n")
+    f.write("  - Cargado con data_only=True: se recuperan los valores cacheados por Excel en el último guardado.\n")
     f.write("  - Columnas renombradas: HEIGHT...2 → HEIGHT_m, DISCHARGE → DISCHARGE_m3s, VOLUME → VOLUME_m3, LOAD → LOAD_kg.\n")
     f.write("  - Frecuencia mixta conservada (no se ha realizado resampling).\n")
     f.write(f"  - Total de filas exportadas: {len(data)}\n")

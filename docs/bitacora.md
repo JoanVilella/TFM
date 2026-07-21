@@ -45,3 +45,37 @@ Explicación de columnas hidro:
 
     Me interesan c, d y l
     Preguntar distintas curvas de gasto
+
+-- Notas reunión 17/07/2026
+BBDD
+Definir modelo físico
+Explicar los problemas de los datos
+Arquitectura de datos
+tiempo, sensor, valor, geoposición, marca del sensor, guardar temperatura
+
+Plantilla TFM
+
+Contar modelo físico
+Enlace a la aplicación (aplicación riscbal), al manual
+
+El problema es predecir
+---
+
+
+-- Apuntes varios
+
+Modelos Lineales Generalizados (GLIM)
+
+Vacaciones agosto
+
+28 se va ricardo
+
+23 reunión
+
+para el 22 - 3 páginas
+
+Modelo y datos en git
+
+Esquema de una observación - Modelos ARIMA
+
+610484012

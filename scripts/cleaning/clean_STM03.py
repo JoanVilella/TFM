@@ -1,4 +1,4 @@
-# ABOUTME: Limpieza y estandarización de los datos crudos de la estación hidrológica STM05 (Monnàber).
+# ABOUTME: Limpieza y estandarización de los datos crudos de la estación hidrológica STM03 (Es Fangar).
 # ABOUTME: Genera un CSV limpio en data/clean/ y un TXT de metadatos con T0 y períodos de frecuencia de muestreo.
 
 import zipfile
@@ -8,11 +8,14 @@ import os
 import csv
 import datetime
 import openpyxl
+from pathlib import Path
 
-INPUT_PATH = r"data\raw\excel\STM05_monnaber.xlsx"
-OUTPUT_CSV = r"data\clean\STM05.csv"
-OUTPUT_META = r"data\clean\STM05_metadata.txt"
-SHEET_NAME = "STM05"
+REPO_ROOT = Path(__file__).resolve().parents[2]
+
+INPUT_PATH = str(REPO_ROOT / "data/raw/stm/STM03_esfangar.xlsx")
+OUTPUT_CSV = str(REPO_ROOT / "data/clean/STM03.csv")
+OUTPUT_META = str(REPO_ROOT / "data/clean/STM03_metadata.txt")
+SHEET_NAME = "STM03"
 
 # Namespace mapping: the file uses strict OOXML namespaces (purl.oclc.org)
 # which openpyxl does not support. We rewrite them to the transitional
@@ -47,15 +50,24 @@ def _patch_xlsx(src_path):
     return buf
 
 
-# --- Load sheet STM05 ---
-print("Cargando Excel (hoja STM05)...")
+# Column indices (0-based) in the 'STM03' sheet:
+#   1 = HEIGHT (filtered/validated), 2 = DISCHARGE, 3 = VOLUME, 12 = LOAD, 16 = DATE.UTC
+# Note: an extra SSC.Calibrated High column at index 11 shifts LOAD to index 12
+# and pushes DATE.UTC to index 16 compared to the standard layout.
+COL_HEIGHT    = 1
+COL_DISCHARGE = 2
+COL_VOLUME    = 3
+COL_LOAD      = 12
+COL_DATE      = 16
+
+# --- Load sheet STM03 ---
+print("Cargando Excel (hoja STM03)...")
 patched = _patch_xlsx(INPUT_PATH)
 wb = openpyxl.load_workbook(patched, data_only=True)
 ws = wb[SHEET_NAME]
 rows = list(ws.iter_rows(values_only=True))
 wb.close()
 
-# Header: index 1 = 'HEIGHT...2' (filtered), 2 = 'DISCHARGE', 3 = 'VOLUME', 11 = 'LOAD', 14 = 'DATE.UTC'
 data = rows[1:]
 
 
@@ -87,7 +99,7 @@ def to_float(val):
 
 
 # --- Detect sampling frequency periods ---
-valid_ts = [(i, clean_ts(r[14])) for i, r in enumerate(data) if clean_ts(r[14]) is not None]
+valid_ts = [(i, clean_ts(r[COL_DATE])) for i, r in enumerate(data) if clean_ts(r[COL_DATE]) is not None]
 
 first_ts = valid_ts[0][1]
 last_ts = valid_ts[-1][1]
@@ -111,16 +123,17 @@ for j in range(len(valid_ts) - 1):
         period_10_end = t2
 
 # --- Count nulls for metadata ---
-formula_height    = sum(1 for r in data if isinstance(r[1], str))
-formula_discharge = sum(1 for r in data if isinstance(r[2], str))
-formula_volume    = sum(1 for r in data if isinstance(r[3], str))
-formula_load      = sum(1 for r in data if isinstance(r[11], str))
-none_height       = sum(1 for r in data if r[1] is None)
-none_discharge    = sum(1 for r in data if r[2] is None)
-none_volume       = sum(1 for r in data if r[3] is None)
-none_load         = sum(1 for r in data if r[11] is None)
-date_only_ts      = sum(1 for r in data if r[14] is not None and isinstance(r[14], datetime.date)
-                        and not isinstance(r[14], datetime.datetime))
+formula_height    = sum(1 for r in data if isinstance(r[COL_HEIGHT], str))
+formula_discharge = sum(1 for r in data if isinstance(r[COL_DISCHARGE], str))
+formula_volume    = sum(1 for r in data if isinstance(r[COL_VOLUME], str))
+formula_load      = sum(1 for r in data if isinstance(r[COL_LOAD], str))
+none_height       = sum(1 for r in data if r[COL_HEIGHT] is None)
+none_discharge    = sum(1 for r in data if r[COL_DISCHARGE] is None)
+none_volume       = sum(1 for r in data if r[COL_VOLUME] is None)
+none_load         = sum(1 for r in data if r[COL_LOAD] is None)
+date_only_ts      = sum(1 for r in data if r[COL_DATE] is not None
+                        and isinstance(r[COL_DATE], datetime.date)
+                        and not isinstance(r[COL_DATE], datetime.datetime))
 
 # --- Write clean CSV ---
 print("Escribiendo CSV limpio...")
@@ -130,11 +143,11 @@ with open(OUTPUT_CSV, "w", newline="", encoding="utf-8") as f:
     writer = csv.writer(f)
     writer.writerow(["TIMESTAMP", "HEIGHT_m", "DISCHARGE_m3s", "VOLUME_m3", "LOAD_kg"])
     for row in data:
-        ts        = clean_ts(row[14])
-        height    = to_float(row[1])
-        discharge = to_float(row[2])
-        volume    = to_float(row[3])
-        load      = to_float(row[11])
+        ts        = clean_ts(row[COL_DATE])
+        height    = to_float(row[COL_HEIGHT])
+        discharge = to_float(row[COL_DISCHARGE])
+        volume    = to_float(row[COL_VOLUME])
+        load      = to_float(row[COL_LOAD])
 
         ts_str        = ts.strftime("%Y-%m-%d %H:%M:%S") if ts is not None else ""
         height_str    = "" if height is None else str(round(height, 6))
@@ -149,7 +162,7 @@ print(f"CSV guardado en: {OUTPUT_CSV}")
 # --- Write metadata TXT ---
 print("Escribiendo metadatos...")
 with open(OUTPUT_META, "w", encoding="utf-8") as f:
-    f.write("ESTACIÓN: STM05 - Monnàber\n")
+    f.write("ESTACIÓN: STM03 - Es Fangar\n")
     f.write("TIPO: Hidrológica\n")
     f.write("VARIABLES: Water level (m), Discharge (m³/s), Volume (m³), Load (kg)\n")
     f.write("\n")
@@ -167,12 +180,15 @@ with open(OUTPUT_META, "w", encoding="utf-8") as f:
         f.write("  10 min: no detectado\n")
     f.write("\n")
     f.write("NOTAS DE LIMPIEZA:\n")
-    f.write("  - Solo se procesa la hoja 'STM05'; las otras hojas son gráficos o auxiliares.\n")
+    f.write("  - Solo se procesa la hoja 'STM03'; las otras hojas son auxiliares.\n")
     f.write("  - El fichero usa namespaces strict OOXML (purl.oclc.org); se reescriben a\n")
     f.write("    namespaces transitionales antes de cargar con openpyxl (en memoria, sin modificar el original).\n")
     f.write("  - Cargado con data_only=True: se recuperan los valores cacheados por Excel en el último guardado.\n")
+    f.write("  - En esta hoja hay una columna extra SSC.Calibrated High (índice 11); LOAD ocupa el índice 12\n")
+    f.write("    y DATE.UTC el índice 16, desplazados respecto al layout estándar de otras estaciones.\n")
     f.write("  - Microsegundos artificiales en TIMESTAMP eliminados (artefacto del Excel).\n")
-    f.write(f"  - {date_only_ts} filas con TIMESTAMP de tipo date (sin hora) convertidas a datetime a las 00:00:00.\n")
+    if date_only_ts:
+        f.write(f"  - {date_only_ts} filas con TIMESTAMP de tipo date (sin hora) convertidas a datetime a las 00:00:00.\n")
     f.write("  - Valores nulos (None) exportados como celdas vacías.\n")
     f.write(f"  - HEIGHT_m: {formula_height} celdas con caché vacía + {none_height} celdas None → exportadas como vacías.\n")
     f.write(f"  - DISCHARGE: {formula_discharge} celdas con caché vacía + {none_discharge} celdas None → exportadas como vacías.\n")

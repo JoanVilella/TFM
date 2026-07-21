@@ -1,0 +1,177 @@
+\documentclass[twocolumn,twoside,a4paper,10pt]{IEEEtran}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[noadjust]{cite}
+    \renewcommand{\citepunct}{,\penalty\citepunctpenalty\,}
+    \renewcommand{\citedash}{--}
+\usepackage{lipsum}
+\usepackage{url}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{hyperref}
+    \hypersetup{
+        colorlinks,
+        linkcolor={red!50!black},
+        citecolor={blue!50!black},
+        urlcolor={blue!80!black}
+    }
+\usepackage{amsmath}
+\usepackage{booktabs}
+% ADD THE PACKAGES YOU MIGHT NEED
+
+
+
+
+
+% % % % % % % % % % % % % % % % % %
+%     EDIT THE THESIS' DETAILS    %
+% % % % % % % % % % % % % % % % % %
+
+
+\usepackage[english]{babel}     % Use either `english`, `catalan` or `spanish` to change titles and other template text
+\title{Hydrological Modelling of the Sant Miquel Basin: A Comparative Study of Physics-Based and Machine Learning Approaches}
+\author{Name Surname}
+\email{name@organization.com}
+\tutors{Name Surname [and Name Surname]}
+\specialization{Data Science}
+\academicyear{2025/26}
+\keywords{hydrological modelling, HEC-HMS, machine learning, flash floods, Sa Marjal}
+% \showedisslogo  % Uncomment this command if you are an EDISS student.
+
+\license{by}  % Alternatives include: by-nc-sa, by-nc-nd, by-nc, by-nd, by-sa, by.
+
+
+
+\begin{document}
+
+\include{titlepage}
+\maketitle
+
+
+
+% % % % % % % % % % % % % % % %
+%     EDIT THE MANUSCRIPT     %
+% % % % % % % % % % % % % % % %
+
+\begin{abstract}
+\noindent
+Accurate prediction of water levels in Mediterranean ephemeral streams is essential for flood early warning and wetland ecosystem management. This thesis focuses on the Sant Miquel basin (Mallorca, Spain), whose catchment drains into the ecologically sensitive Sa~Marjal coastal wetland (monitoring station STM08). Two complementary modelling paradigms are developed and evaluated: (\textit{i})~a physics-based hydrological model constructed with HEC-HMS (Hydrologic Engineering Center -- Hydrologic Modeling System) and calibrated against twelve years of sub-hourly streamflow observations from eight monitoring stations; and (\textit{ii})~a suite of data-driven models -- including gradient-boosted trees, Long Short-Term Memory (LSTM) networks, and the Temporal Fusion Transformer (TFT) -- trained on the same multi-source observational record. Model performance is assessed with standard hydrological metrics (Nash--Sutcliffe Efficiency, Kling--Gupta Efficiency, RMSE, PBIAS) across flood events, recession periods, and ordinary flow conditions. The comparative analysis aims to identify the conditions under which each paradigm offers the greatest advantage and to provide operational guidance for real-time forecasting.
+\end{abstract}
+
+
+
+\section{Introduction\label{sec:intro}}
+
+Flash floods rank among the most destructive natural hazards in Mediterranean Europe, responsible for significant loss of life and economic damage each year~\cite{Llasat2010}. Their defining characteristics -- short response times, high peak discharges, and rapid recession -- are determined by the interaction of intense convective or frontal rainfall with small, steep, low-permeability catchments. The Balearic Islands experience some of the highest unit-area flood peaks recorded in Europe~\cite{Estrany2010}, driven by Mesoscale Convective Systems whose intensity is amplified by warm sea-surface temperatures and island orography.
+
+Against this backdrop, real-time prediction of streamflow is both an ecological and a public-safety imperative. Ecologically, the Sa~Marjal coastal wetland -- the terminal receptor of the Sant Miquel basin -- is a protected habitat under the EU Habitats Directive (92/43/EEC) whose ecological functioning depends on the timing and magnitude of flood pulses. From a risk management perspective, the lower reaches of the basin are subject to recurring flood damage, making timely warnings critical for civil protection.
+
+Two broad paradigms exist for hydrological streamflow modelling. \textit{Physics-based models} represent catchment processes -- infiltration, surface runoff generation, channel routing -- through governing equations grounded in physical principles~\cite{Beven2012}. Tools such as HEC-HMS, SWAT, and TOPMODEL are widely used in operational hydrology. Their main advantages are physical interpretability, the ability to incorporate catchment characteristics derived from terrain analysis and field surveys, and a capacity for extrapolation to unobserved scenarios. Their limitations include structural parameter uncertainty, high data requirements for catchment characterisation, and sensitivity to spatial variability in precipitation.
+
+\textit{Data-driven models}, by contrast, learn the input--output mapping directly from historical observations without explicit process representation. Classical approaches such as random forests and gradient-boosted trees are computationally efficient and robust to missing data~\cite{Breiman2001}. Deep learning architectures -- particularly LSTM networks~\cite{Hochreiter1997} and the Temporal Fusion Transformer~\cite{Lim2021} -- excel at capturing long-range temporal dependencies and multivariate covariates. Recent large-scale benchmarks have demonstrated that deep learning models can match or exceed physics-based models when trained on sufficient data~\cite{Kratzert2019}. Their main limitations are poor extrapolation beyond the training distribution and limited physical interpretability.
+
+The complementarity of these paradigms motivates systematic comparative evaluations on well-instrumented catchments. This thesis contributes to that research agenda by applying both approaches to the Sant Miquel basin, using a continuous monitoring record maintained since 2012 by the RiscBal hydrological risk observatory of the Universitat de les Illes Balears. The dataset provides sub-hourly precipitation, temperature, water level, discharge, and suspended sediment concentration at eight stations, complemented by three hourly rain-gauge records from the Spanish national meteorological agency (AEMET). The twelve-year observation window encompasses a wide spectrum of hydrological conditions, including multiple extreme events, constituting a rigorous test bed for the comparison.
+
+The remainder of this paper is organised as follows. Section~\ref{sec:area} characterises the study area. Section~\ref{sec:data} describes the monitoring network, data architecture, and quality issues. Section~\ref{sec:problem} formalises the prediction problem.
+
+
+
+\section{Study Area\label{sec:area}}
+
+The Sant Miquel basin is located in northern Mallorca, Spain (approximately 39.80\textdegree{}N, 2.95\textdegree{}E), within the Serra de Tramuntana mountain range -- a UNESCO World Heritage landscape. The catchment is underlain primarily by Mesozoic karstic limestone, resulting in a partly subsurface drainage network that complicates runoff estimation from terrain analysis alone. Surface topography is rugged, with elevations ranging from near sea level at the Sa~Marjal wetland to above 600~m in the headwaters, and channel gradients are steep.
+
+The climate is semi-arid Mediterranean (K\"oppen BSk/Csa). Mean annual precipitation varies from approximately 800~mm in the Serra de Tramuntana highlands to 400--500~mm near the coast. Rainfall is strongly seasonal: the bulk of the annual total falls between October and March in association with Atlantic frontal systems and Mediterranean convective events; summers are hot and dry. Interannual variability is high. The hydrological regime is intermittent -- the main channel (Torrent de Sant Miquel) and its tributaries carry flow only during and shortly after rainfall events, since baseflow is negligible owing to rapid drainage through karst conduits. Land use is dominated by natural garrigue scrubland and traditional rain-fed agriculture (almond and olive orchards), with low impervious cover.
+
+The terminal node of the catchment is the Sa~Marjal wetland (STM08), a Site of Community Importance (SCI) under the Natura~2000 network. Near-real-time hydrological data from the monitoring network are publicly accessible through the RiscBal application (\url{https://riscbal.uib.es}), which serves as the operational context for the forecasting system developed in this thesis.
+
+
+
+\section{Data and Monitoring Network\label{sec:data}}
+
+\subsection{Monitoring stations}
+
+The basin is instrumented by eight stations (STM01--STM08) operated by the Estrany Hydrology Group at the UIB. Stations STM01 and STM02 are meteorological, recording precipitation and air temperature. Stations STM03--STM08 are hydrological gauges equipped with pressure transducers that measure water surface level continuously; volumetric discharge is derived via station-specific rating curves. Suspended sediment concentration and electrical conductivity are also recorded at hydrological stations. Three complementary rain-gauge records from the AEMET national network extend precipitation coverage to the lower basin and coastal plain. Table~\ref{tab:stations} summarises the complete station inventory.
+
+\begin{table*}[!t]
+    \caption{Monitoring Station Inventory.}
+    \label{tab:stations}
+    \begin{center}
+    \begin{tabular}{lllll}
+        \toprule
+        \textbf{ID} & \textbf{Name} & \textbf{Type} & \textbf{Period} & \textbf{Resolution} \\
+        \midrule
+        STM01 & Coll des Tel\`{e}graf & Meteorological (PRECIP, TEMP) & 2012--2026 & 10 min \\
+        STM02 & M\'{i}ner Gran        & Meteorological (PRECIP, TEMP) & 2014--2026 & 10 min \\
+        STM03 & Es Fangar             & Hydrological (HEIGHT, DISCHARGE, LOAD) & 2012--2026 & 5 min \\
+        STM04 & Gabelli               & Hydrological (HEIGHT, DISCHARGE, LOAD) & 2012--2026 & 5 min \\
+        STM05 & Monn\`{a}ber          & Hydrological (HEIGHT, DISCHARGE, LOAD) & 2012--2026 & 5 min \\
+        STM06 & Sant Miquel           & Hydrological (HEIGHT, DISCHARGE, LOAD) & 2012--2026 & 5 min \\
+        STM07 & B\'{u}ger             & Hydrological (HEIGHT, DISCHARGE, LOAD) & 2012--2026 & 5 min \\
+        STM08 & Sa Marjal (\textbf{target}) & Hydrological (HEIGHT, DISCHARGE, LOAD) & 2013--2026 & 5 min \\
+        \midrule
+        B013X & Lluc                  & AEMET rain gauge (PRECIP) & 1993--2026 & 60 min \\
+        B605X & Muro--S'Albufera      & AEMET rain gauge (PRECIP) & 2005--2026 & 60 min \\
+        B691Y & Sa Pobla--Sa Canova   & AEMET rain gauge (PRECIP) & 2011--2026 & 60 min \\
+        \bottomrule
+    \end{tabular}
+    \end{center}
+\end{table*}
+
+\subsection{Data architecture}
+
+Each observation in the monitoring database is described by the following attributes:
+
+\begin{itemize}
+    \item \textbf{Timestamp (UTC).} Date and time of measurement, stored in Coordinated Universal Time to prevent ambiguities arising from daylight saving time transitions.
+    \item \textbf{Sensor identifier.} A unique code linking each record to a specific instrument at a specific station, enabling instrument-level quality control and detection of sensor drift between equipment generations.
+    \item \textbf{Measured value.} The physical quantity recorded (water level, precipitation depth, temperature, etc.) in standard hydrological units (m, mm, \textdegree{}C, m$^{3}$~s$^{-1}$).
+    \item \textbf{Geographic coordinates.} Latitude, longitude, and altitude of each sensor, enabling spatial operations such as Thiessen polygon construction for areal rainfall estimation and integration with digital elevation models for HEC-HMS parameterisation.
+    \item \textbf{Sensor model.} Manufacturer and instrument designation, relevant for assessing systematic biases between successive instrument generations and for consistency checks after equipment replacement.
+    \item \textbf{Water temperature.} Recorded alongside hydraulic variables at hydrological stations; used for conductivity correction and as an auxiliary predictor in data-driven models.
+\end{itemize}
+
+This normalised schema supports both the spatial operations required for physics-based model parameterisation and the tabular feature engineering required for machine learning.
+
+\subsection{Data quality and challenges}
+
+The common observation window after temporal alignment spans approximately twelve years (September~2014 to July~2026). Four quality issues are particularly significant:
+
+\textbf{(1) Mixed temporal resolutions.} STM stations originally sampled at 15-minute intervals; the frequency was upgraded to 10~min in May~2022 and to 5~min at most stations from mid-2025 onward. AEMET gauges provide hourly data. All series are resampled to a common hourly resolution -- precipitation summed, water levels and temperature averaged -- to produce a consistent modelling dataset.
+
+\textbf{(2) Missing records and quality flags.} Sensor malfunctions, maintenance periods, and telecommunication failures generate data gaps of varying duration. A binary \texttt{quality} flag marks records requiring expert validation: station STM03 exhibits approximately 45\,000 flagged entries in the extended (2025--2026) period, and STM05 approximately 3\,000. The decision to retain, impute, or exclude flagged records must be made carefully to avoid introducing systematic bias into model training.
+
+\textbf{(3) Incomplete variable coverage in the extended period.} From approximately mid-2025 onward, only \texttt{HEIGHT\_m} is available from the hydrological stations; derived variables (\texttt{DISCHARGE\_m$^{3}$~s$^{-1}$}, \texttt{VOLUME\_m$^{3}$}, \texttt{LOAD\_kg}) are absent because the rating-curve computation pipeline has not yet been applied to the most recent records. Since \texttt{HEIGHT\_m} is the target variable and remains continuously available, this does not affect the core prediction task but limits the use of discharge as a secondary validation metric.
+
+\textbf{(4) Highly intermittent flow regime.} Discharge is zero for the majority of the record. The resulting heavily right-skewed distribution of \texttt{HEIGHT\_m} means that standard loss functions minimising average error will implicitly favour dry-period performance over flood events. Metric selection, class-stratified evaluation, and event-based analysis are therefore essential components of the model assessment framework.
+
+
+
+\section{Problem Statement\label{sec:problem}}
+
+Let $h(t)$ denote the water level (m) recorded at STM08 at discrete time step $t$ (hourly resolution). Let $\mathbf{x}(t) \in \mathbb{R}^{p}$ be the vector of $p$ predictor variables at time $t$, comprising hourly precipitation totals, upstream water levels, and air temperatures from all available stations. The prediction task is defined as:
+
+\begin{equation}
+    \hat{h}(t + \Delta) = f\!\left(\mathbf{x}(t),\, \mathbf{x}(t{-}1),\, \ldots,\, \mathbf{x}(t{-}L)\right)
+    \label{eq:problem}
+\end{equation}
+
+\noindent where $\Delta \geq 1$~h is the forecast horizon, $L$ is the look-back window (hours), and $f(\cdot)$ is the model function. Two instantiations of $f$ are investigated: (i)~the physics-based HEC-HMS model, in which $f$ encapsulates calibrated process equations for rainfall--runoff transformation and channel routing; and (ii)~a family of data-driven models, in which $f$ is learned from observations by statistical optimisation.
+
+The dataset is partitioned chronologically to avoid temporal leakage:
+\begin{itemize}
+    \item \textbf{Training:} January~2014 -- December~2020
+    \item \textbf{Validation:} January~2021 -- June~2022
+    \item \textbf{Test:} July~2022 -- July~2026
+\end{itemize}
+
+Model performance is quantified using four metrics standard in operational hydrology: Nash--Sutcliffe Efficiency (NSE), Kling--Gupta Efficiency (KGE), root mean squared error (RMSE), and percent bias (PBIAS). Results are reported separately for the full test period and for identified flood events, to distinguish performance on rare high-flow conditions from overall average accuracy.
+
+
+\bibliographystyle{abbrv}
+\bibliography{bibliography} % EDIT THE FILE `bibliography.bib` WITH YOUR REFERENCES
+
+\end{document}
+
+
+

@@ -1,61 +1,34 @@
-# ABOUTME: Limpieza y estandarización de los datos crudos de la estación hidrológica STM04 (Gabelli).
+# ABOUTME: Limpieza y estandarización de los datos crudos de la estación hidrológica STM07 (Búger).
 # ABOUTME: Genera un CSV limpio en data/clean/ y un TXT de metadatos con T0 y períodos de frecuencia de muestreo.
 
-import zipfile
-import re
-import io
 import os
 import csv
 import datetime
 import openpyxl
+from pathlib import Path
 
-INPUT_PATH = r"data\raw\excel\STM04_gabelli.xlsx"
-OUTPUT_CSV = r"data\clean\STM04.csv"
-OUTPUT_META = r"data\clean\STM04_metadata.txt"
-SHEET_NAME = "STM04"
+REPO_ROOT = Path(__file__).resolve().parents[2]
 
-# Namespace mapping: the file uses strict OOXML namespaces (purl.oclc.org)
-# which openpyxl does not support. We rewrite them to the transitional
-# namespaces before parsing, and also strip the broken externalReferences node.
-_STRICT_NS  = "http://purl.oclc.org/ooxml/spreadsheetml/main"
-_TRANSIT_NS = "http://schemas.openxmlformats.org/spreadsheetml/2006/main"
-_STRICT_REL  = "http://purl.oclc.org/ooxml/officeDocument/relationships"
-_TRANSIT_REL = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
+INPUT_PATH = str(REPO_ROOT / "data/raw/stm/STM07_buger.xlsx")
+OUTPUT_CSV = str(REPO_ROOT / "data/clean/STM07.csv")
+OUTPUT_META = str(REPO_ROOT / "data/clean/STM07_metadata.txt")
+SHEET_NAME = "data"
 
+# Column indices (0-based) in the 'data' sheet:
+#   1 = HEIGHT (filtered/validated), 2 = DISCHARGE, 3 = VOLUME, 12 = LOAD, 15 = DATE.UTC
+COL_HEIGHT    = 1
+COL_DISCHARGE = 2
+COL_VOLUME    = 3
+COL_LOAD      = 12
+COL_DATE      = 15
 
-def _patch_xlsx(src_path):
-    """Return a BytesIO with strict OOXML namespaces replaced by transitional ones."""
-    buf = io.BytesIO()
-    with zipfile.ZipFile(src_path, "r") as zin:
-        with zipfile.ZipFile(buf, "w", compression=zipfile.ZIP_DEFLATED) as zout:
-            for item in zin.infolist():
-                data = zin.read(item.filename)
-                if item.filename.endswith(".xml") or item.filename.endswith(".rels"):
-                    text = data.decode("utf-8")
-                    text = text.replace(_STRICT_NS, _TRANSIT_NS)
-                    text = text.replace(_STRICT_REL, _TRANSIT_REL)
-                    # Remove externalReferences node that triggers an openpyxl bug
-                    text = re.sub(
-                        r"<externalReferences>.*?</externalReferences>",
-                        "",
-                        text,
-                        flags=re.DOTALL,
-                    )
-                    data = text.encode("utf-8")
-                zout.writestr(item, data)
-    buf.seek(0)
-    return buf
-
-
-# --- Load sheet STM04 ---
-print("Cargando Excel (hoja STM04)...")
-patched = _patch_xlsx(INPUT_PATH)
-wb = openpyxl.load_workbook(patched, data_only=True)
+# --- Load sheet ---
+print("Cargando Excel (hoja data)...")
+wb = openpyxl.load_workbook(INPUT_PATH, data_only=True)
 ws = wb[SHEET_NAME]
 rows = list(ws.iter_rows(values_only=True))
 wb.close()
 
-# Header: index 1 = 'HEIGHT...2' (filtered), 2 = 'DISCHARGE', 3 = 'VOLUME', 11 = 'LOAD', 14 = 'DATE.UTC'
 data = rows[1:]
 
 
@@ -78,7 +51,7 @@ def to_float(val):
     if val is None:
         return None
     if isinstance(val, str):
-        # Cell contains an unresolved Excel formula; treat as missing
+        # Cell contains an unresolved Excel formula or empty string; treat as missing
         return None
     try:
         return float(val)
@@ -87,7 +60,7 @@ def to_float(val):
 
 
 # --- Detect sampling frequency periods ---
-valid_ts = [(i, clean_ts(r[14])) for i, r in enumerate(data) if clean_ts(r[14]) is not None]
+valid_ts = [(i, clean_ts(r[COL_DATE])) for i, r in enumerate(data) if clean_ts(r[COL_DATE]) is not None]
 
 first_ts = valid_ts[0][1]
 last_ts = valid_ts[-1][1]
@@ -111,14 +84,17 @@ for j in range(len(valid_ts) - 1):
         period_10_end = t2
 
 # --- Count nulls for metadata ---
-formula_height    = sum(1 for r in data if isinstance(r[1], str))
-formula_discharge = sum(1 for r in data if isinstance(r[2], str))
-formula_volume    = sum(1 for r in data if isinstance(r[3], str))
-formula_load      = sum(1 for r in data if isinstance(r[11], str))
-none_height       = sum(1 for r in data if r[1] is None)
-none_discharge    = sum(1 for r in data if r[2] is None)
-none_volume       = sum(1 for r in data if r[3] is None)
-none_load         = sum(1 for r in data if r[11] is None)
+formula_height    = sum(1 for r in data if isinstance(r[COL_HEIGHT], str))
+formula_discharge = sum(1 for r in data if isinstance(r[COL_DISCHARGE], str))
+formula_volume    = sum(1 for r in data if isinstance(r[COL_VOLUME], str))
+formula_load      = sum(1 for r in data if isinstance(r[COL_LOAD], str))
+none_height       = sum(1 for r in data if r[COL_HEIGHT] is None)
+none_discharge    = sum(1 for r in data if r[COL_DISCHARGE] is None)
+none_volume       = sum(1 for r in data if r[COL_VOLUME] is None)
+none_load         = sum(1 for r in data if r[COL_LOAD] is None)
+date_only_ts      = sum(1 for r in data if r[COL_DATE] is not None
+                        and isinstance(r[COL_DATE], datetime.date)
+                        and not isinstance(r[COL_DATE], datetime.datetime))
 
 # --- Write clean CSV ---
 print("Escribiendo CSV limpio...")
@@ -128,11 +104,11 @@ with open(OUTPUT_CSV, "w", newline="", encoding="utf-8") as f:
     writer = csv.writer(f)
     writer.writerow(["TIMESTAMP", "HEIGHT_m", "DISCHARGE_m3s", "VOLUME_m3", "LOAD_kg"])
     for row in data:
-        ts        = clean_ts(row[14])
-        height    = to_float(row[1])
-        discharge = to_float(row[2])
-        volume    = to_float(row[3])
-        load      = to_float(row[11])
+        ts        = clean_ts(row[COL_DATE])
+        height    = to_float(row[COL_HEIGHT])
+        discharge = to_float(row[COL_DISCHARGE])
+        volume    = to_float(row[COL_VOLUME])
+        load      = to_float(row[COL_LOAD])
 
         ts_str        = ts.strftime("%Y-%m-%d %H:%M:%S") if ts is not None else ""
         height_str    = "" if height is None else str(round(height, 6))
@@ -147,7 +123,7 @@ print(f"CSV guardado en: {OUTPUT_CSV}")
 # --- Write metadata TXT ---
 print("Escribiendo metadatos...")
 with open(OUTPUT_META, "w", encoding="utf-8") as f:
-    f.write("ESTACIÓN: STM04 - Gabelli\n")
+    f.write("ESTACIÓN: STM07 - Búger\n")
     f.write("TIPO: Hidrológica\n")
     f.write("VARIABLES: Water level (m), Discharge (m³/s), Volume (m³), Load (kg)\n")
     f.write("\n")
@@ -165,13 +141,12 @@ with open(OUTPUT_META, "w", encoding="utf-8") as f:
         f.write("  10 min: no detectado\n")
     f.write("\n")
     f.write("NOTAS DE LIMPIEZA:\n")
-    f.write("  - Solo se procesa la hoja 'STM04'; las otras hojas son gráficos o auxiliares.\n")
-    f.write("  - El fichero usa namespaces strict OOXML (purl.oclc.org); se reescriben a\n")
-    f.write("    namespaces transitionales antes de cargar con openpyxl (en memoria, sin modificar el original).\n")
-    f.write("  - La referencia externa rota (ExternalReference sin atributo id) ha sido eliminada del workbook.xml.\n")
+    f.write("  - Solo se procesa la hoja 'data'; las otras hojas son gráficos o auxiliares.\n")
     f.write("  - Cargado con data_only=True: se recuperan los valores cacheados por Excel en el último guardado.\n")
+    f.write("  - En esta hoja LOAD ocupa la columna M (índice 12), no L (índice 11) como en otras estaciones.\n")
     f.write("  - Microsegundos artificiales en TIMESTAMP eliminados (artefacto del Excel).\n")
-    f.write("  - 4584 filas con TIMESTAMP de tipo date (sin hora) convertidas a datetime a las 00:00:00.\n")
+    if date_only_ts:
+        f.write(f"  - {date_only_ts} filas con TIMESTAMP de tipo date (sin hora) convertidas a datetime a las 00:00:00.\n")
     f.write("  - Valores nulos (None) exportados como celdas vacías.\n")
     f.write(f"  - HEIGHT_m: {formula_height} celdas con caché vacía + {none_height} celdas None → exportadas como vacías.\n")
     f.write(f"  - DISCHARGE: {formula_discharge} celdas con caché vacía + {none_discharge} celdas None → exportadas como vacías.\n")

@@ -1,12 +1,15 @@
 # ABOUTME: Extiende los CSV limpios de STM01 y STM02 con datos de precipitación y temperatura nuevos
-# ABOUTME: desde data/raw/csv/new_precipitation_data/, integrándolos cronológicamente hasta la fecha actual.
+# ABOUTME: desde data/raw/db_exports/precipitation/, integrándolos cronológicamente hasta la fecha actual.
 
 import csv
 import os
 import datetime
+from pathlib import Path
 
-RAW_DIR   = r"data\raw\csv\new_precipitation_data"
-CLEAN_DIR = r"data\clean"
+REPO_ROOT = Path(__file__).resolve().parents[2]
+
+RAW_DIR   = str(REPO_ROOT / "data/raw/db_exports/precipitation")
+CLEAN_DIR = str(REPO_ROOT / "data/clean")
 
 STATIONS = {
     "STM01": "Coll des Telègraf",

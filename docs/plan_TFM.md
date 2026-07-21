@@ -2,7 +2,11 @@
 
 ## Objetivo
 
-Predecir el **nivel de agua** (caudal / *discharge*, proxy del nivel) en la estación hidrológica **STM08 - Sa Marjal** utilizando como predictores las series temporales del resto de estaciones meteorológicas e hidrológicas disponibles.
+Este TFM tiene un **doble objetivo**:
+
+1. **Modelo físico (HEC-HMS)**: Construir un modelo hidrológico de base física de la cuenca de Sant Miquel con el software **HEC-HMS** (Hydrologic Engineering Center – Hydrologic Modeling System), calibrado y validado con las series observadas en las estaciones STM03–STM08.
+2. **Modelos basados en datos (ML/IA)**: Desarrollar modelos de aprendizaje automático e inteligencia artificial para predecir el **nivel de agua** (`HEIGHT_m`) en la estación hidrológica **STM08 - Sa Marjal**, utilizando como predictores las series temporales del resto de estaciones meteorológicas e hidrológicas disponibles.
+3. **Comparación**: Evaluar y comparar el rendimiento de ambas familias de modelos (físico vs. datos) bajo las métricas estándar en hidrología (NSE, KGE, RMSE, PBIAS), analizando sus ventajas, limitaciones y contextos de aplicación.
 
 ---
 
@@ -118,7 +122,23 @@ Esto da **~12 años** de datos solapados con todas las fuentes activas. Todas la
 
 **Entregable**: `02_preprocessing.ipynb` + `data/processed/dataset_hourly.parquet`
 
-### Fase 3 — Modelos de referencia (*baselines*)
+### Fase 3 — Modelo físico con HEC-HMS
+
+**Objetivo**: Construir un modelo hidrológico de base física de la cuenca de Sant Miquel calibrado con datos observados.
+
+- [ ] **Delineación de la cuenca**: Obtener el MDT (Modelo Digital del Terreno) de la zona y delimitar la cuenca hidrográfica y las subcuencas drenantes hacia STM08.
+- [ ] **Configuración del modelo HEC-HMS**:
+  - Definir los parámetros morfométricos de cada subcuenca (área, pendiente, longitud de cauce).
+  - Seleccionar los métodos de transformación lluvia-escorrentía (p.ej. SCS Curve Number) y de tránsito de avenidas (p.ej. Muskingum).
+  - Asignar las series de precipitación de las estaciones STM01, STM02 y AEMET como entrada forzante.
+- [ ] **Calibración y validación**:
+  - Calibrar los parámetros del modelo (CN, Manning, tiempos de concentración) frente a caudales observados en STM06 / STM08 mediante optimización automática (p.ej. algoritmo DCEA integrado en HEC-HMS).
+  - Validar con eventos de crecida independientes del período de calibración.
+- [ ] **Análisis de incertidumbre**: Identificar los parámetros más sensibles y sus rangos de variación.
+
+**Entregable**: Proyecto HEC-HMS calibrado (`hec_hms/`) + notebook de análisis de resultados `03_hec_hms.ipynb`
+
+### Fase 4 — Modelos de referencia (*baselines*)
 
 **Objetivo**: Establecer límites inferiores de rendimiento.
 
@@ -132,9 +152,9 @@ Esto da **~12 años** de datos solapados con todas las fuentes activas. Todas la
 - RMSE y MAE.
 - PBIAS (sesgo volumétrico).
 
-**Entregable**: `03_baselines.ipynb`
+**Entregable**: `04_baselines.ipynb`
 
-### Fase 4 — Modelos secuenciales
+### Fase 5 — Modelos secuenciales
 
 **Objetivo**: Capturar las dependencias temporales de largo alcance.
 
@@ -142,23 +162,36 @@ Esto da **~12 años** de datos solapados con todas las fuentes activas. Todas la
 - [ ] **Temporal Fusion Transformer (TFT)**: estado del arte en series temporales multivariables, maneja covariables conocidas (meteo) y pasadas (hidro).
 - [ ] Ajuste de hiperparámetros con *Optuna* o *Ray Tune*.
 
-**Entregable**: `04_deep_learning.ipynb`
+**Entregable**: `05_deep_learning.ipynb`
 
-### Fase 5 — Interpretabilidad y análisis de resultados
+### Fase 6 — Interpretabilidad y análisis de resultados
 
 - [ ] Feature importance (SHAP values) para entender qué predictores dominan.
 - [ ] Análisis de errores: ¿el modelo falla más en crecidas o en estiajes?
 - [ ] Curvas de error por umbral de caudal.
 - [ ] Comparación de predicciones vs observaciones en eventos seleccionados.
 
-**Entregable**: `05_interpretability.ipynb`
+**Entregable**: `06_interpretability.ipynb`
 
-### Fase 6 — Escritura de la memoria
+### Fase 7 — Comparación HEC-HMS vs. ML/IA
 
-- [ ] Introducción y contexto hidrológico de la cuenca.
-- [ ] Descripción de los datos y del preprocesado.
-- [ ] Resultados y comparación de modelos.
-- [ ] Discusión y conclusiones.
+**Objetivo**: Confrontar el modelo físico con los modelos basados en datos sobre los mismos eventos y períodos.
+
+- [ ] Evaluar ambas familias con las métricas comunes (NSE, KGE, RMSE, MAE, PBIAS) en train/val/test.
+- [ ] Análisis por tipo de evento: crecidas, estiajes y condiciones ordinarias.
+- [ ] Discutir los requisitos de datos de cada enfoque (datos de entrada, esfuerzo de calibración, transferibilidad).
+- [ ] Identificar en qué escenarios el modelo físico supera a los datos y viceversa.
+
+**Entregable**: `07_comparison.ipynb`
+
+### Fase 8 — Escritura de la memoria
+
+- [ ] Introducción y contexto hidrológico de la cuenca de Sant Miquel.
+- [ ] Descripción del modelo físico HEC-HMS: metodología, calibración y resultados.
+- [ ] Descripción de los datos y del preprocesado para los modelos ML/IA.
+- [ ] Resultados y comparación entre el modelo físico y los modelos basados en datos.
+- [ ] Discusión: ventajas, limitaciones y recomendaciones de uso de cada enfoque.
+- [ ] Conclusiones.
 
 ---
 
@@ -168,6 +201,8 @@ Esto da **~12 años** de datos solapados con todas las fuentes activas. Todas la
 |---|---|
 | Manipulación de datos | `pandas`, `polars` (opcional para velocidad) |
 | Visualización | `matplotlib`, `seaborn`, `plotly` |
+| Modelo físico | **HEC-HMS** (USACE) |
+| SIG / MDT | QGIS o ArcGIS + HEC-GeoHMS para delineación de cuenca |
 | ML clásico | `scikit-learn`, `xgboost`, `lightgbm` |
 | Deep Learning | `PyTorch` + `pytorch-forecasting` (TFT) |
 | Hiperparámetros | `optuna` |
@@ -177,6 +212,15 @@ Esto da **~12 años** de datos solapados con todas las fuentes activas. Todas la
 ---
 
 ## 6. Preguntas abiertas / pendientes de Fran
+
+### Específicas de HEC-HMS
+
+- ¿Está disponible un MDT de alta resolución (LiDAR o similar) para la cuenca de Sant Miquel?
+- ¿Existe cartografía de usos del suelo y tipos de suelo para calcular el CN (Curve Number)?
+- ¿Se dispone de aforos de caudales punta en eventos históricos para calibrar el modelo?
+- ¿Las estaciones aguas arriba (STM03–STM07) actúan como puntos de control internos en la cuenca?
+
+### Generales
 
 - Curvas de aforo de STM08: ¿están calibradas para todo el período o cambian con el tiempo?
 - Confirmación de la topología de la cuenca: ¿todas las STM drenan hacia Sa Marjal?

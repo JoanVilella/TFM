@@ -1,14 +1,18 @@
-# ABOUTME: Limpieza y estandarización de los datos crudos de la estación meteorológica STM02 (Míner Gran).
+# ABOUTME: Limpieza y estandarización de los datos crudos de la estación meteorológica STM01 (Coll des Telègraf).
 # ABOUTME: Genera un CSV limpio en data/clean/ y un TXT de metadatos con T0 y períodos de frecuencia de muestreo.
 
 import openpyxl
 import csv
 import os
+import datetime
+from pathlib import Path
 
-INPUT_PATH = r"data\raw\excel\STM02_rain_minergran.xlsx"
-OUTPUT_CSV = r"data\clean\STM02.csv"
-OUTPUT_META = r"data\clean\STM02_metadata.txt"
-SHEET_NAME = "miner_gran_15min"
+REPO_ROOT = Path(__file__).resolve().parents[2]
+
+INPUT_PATH = str(REPO_ROOT / "data/raw/stm/STM01_rain_colltelegraf.xlsx")
+OUTPUT_CSV = str(REPO_ROOT / "data/clean/STM01.csv")
+OUTPUT_META = str(REPO_ROOT / "data/clean/STM01_metadata.txt")
+SHEET_NAME = "Sheet1"
 
 # --- Load raw data ---
 print("Cargando Excel...")
@@ -17,8 +21,7 @@ ws = wb[SHEET_NAME]
 rows = list(ws.iter_rows(values_only=True))
 wb.close()
 
-# Header: ('DATE.UTC', <excel_serial>, 'Precip', 'Temp', None, None)
-# Keep only cols 0 (TIMESTAMP), 2 (Precip), 3 (Temp); drop serial, empty cols
+header = rows[0]  # ('TIMESTAMP', 'Precip', 'Temp')
 data = rows[1:]
 
 # --- Clean timestamps: strip microsecond artifacts ---
@@ -29,6 +32,7 @@ def clean_ts(ts):
     return ts.replace(microsecond=0)
 
 # --- Detect sampling frequency periods ---
+# Collect valid (non-None) timestamps to find period boundaries
 valid_ts = [(i, clean_ts(r[0])) for i, r in enumerate(data) if r[0] is not None]
 
 first_ts = valid_ts[0][1]
@@ -61,15 +65,13 @@ with open(OUTPUT_CSV, "w", newline="", encoding="utf-8") as f:
     writer.writerow(["TIMESTAMP", "PRECIP_mm", "TEMP_C"])
     for row in data:
         ts = clean_ts(row[0])
-        precip = row[2]
-        temp = row[3]
+        precip = row[1]
+        temp = row[2]
+        # Format timestamp as ISO 8601
         ts_str = ts.strftime("%Y-%m-%d %H:%M:%S") if ts is not None else ""
+        # Keep NaN as empty string for traceability
         precip_str = "" if precip is None else str(precip)
-        # Treat None, 'NAN', and Excel formula strings as empty (null)
-        if temp is None or isinstance(temp, str):
-            temp_str = ""
-        else:
-            temp_str = str(round(temp, 4))
+        temp_str = "" if temp is None else str(round(temp, 4))
         writer.writerow([ts_str, precip_str, temp_str])
 
 print(f"CSV guardado en: {OUTPUT_CSV}")
@@ -77,7 +79,7 @@ print(f"CSV guardado en: {OUTPUT_CSV}")
 # --- Write metadata TXT ---
 print("Escribiendo metadatos...")
 with open(OUTPUT_META, "w", encoding="utf-8") as f:
-    f.write("ESTACIÓN: STM02 - Míner Gran\n")
+    f.write("ESTACIÓN: STM01 - Coll des Telègraf\n")
     f.write("TIPO: Meteorológica\n")
     f.write("VARIABLES: Precipitación (mm), Temperatura del aire (ºC)\n")
     f.write("\n")
@@ -95,10 +97,6 @@ with open(OUTPUT_META, "w", encoding="utf-8") as f:
         f.write("  10 min: no detectado\n")
     f.write("\n")
     f.write("NOTAS DE LIMPIEZA:\n")
-    f.write("  - Columna de serial Excel (DATE.UTC duplicado numérico) eliminada.\n")
-    f.write("  - 1 celda de Temp contenía una fórmula Excel (=AVERAGE); tratada como nulo.\n")
-    f.write("  - 22261 celdas de Temp contenían el string 'NAN'; tratadas como nulo.\n")
-    f.write("  - Dos columnas vacías/basura al final eliminadas.\n")
     f.write("  - Microsegundos artificiales en TIMESTAMP eliminados (artefacto del Excel).\n")
     f.write("  - Valores nulos (None) exportados como celdas vacías.\n")
     f.write("  - Columnas renombradas: Precip -> PRECIP_mm, Temp -> TEMP_C.\n")

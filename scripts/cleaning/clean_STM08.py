@@ -1,66 +1,30 @@
-# ABOUTME: Limpieza y estandarización de los datos crudos de la estación hidrológica STM03 (Es Fangar).
+# ABOUTME: Limpieza y estandarización de los datos crudos de la estación hidrológica STM08 (Sa Marjal).
 # ABOUTME: Genera un CSV limpio en data/clean/ y un TXT de metadatos con T0 y períodos de frecuencia de muestreo.
 
-import zipfile
-import re
-import io
 import os
 import csv
 import datetime
 import openpyxl
+from pathlib import Path
 
-INPUT_PATH = r"data\raw\excel\STM03_esfangar.xlsx"
-OUTPUT_CSV = r"data\clean\STM03.csv"
-OUTPUT_META = r"data\clean\STM03_metadata.txt"
-SHEET_NAME = "STM03"
+REPO_ROOT = Path(__file__).resolve().parents[2]
 
-# Namespace mapping: the file uses strict OOXML namespaces (purl.oclc.org)
-# which openpyxl does not support. We rewrite them to the transitional
-# namespaces before parsing, and also strip any broken externalReferences node.
-_STRICT_NS  = "http://purl.oclc.org/ooxml/spreadsheetml/main"
-_TRANSIT_NS = "http://schemas.openxmlformats.org/spreadsheetml/2006/main"
-_STRICT_REL  = "http://purl.oclc.org/ooxml/officeDocument/relationships"
-_TRANSIT_REL = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
+INPUT_PATH = str(REPO_ROOT / "data/raw/stm/STM08_samarjal.xlsx")
+OUTPUT_CSV = str(REPO_ROOT / "data/clean/STM08.csv")
+OUTPUT_META = str(REPO_ROOT / "data/clean/STM08_metadata.txt")
+SHEET_NAME = "data"
 
-
-def _patch_xlsx(src_path):
-    """Return a BytesIO with strict OOXML namespaces replaced by transitional ones."""
-    buf = io.BytesIO()
-    with zipfile.ZipFile(src_path, "r") as zin:
-        with zipfile.ZipFile(buf, "w", compression=zipfile.ZIP_DEFLATED) as zout:
-            for item in zin.infolist():
-                data = zin.read(item.filename)
-                if item.filename.endswith(".xml") or item.filename.endswith(".rels"):
-                    text = data.decode("utf-8")
-                    text = text.replace(_STRICT_NS, _TRANSIT_NS)
-                    text = text.replace(_STRICT_REL, _TRANSIT_REL)
-                    # Remove externalReferences node that triggers an openpyxl bug
-                    text = re.sub(
-                        r"<externalReferences>.*?</externalReferences>",
-                        "",
-                        text,
-                        flags=re.DOTALL,
-                    )
-                    data = text.encode("utf-8")
-                zout.writestr(item, data)
-    buf.seek(0)
-    return buf
-
-
-# Column indices (0-based) in the 'STM03' sheet:
-#   1 = HEIGHT (filtered/validated), 2 = DISCHARGE, 3 = VOLUME, 12 = LOAD, 16 = DATE.UTC
-# Note: an extra SSC.Calibrated High column at index 11 shifts LOAD to index 12
-# and pushes DATE.UTC to index 16 compared to the standard layout.
+# Column indices (0-based) in the 'data' sheet:
+#   1 = HEIGHT (filtered/validated), 2 = DISCHARGE, 3 = VOLUME, 11 = LOAD, 14 = DATE.UTC
 COL_HEIGHT    = 1
 COL_DISCHARGE = 2
 COL_VOLUME    = 3
-COL_LOAD      = 12
-COL_DATE      = 16
+COL_LOAD      = 11
+COL_DATE      = 14
 
-# --- Load sheet STM03 ---
-print("Cargando Excel (hoja STM03)...")
-patched = _patch_xlsx(INPUT_PATH)
-wb = openpyxl.load_workbook(patched, data_only=True)
+# --- Load sheet ---
+print("Cargando Excel (hoja data)...")
+wb = openpyxl.load_workbook(INPUT_PATH, data_only=True)
 ws = wb[SHEET_NAME]
 rows = list(ws.iter_rows(values_only=True))
 wb.close()
@@ -159,7 +123,7 @@ print(f"CSV guardado en: {OUTPUT_CSV}")
 # --- Write metadata TXT ---
 print("Escribiendo metadatos...")
 with open(OUTPUT_META, "w", encoding="utf-8") as f:
-    f.write("ESTACIÓN: STM03 - Es Fangar\n")
+    f.write("ESTACIÓN: STM08 - Sa Marjal\n")
     f.write("TIPO: Hidrológica\n")
     f.write("VARIABLES: Water level (m), Discharge (m³/s), Volume (m³), Load (kg)\n")
     f.write("\n")
@@ -177,12 +141,8 @@ with open(OUTPUT_META, "w", encoding="utf-8") as f:
         f.write("  10 min: no detectado\n")
     f.write("\n")
     f.write("NOTAS DE LIMPIEZA:\n")
-    f.write("  - Solo se procesa la hoja 'STM03'; las otras hojas son auxiliares.\n")
-    f.write("  - El fichero usa namespaces strict OOXML (purl.oclc.org); se reescriben a\n")
-    f.write("    namespaces transitionales antes de cargar con openpyxl (en memoria, sin modificar el original).\n")
+    f.write("  - Solo se procesa la hoja 'data' (única hoja del fichero).\n")
     f.write("  - Cargado con data_only=True: se recuperan los valores cacheados por Excel en el último guardado.\n")
-    f.write("  - En esta hoja hay una columna extra SSC.Calibrated High (índice 11); LOAD ocupa el índice 12\n")
-    f.write("    y DATE.UTC el índice 16, desplazados respecto al layout estándar de otras estaciones.\n")
     f.write("  - Microsegundos artificiales en TIMESTAMP eliminados (artefacto del Excel).\n")
     if date_only_ts:
         f.write(f"  - {date_only_ts} filas con TIMESTAMP de tipo date (sin hora) convertidas a datetime a las 00:00:00.\n")

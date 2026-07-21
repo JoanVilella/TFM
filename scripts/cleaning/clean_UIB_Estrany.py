@@ -4,9 +4,12 @@
 import csv
 import os
 import datetime
+from pathlib import Path
 
-RAW_DIR = r"data\raw\csv"
-CLEAN_DIR = r"data\clean"
+REPO_ROOT = Path(__file__).resolve().parents[2]
+
+RAW_DIR = str(REPO_ROOT / "data/raw/aemet")
+CLEAN_DIR = str(REPO_ROOT / "data/clean")
 
 STATIONS = {
     "B013X": {
