@@ -78,7 +78,7 @@ Esto da **~12 años** de datos solapados con todas las fuentes activas. Todas la
 
 ## 3. Retos principales
 
-1. **Frecuencias mixtas**: 5 min / 10 min / 15 min (STM según período) vs 60 min (AEMET). Necesario remuestrear a frecuencia común.
+1. **Frecuencias mixtas**: 5 min / 10 min / 15 min (STM según período) vs 60 min (AEMET). Se adopta una rejilla común de **10 min**, desagregando las series de menor resolución (60 min → 10 min) en lugar de agregar a la más gruesa.
 2. **Datos faltantes**: Algunas estaciones tienen miles de celdas nulas (p.ej. STM03 tiene >130 k nulos en `LOAD_kg`). `LOAD_kg` es la variable con más nulos; el tramo extendido solo tiene `HEIGHT_m`.
 3. **Heterogeneidad del tramo extendido**: Desde ~2025-07/2026-02 solo está disponible `HEIGHT_m` (sin caudal ni volumen); el split de train/val/test debe tener esto en cuenta.
 4. **Leakage temporal**: En series temporales es crítico hacer el split cronológico estricto.
@@ -117,7 +117,7 @@ Esto da **~12 años** de datos solapados con todas las fuentes activas. Todas la
 
 **Objetivo**: Producir un DataFrame listo para modelizar.
 
-- [ ] **Remuestreo**: Agregar todas las series a resolución horaria (suma para precipitación, media para caudal y temperatura). Justificar la resolución elegida.
+- [ ] **Remuestreo**: Construir el dataset sobre una **rejilla uniforme de 10 min**: desagregación temporal de las series horarias AEMET (60 → 10 min), remuestreo del período histórico STM de 15 min y agregación de los registros recientes de 5 min. Precipitación tratada como acumulado; nivel y temperatura como estados instantáneos. (Método concreto de desagregación pendiente de decidir; justificar la elección.)
 - [ ] **Alineación temporal**: Indexar por `TIMESTAMP UTC` común, rellenar huecos de índice.
 - [ ] **Imputación de nulos**:
   - Huecos cortos (< 3 h): interpolación lineal.
@@ -132,7 +132,7 @@ Esto da **~12 años** de datos solapados con todas las fuentes activas. Todas la
   - Validation: 2021-01-01 → 2022-06-30
   - Test: 2022-07-01 → fin de ventana
 
-**Entregable**: `02_preprocessing.ipynb` + `data/processed/dataset_hourly.parquet`
+**Entregable**: `02_preprocessing.ipynb` + `data/processed/dataset_10min.parquet`
 
 ### Fase 3 — Modelo físico con HEC-HMS
 

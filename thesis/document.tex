@@ -56,7 +56,7 @@
 
 \begin{abstract}
 \noindent
-Accurate prediction of water levels in Mediterranean ephemeral streams is essential for flood early warning and wetland ecosystem management. This thesis focuses on the Sant Miquel basin (Mallorca, Spain), whose catchment drains into the ecologically sensitive Sa~Marjal coastal wetland (monitoring station STM08). Two complementary modelling paradigms are developed and evaluated: (\textit{i})~a physics-based hydrological model constructed with HEC-HMS (Hydrologic Engineering Center -- Hydrologic Modeling System) and calibrated against twelve years of sub-hourly streamflow observations from eight monitoring stations; and (\textit{ii})~a suite of data-driven models -- including gradient-boosted trees, Long Short-Term Memory (LSTM) networks, and the Temporal Fusion Transformer (TFT) -- trained on the same multi-source observational record. Model performance is assessed with standard hydrological metrics (Nash--Sutcliffe Efficiency, Kling--Gupta Efficiency, RMSE, PBIAS) across flood events, recession periods, and ordinary flow conditions. The comparative analysis aims to identify the conditions under which each paradigm offers the greatest advantage and to provide operational guidance for real-time forecasting.
+Accurate prediction of water levels in Mediterranean ephemeral streams is essential for flood early warning and wetland ecosystem management. This thesis focuses on the Sant Miquel basin (Mallorca, Spain), whose catchment drains into the ecologically sensitive Sa~Marjal coastal wetland (monitoring station STM08). Two complementary modelling paradigms are developed and evaluated: (\textit{i})~a physics-based hydrological model constructed with HEC-HMS (Hydrologic Engineering Center -- Hydrologic Modeling System) and calibrated against twelve years of sub-hourly streamflow observations from eight monitoring stations; and (\textit{ii})~a suite of data-driven models -- including gradient-boosted trees, Long Short-Term Memory (LSTM) networks, and the Temporal Fusion Transformer (TFT) -- trained on the same multi-source observational record. Model performance is assessed with standard hydrological metrics (Nash--Sutcliffe Efficiency, Kling--Gupta Efficiency, RMSE, PBIAS) across flood events, recession periods, and ordinary flow conditions. The comparative analysis aims to identify the conditions under which each paradigm offers the greatest advantage and to provide operational guidance for real-time forecasting. The ultimate objective is the integration of the resulting forecaster into the RiscBal application, where the predicted water level will be displayed as an additional curve alongside the observed record at Sa~Marjal.
 \end{abstract}
 
 
@@ -71,9 +71,9 @@ Two broad paradigms exist for hydrological streamflow modelling. \textit{Physics
 
 \textit{Data-driven models}, by contrast, learn the input--output mapping directly from historical observations without explicit process representation. Classical approaches such as random forests and gradient-boosted trees are computationally efficient and robust to missing data~\cite{Breiman2001}. Deep learning architectures -- particularly LSTM networks~\cite{Hochreiter1997} and the Temporal Fusion Transformer~\cite{Lim2021} -- excel at capturing long-range temporal dependencies and multivariate covariates. Recent large-scale benchmarks have demonstrated that deep learning models can match or exceed physics-based models when trained on sufficient data~\cite{Kratzert2019}. Their main limitations are poor extrapolation beyond the training distribution and limited physical interpretability.
 
-The complementarity of these paradigms motivates systematic comparative evaluations on well-instrumented catchments. This thesis contributes to that research agenda by applying both approaches to the Sant Miquel basin, using a continuous monitoring record maintained since 2012 by the RiscBal hydrological risk observatory of the Universitat de les Illes Balears. The dataset provides sub-hourly precipitation, temperature, water level, discharge, and suspended sediment concentration at eight stations, complemented by three hourly rain-gauge records from the Spanish national meteorological agency (AEMET). The twelve-year observation window encompasses a wide spectrum of hydrological conditions, including multiple extreme events, constituting a rigorous test bed for the comparison.
+The complementarity of these paradigms motivates systematic comparative evaluations on well-instrumented catchments. This thesis contributes to that research agenda by applying both approaches to the Sant Miquel basin, using a continuous monitoring record maintained since 2012 by the RiscBal hydrological risk observatory of the Universitat de les Illes Balears. The dataset provides sub-hourly precipitation, temperature, water level, discharge, and suspended sediment concentration at eight stations, complemented by three hourly rain-gauge records from the Spanish national meteorological agency (AEMET). The twelve-year observation window encompasses a wide spectrum of hydrological conditions, including multiple extreme events, constituting a rigorous test bed for the comparison. The work has, in addition, an explicitly applied objective: the best-performing model is intended to be integrated into the RiscBal application, so that the water-level chart of station STM08 displays an additional curve with the predicted level, converting a monitoring platform into an early-warning tool.
 
-The remainder of this paper is organised as follows. Section~\ref{sec:area} characterises the study area. Section~\ref{sec:data} describes the monitoring network, data architecture, and quality issues. Section~\ref{sec:problem} formalises the prediction problem.
+The remainder of this paper is organised as follows. Section~\ref{sec:area} characterises the study area. Section~\ref{sec:data} describes the monitoring network, data architecture, and quality issues. Section~\ref{sec:model} defines the physics-based model. Section~\ref{sec:problem} formalises the prediction problem and its operational context.
 
 
 
@@ -137,7 +137,7 @@ This normalised schema supports both the spatial operations required for physics
 
 The common observation window after temporal alignment spans approximately twelve years (September~2014 to July~2026). Four quality issues are particularly significant:
 
-\textbf{(1) Mixed temporal resolutions.} STM stations originally sampled at 15-minute intervals; the frequency was upgraded to 10~min in May~2022 and to 5~min at most stations from mid-2025 onward. AEMET gauges provide hourly data. All series are resampled to a common hourly resolution -- precipitation summed, water levels and temperature averaged -- to produce a consistent modelling dataset.
+\textbf{(1) Mixed temporal resolutions.} STM stations originally sampled at 15-minute intervals; the frequency was upgraded to 10~min in May~2022 and to 5~min at most stations from mid-2025 onward, while AEMET gauges provide hourly data. Degrading all series to the coarsest (hourly) resolution would discard precisely the fast-response dynamics that characterise flash floods in small Mediterranean catchments. The modelling dataset is therefore built on a uniform 10-minute grid: the hourly AEMET records are temporally disaggregated, the legacy 15-minute STM records are resampled onto the finer grid, and the recent 5-minute records are aggregated, treating precipitation as an accumulated depth and water level and temperature as instantaneous states.
 
 \textbf{(2) Missing records and quality flags.} Sensor malfunctions, maintenance periods, and telecommunication failures generate data gaps of varying duration. A binary \texttt{quality} flag marks records requiring expert validation: station STM03 exhibits approximately 45\,000 flagged entries in the extended (2025--2026) period, and STM05 approximately 3\,000. The decision to retain, impute, or exclude flagged records must be made carefully to avoid introducing systematic bias into model training.
 
@@ -147,25 +147,35 @@ The common observation window after temporal alignment spans approximately twelv
 
 
 
+\section{The Physics-Based Model\label{sec:model}}
+
+The physics-based paradigm is represented by HEC-HMS (Hydrologic Engineering Center -- Hydrologic Modeling System), a widely used semi-distributed rainfall--runoff modelling software developed by the US Army Corps of Engineers~\cite{USACE2000}. HEC-HMS represents a catchment as a network of hydrologic elements -- sub-basins, reaches, junctions, and reservoirs -- connected according to the drainage topology. Within each sub-basin, the transformation of precipitation into runoff is decomposed into sequential, separately parameterised processes: (\textit{i})~a \textit{loss} component, which partitions precipitation into infiltration and effective rainfall; (\textit{ii})~a \textit{transform} component, which converts effective rainfall into direct runoff at the sub-basin outlet; and (\textit{iii})~a \textit{routing} component, which propagates the resulting hydrograph through the channel network, accounting for flow translation and attenuation.
+
+For the Sant Miquel basin, the model will be delineated and parameterised using the available high-resolution digital elevation model and the land-use and soil-type cartography, from which sub-basin morphometry and loss parameters are derived. Precipitation forcing will combine the STM01--STM02 gauges with the temporally disaggregated AEMET records. Calibration and validation will be performed against observed water levels and discharges at the interior gauges (STM03--STM07), which act as internal control points, and at the basin outlet (STM08), the latter providing the direct comparison with the data-driven family over the same events and evaluation periods.
+
+
+
 \section{Problem Statement\label{sec:problem}}
 
-Let $h(t)$ denote the water level (m) recorded at STM08 at discrete time step $t$ (hourly resolution). Let $\mathbf{x}(t) \in \mathbb{R}^{p}$ be the vector of $p$ predictor variables at time $t$, comprising hourly precipitation totals, upstream water levels, and air temperatures from all available stations. The prediction task is defined as:
+Let $h(t)$ denote the water level (m) recorded at STM08 at discrete time step $t$ on the uniform 10-minute grid. Let $\mathbf{x}(t) \in \mathbb{R}^{p}$ be the vector of $p$ predictor variables at time $t$, comprising 10-minute precipitation depths, upstream water levels, and air temperatures from all available stations. The prediction task is defined as:
 
 \begin{equation}
     \hat{h}(t + \Delta) = f\!\left(\mathbf{x}(t),\, \mathbf{x}(t{-}1),\, \ldots,\, \mathbf{x}(t{-}L)\right)
     \label{eq:problem}
 \end{equation}
 
-\noindent where $\Delta \geq 1$~h is the forecast horizon, $L$ is the look-back window (hours), and $f(\cdot)$ is the model function. Two instantiations of $f$ are investigated: (i)~the physics-based HEC-HMS model, in which $f$ encapsulates calibrated process equations for rainfall--runoff transformation and channel routing; and (ii)~a family of data-driven models, in which $f$ is learned from observations by statistical optimisation.
+\noindent where $\Delta$ is the forecast horizon, an integer multiple of the 10-minute base interval, $L$ is the look-back window in time steps, and $f(\cdot)$ is the model function. Two instantiations of $f$ are investigated: (i)~the physics-based HEC-HMS model, in which $f$ encapsulates calibrated process equations for rainfall--runoff transformation and channel routing; and (ii)~a family of data-driven models, in which $f$ is learned from observations by statistical optimisation.
 
 The dataset is partitioned chronologically to avoid temporal leakage:
 \begin{itemize}
-    \item \textbf{Training:} January~2014 -- December~2020
+    \item \textbf{Training:} September~2014 -- December~2020
     \item \textbf{Validation:} January~2021 -- June~2022
     \item \textbf{Test:} July~2022 -- July~2026
 \end{itemize}
 
 Model performance is quantified using four metrics standard in operational hydrology: Nash--Sutcliffe Efficiency (NSE), Kling--Gupta Efficiency (KGE), root mean squared error (RMSE), and percent bias (PBIAS). Results are reported separately for the full test period and for identified flood events, to distinguish performance on rare high-flow conditions from overall average accuracy.
+
+Beyond the comparative evaluation, the problem is framed by its operational endpoint: the selected forecaster will be embedded in the RiscBal application, where at each time step the predicted level $\hat{h}(t+\Delta)$ will be plotted as an additional curve on the STM08 water-level chart alongside the observations, converting the monitoring platform into an early-warning tool for flood risk management in the lower basin.
 
 
 \bibliographystyle{abbrv}
