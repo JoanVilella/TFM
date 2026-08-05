@@ -94,25 +94,26 @@ The terminal node of the catchment is the Sa~Marjal wetland (STM08), a Site of C
 The basin is instrumented by eight stations (STM01--STM08) operated by the Estrany Hydrology Group at the UIB. Stations STM01 and STM02 are meteorological, recording precipitation and air temperature. Stations STM03--STM08 are hydrological gauges equipped with pressure transducers that measure water surface level continuously; volumetric discharge is derived via station-specific rating curves. Suspended sediment concentration and electrical conductivity are also recorded at hydrological stations. Three complementary rain-gauge records from the AEMET national network extend precipitation coverage to the lower basin and coastal plain. Table~\ref{tab:stations} summarises the complete station inventory.
 
 \begin{table*}[!t]
-    \caption{Monitoring Station Inventory.}
+    \caption{Monitoring station inventory: identifier, sensor type, measured variables, location, altitude, sampling frequency, and position relative to STM08 (Sa~Marjal). Distances are planar (UTM zone~31N).}
     \label{tab:stations}
     \begin{center}
-    \begin{tabular}{lllll}
+    \footnotesize
+    \begin{tabular}{@{}llllrcl@{}}
         \toprule
-        \textbf{ID} & \textbf{Name} & \textbf{Type} & \textbf{Period} & \textbf{Resolution} \\
+        \textbf{ID} & \textbf{Type} & \textbf{Variables} & \textbf{Location} & \textbf{Alt.\ (m)} & \textbf{Freq.} & \textbf{Position rel.\ to STM08} \\
         \midrule
-        STM01 & Coll des Tel\`{e}graf & Meteorological (PRECIP, TEMP) & 2012--2026 & 10 min \\
-        STM02 & M\'{i}ner Gran        & Meteorological (PRECIP, TEMP) & 2014--2026 & 10 min \\
-        STM03 & Es Fangar             & Hydrological (HEIGHT, DISCHARGE, LOAD) & 2012--2026 & 5 min \\
-        STM04 & Gabelli               & Hydrological (HEIGHT, DISCHARGE, LOAD) & 2012--2026 & 5 min \\
-        STM05 & Monn\`{a}ber          & Hydrological (HEIGHT, DISCHARGE, LOAD) & 2012--2026 & 5 min \\
-        STM06 & Sant Miquel           & Hydrological (HEIGHT, DISCHARGE, LOAD) & 2012--2026 & 5 min \\
-        STM07 & B\'{u}ger             & Hydrological (HEIGHT, DISCHARGE, LOAD) & 2012--2026 & 5 min \\
-        STM08 & Sa Marjal (\textbf{target}) & Hydrological (HEIGHT, DISCHARGE, LOAD) & 2013--2026 & 5 min \\
+        STM01 & Meteorological & PRECIP, TEMP & Coll des Tel\`{e}graf & 1105 & 15$\rightarrow$10\,min & 15.9\,km W (headwaters) \\
+        STM02 & Meteorological & PRECIP, TEMP & M\'{i}ner Gran & 559 & 15$\rightarrow$10\,min & 8.5\,km WNW (upper basin) \\
+        STM03 & Hydrological & HEIGHT, $Q$, LOAD & Es Fangar & 73 & 15$\rightarrow$10$\rightarrow$5\,min & 5.1\,km WNW (upstream) \\
+        STM04 & Hydrological & HEIGHT, $Q$, LOAD & Gabell\'{i} & 50 & 15$\rightarrow$10$\rightarrow$5\,min & 6.2\,km W (upstream) \\
+        STM05 & Hydrological & HEIGHT, $Q$, LOAD & Monn\`{a}ber & 51 & 15$\rightarrow$10$\rightarrow$5\,min & 6.4\,km W (upstream) \\
+        STM06 & Hydrological & HEIGHT, $Q$, LOAD & Sant Miquel & 47 & 15$\rightarrow$10$\rightarrow$5\,min & 6.2\,km W (upstream) \\
+        STM07 & Hydrological & HEIGHT, $Q$, LOAD & B\'{u}ger & 55 & 15$\rightarrow$10$\rightarrow$5\,min & 6.6\,km SW (upstream) \\
+        STM08 & Hydrological & HEIGHT, $Q$, LOAD & Sa Marjal (\textbf{target}) & 6 & 15$\rightarrow$10$\rightarrow$5\,min & Basin outlet (0\,km) \\
         \midrule
-        B013X & Lluc                  & AEMET rain gauge (PRECIP) & 1993--2026 & 60 min \\
-        B605X & Muro--S'Albufera      & AEMET rain gauge (PRECIP) & 2005--2026 & 60 min \\
-        B691Y & Sa Pobla--Sa Canova   & AEMET rain gauge (PRECIP) & 2011--2026 & 60 min \\
+        B013X & AEMET rain gauge & PRECIP & Lluc & 490 & 60\,min & 13.5\,km WNW (headwaters) \\
+        B605X & AEMET rain gauge & PRECIP & Muro--S'Albufera & 2 & 60\,min & 5.8\,km E (coastal plain) \\
+        B691Y & AEMET rain gauge & PRECIP & Sa Pobla--Sa Canova & 40 & 60\,min & 4.9\,km SSW (lower plain) \\
         \bottomrule
     \end{tabular}
     \end{center}
