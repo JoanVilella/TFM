@@ -5,6 +5,32 @@
 
 ---
 
+## Iteration 3 — 2026-08-06
+
+### Changes made
+
+**Updated `01_eda.ipynb` comments to match re-executed results**
+
+The notebook was re-executed after the v2 CSV format change (HEIGHT_m only), but several markdown comments still reflected Iteration 1 numbers (when DISCHARGE/VOLUME/LOAD were present). Fixed:
+
+| Location | Before | After |
+|----------|--------|-------|
+| §3.1 plausibility screening | kept −0.5 m ≤ H ≤ 5 m **and** 0 ≤ Q ≤ 200 m³/s | keeps −0.5 m ≤ H ≤ 5 m only (Q/V/L are all NaN) |
+| §8 missing data | `LOAD_kg` (STM03 43 %), `DISCHARGE_m3s`/`VOLUME_m3` (22 %), `STM02 TEMP_C` (29 %) | DISCHARGE/VOLUME/LOAD 100 % NaN (intentional); `STM02 TEMP_C` 28.6 %, `STM01 TEMP_C` 11.0 % |
+| §8 NaN runs | 31 NaN runs | **32** NaN runs |
+
+### Remaining open issues
+
+- [ ] STM03 has 51,336 records with `quality != 0` — most are in the extension period.
+- [ ] DISCHARGE/VOLUME/LOAD will be derived from HEIGHT_m via rating curves (user's next step).
+- [ ] Quality flag meanings (0/1/...) still undocumented. Flags are counted but not preserved in clean CSVs.
+- [ ] `clean_STM02.py` still has the tipping-bucket formula issue (73 cells with `=0.2*N`). Workaround exists in the notebook loader.
+
+*End of Iteration 3.*
+
+
+---
+
 ## Iteration 2 — 2026-08-06
 
 ### Changes made
