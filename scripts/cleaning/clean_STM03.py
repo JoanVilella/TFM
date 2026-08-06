@@ -51,14 +51,12 @@ def _patch_xlsx(src_path):
 
 
 # Column indices (0-based) in the 'STM03' sheet:
-#   1 = HEIGHT (filtered/validated), 2 = DISCHARGE, 3 = VOLUME, 12 = LOAD, 16 = DATE.UTC
-# Note: an extra SSC.Calibrated High column at index 11 shifts LOAD to index 12
-# and pushes DATE.UTC to index 16 compared to the standard layout.
-COL_HEIGHT    = 1
-COL_DISCHARGE = 2
-COL_VOLUME    = 3
-COL_LOAD      = 12
-COL_DATE      = 16
+#   1 = HEIGHT...2 (filtered/validated), 16 = DATE.UTC
+# Note: an extra SSC.Calibrated High column at index 11 shifts DATE.UTC to
+# index 16 compared to the standard layout. Only HEIGHT_m is extracted; other
+# variables (DISCHARGE, VOLUME, LOAD) will be derived later from rating curves.
+COL_HEIGHT = 1
+COL_DATE   = 16
 
 # --- Load sheet STM03 ---
 print("Cargando Excel (hoja STM03)...")
@@ -123,17 +121,11 @@ for j in range(len(valid_ts) - 1):
         period_10_end = t2
 
 # --- Count nulls for metadata ---
-formula_height    = sum(1 for r in data if isinstance(r[COL_HEIGHT], str))
-formula_discharge = sum(1 for r in data if isinstance(r[COL_DISCHARGE], str))
-formula_volume    = sum(1 for r in data if isinstance(r[COL_VOLUME], str))
-formula_load      = sum(1 for r in data if isinstance(r[COL_LOAD], str))
-none_height       = sum(1 for r in data if r[COL_HEIGHT] is None)
-none_discharge    = sum(1 for r in data if r[COL_DISCHARGE] is None)
-none_volume       = sum(1 for r in data if r[COL_VOLUME] is None)
-none_load         = sum(1 for r in data if r[COL_LOAD] is None)
-date_only_ts      = sum(1 for r in data if r[COL_DATE] is not None
-                        and isinstance(r[COL_DATE], datetime.date)
-                        and not isinstance(r[COL_DATE], datetime.datetime))
+formula_height = sum(1 for r in data if isinstance(r[COL_HEIGHT], str))
+none_height    = sum(1 for r in data if r[COL_HEIGHT] is None)
+date_only_ts   = sum(1 for r in data if r[COL_DATE] is not None
+                     and isinstance(r[COL_DATE], datetime.date)
+                     and not isinstance(r[COL_DATE], datetime.datetime))
 
 # --- Write clean CSV ---
 print("Escribiendo CSV limpio...")
@@ -141,21 +133,15 @@ os.makedirs(os.path.dirname(OUTPUT_CSV), exist_ok=True)
 
 with open(OUTPUT_CSV, "w", newline="", encoding="utf-8") as f:
     writer = csv.writer(f)
-    writer.writerow(["TIMESTAMP", "HEIGHT_m", "DISCHARGE_m3s", "VOLUME_m3", "LOAD_kg"])
+    writer.writerow(["TIMESTAMP", "HEIGHT_m"])
     for row in data:
-        ts        = clean_ts(row[COL_DATE])
-        height    = to_float(row[COL_HEIGHT])
-        discharge = to_float(row[COL_DISCHARGE])
-        volume    = to_float(row[COL_VOLUME])
-        load      = to_float(row[COL_LOAD])
+        ts     = clean_ts(row[COL_DATE])
+        height = to_float(row[COL_HEIGHT])
 
-        ts_str        = ts.strftime("%Y-%m-%d %H:%M:%S") if ts is not None else ""
-        height_str    = "" if height is None else str(round(height, 6))
-        discharge_str = "" if discharge is None else str(round(discharge, 6))
-        volume_str    = "" if volume is None else str(round(volume, 6))
-        load_str      = "" if load is None else str(round(load, 6))
+        ts_str     = ts.strftime("%Y-%m-%d %H:%M:%S") if ts is not None else ""
+        height_str = "" if height is None else str(round(height, 6))
 
-        writer.writerow([ts_str, height_str, discharge_str, volume_str, load_str])
+        writer.writerow([ts_str, height_str])
 
 print(f"CSV guardado en: {OUTPUT_CSV}")
 
@@ -164,7 +150,7 @@ print("Escribiendo metadatos...")
 with open(OUTPUT_META, "w", encoding="utf-8") as f:
     f.write("ESTACIÓN: STM03 - Es Fangar\n")
     f.write("TIPO: Hidrológica\n")
-    f.write("VARIABLES: Water level (m), Discharge (m³/s), Volume (m³), Load (kg)\n")
+    f.write("VARIABLES: Water level (m) — HEIGHT...2 (filtered/validated)\n")
     f.write("\n")
     f.write(f"T0 (primer registro):    {first_ts}\n")
     f.write(f"T_end (último registro): {last_ts}\n")
@@ -190,11 +176,8 @@ with open(OUTPUT_META, "w", encoding="utf-8") as f:
     if date_only_ts:
         f.write(f"  - {date_only_ts} filas con TIMESTAMP de tipo date (sin hora) convertidas a datetime a las 00:00:00.\n")
     f.write("  - Valores nulos (None) exportados como celdas vacías.\n")
-    f.write(f"  - HEIGHT_m: {formula_height} celdas con caché vacía + {none_height} celdas None → exportadas como vacías.\n")
-    f.write(f"  - DISCHARGE: {formula_discharge} celdas con caché vacía + {none_discharge} celdas None → exportadas como vacías.\n")
-    f.write(f"  - VOLUME: {formula_volume} celdas con caché vacía + {none_volume} celdas None → exportadas como vacías.\n")
-    f.write(f"  - LOAD: {formula_load} celdas con caché vacía + {none_load} celdas None → exportadas como vacías.\n")
-    f.write("  - Columnas renombradas: HEIGHT...2 → HEIGHT_m, DISCHARGE → DISCHARGE_m3s, VOLUME → VOLUME_m3, LOAD → LOAD_kg.\n")
+    f.write(f"  - HEIGHT_m (HEIGHT...2): {formula_height} celdas con caché vacía + {none_height} celdas None → exportadas como vacías.\n")
+    f.write("  - Solo se extrae HEIGHT_m (nivel validado). DISCHARGE, VOLUME y LOAD se derivarán posteriormente con curvas de aforo.\n")
     f.write("  - Frecuencia mixta conservada (no se ha realizado resampling).\n")
     f.write(f"  - Total de filas exportadas: {len(data)}\n")
 

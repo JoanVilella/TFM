@@ -8,7 +8,7 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
-RAW_DIR   = str(REPO_ROOT / "data/raw/db_exports/precipitation")
+RAW_DIR   = str(REPO_ROOT / "data/raw/db_exports/prod_data")
 CLEAN_DIR = str(REPO_ROOT / "data/clean")
 
 STATIONS = {
@@ -48,7 +48,7 @@ def load_new_meteo_rows(code):
     Returns a dict {datetime: (precip_str, temp_str)} and a count of non-zero
     quality records. Timestamps with only one variable present keep the other empty.
     """
-    path = os.path.join(RAW_DIR, f"new_{code}.csv")
+    path = os.path.join(RAW_DIR, f"{code.lower()}.csv")
     precip = {}
     temp = {}
     non_zero_quality = 0
@@ -115,7 +115,7 @@ def update_metadata(code, new_last_ts, new_count, non_zero_quality, total_rows):
         new_lines[-1] += "\n"
 
     if not already_extended:
-        new_lines.append(f"  - Extensión con datos de precipitación y temperatura (base de datos interna, Rain10m + AirTemp): "
+        new_lines.append(f"  - Extensión con datos de precipitación y temperatura (prod_data, Rain10m + AirTemp): "
                          f"{new_count} registros nuevos añadidos hasta {new_last_ts}.\n")
         if non_zero_quality:
             new_lines.append(f"  - AVISO extensión: {non_zero_quality} registro(s) con quality != 0 incluidos.\n")
@@ -131,7 +131,7 @@ def process_station(code, name):
     print(f"  Último timestamp en limpio: {last_ts}  ({existing_count} filas)")
 
     all_new, non_zero_quality = load_new_meteo_rows(code)
-    print(f"  Timestamps en fichero nuevo (BD): {len(all_new)}")
+    print(f"  Timestamps en fichero nuevo (prod_data): {len(all_new)}")
     if non_zero_quality:
         print(f"  AVISO: {non_zero_quality} registros con quality != 0")
 

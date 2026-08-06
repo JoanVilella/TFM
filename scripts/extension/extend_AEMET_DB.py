@@ -1,5 +1,5 @@
 # ABOUTME: Extiende los CSV limpios de B013X, B605X y B691Y con datos nuevos
-# ABOUTME: extraídos de la base de datos (2023-01-01 → 2026-07-14), integrándolos cronológicamente.
+# ABOUTME: extraídos de la base de datos de producción (2023-01-01 → actualidad), integrándolos cronológicamente.
 
 import csv
 import os
@@ -8,7 +8,7 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
-RAW_CSV  = str(REPO_ROOT / "data/raw/db_exports/raw_B013X_B605X_B691Y_2023_01_01_2026_07_14.csv")
+RAW_DIR   = str(REPO_ROOT / "data/raw/db_exports/prod_data")
 CLEAN_DIR = str(REPO_ROOT / "data/clean")
 
 STATIONS = {
@@ -21,7 +21,6 @@ STATIONS = {
 def parse_db_timestamp(ts_str):
     """Parse a DB timestamp string like '2023-01-01 00:00:00+00' into a naive UTC datetime."""
     ts_str = ts_str.strip()
-    # Strip timezone suffix (+00 or +00:00)
     for suffix in ("+00:00", "+00"):
         if ts_str.endswith(suffix):
             ts_str = ts_str[: -len(suffix)]
@@ -40,23 +39,27 @@ def load_existing_clean(code):
             if not row:
                 continue
             ts = datetime.datetime.strptime(row[0], "%Y-%m-%d %H:%M:%S")
-            records[ts] = row[1]  # may be empty string (null)
+            records[ts] = row[1]
     return records
 
 
 def load_new_db_rows(code):
-    """Load rows for a station from the raw DB CSV.
+    """Load Rain60m rows for a station from prod_data CSV.
 
     Returns a dict {datetime: precip_str}. Values are already in mm.
     Records with empty or non-numeric values are stored as empty string.
     """
+    path = os.path.join(RAW_DIR, f"{code}.csv")
     records = {}
     non_zero_quality = 0
-    with open(RAW_CSV, "r", encoding="utf-8") as f:
+    with open(path, "r", encoding="utf-8") as f:
         reader = csv.reader(f)
         next(reader)  # skip header: id,code_id,station_name,x_utm,y_utm,variable,quality,timestamp,value
         for row in reader:
-            if not row or row[1].strip() != code:
+            if not row or len(row) < 9:
+                continue
+            variable = row[5].strip()
+            if variable != "Rain60m":
                 continue
             quality = row[6].strip()
             if quality != "0":
@@ -105,12 +108,12 @@ def update_metadata(code, name, merged, new_count, non_zero_quality, overlap_cou
         f.write(f"  60 min: {first_ts}  -->  {last_ts}\n")
         f.write("\n")
         f.write("NOTAS DE LIMPIEZA:\n")
-        f.write("  - Fuente original: UIB-Estrany (formato phor de AEMET/SMN), hasta 2023-01-01.\n")
-        f.write("  - Extensión: base de datos interna (Rain60m), desde 2023-01-01.\n")
+        f.write("  - Fuente original: UIB-Estrany / RiscBal (formato phor de AEMET/SMN), hasta 2023-01-01.\n")
+        f.write("  - Extensión: base de datos de producción (prod_data, Rain60m), desde 2023-01-01.\n")
         f.write("  - Valores originales UIB-Estrany en décimas de mm → convertidos a mm (÷10).\n")
-        f.write("  - Valores de la BD ya en mm (sin conversión).\n")
-        f.write("  - Timestamps de la BD en UTC (sufijo +00 eliminado); serie completa en UTC.\n")
-        f.write(f"  - Registros incorporados de la BD: {new_count}.\n")
+        f.write("  - Valores de prod_data ya en mm (sin conversión).\n")
+        f.write("  - Timestamps de prod_data en UTC (sufijo +00 eliminado); serie completa en UTC.\n")
+        f.write(f"  - Registros incorporados de prod_data: {new_count}.\n")
         f.write(f"  - Solapamiento en el punto de unión (2023-01-01 00:00:00): {overlap_count} registro(s) — se conserva el valor original.\n")
         if non_zero_quality:
             f.write(f"  - AVISO: {non_zero_quality} registro(s) con quality != 0 incluidos (filtro de calidad no aplicado).\n")
@@ -126,15 +129,13 @@ def process_station(code, name):
     print(f"  Registros existentes: {len(existing)}")
 
     new_records, non_zero_quality = load_new_db_rows(code)
-    print(f"  Registros nuevos (BD): {len(new_records)}")
+    print(f"  Registros nuevos (prod_data): {len(new_records)}")
     if non_zero_quality:
         print(f"  AVISO: {non_zero_quality} registros con quality != 0")
 
-    # Count overlap: timestamps present in both sources
     overlap = set(existing.keys()) & set(new_records.keys())
     print(f"  Solapamiento en la unión: {len(overlap)} timestamp(s)")
 
-    # Merge: existing values take precedence for overlapping timestamps
     merged = {**new_records, **existing}
 
     csv_path  = write_clean_csv(code, merged)

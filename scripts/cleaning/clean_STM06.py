@@ -19,8 +19,8 @@ ws = wb.worksheets[0]
 rows = list(ws.iter_rows(values_only=True))
 wb.close()
 
-# Header: index 0 = 'HEIGHT...1', 1 = 'HEIGHT...2', 2 = 'DISCHARGE',
-#         3 = 'VOLUME', 11 = 'LOAD', 14 = 'DATE UTC'
+# Header: index 0 = 'HEIGHT...1', 1 = 'HEIGHT...2' (filtered/validated), 14 = 'DATE UTC'
+# Only HEIGHT...2 is extracted; other variables will be derived later from rating curves.
 data = rows[1:]
 
 
@@ -71,12 +71,8 @@ for j in range(len(valid_ts) - 1):
         period_10_end = t2
 
 # --- Count formula strings for metadata ---
-formula_height    = sum(1 for r in data if isinstance(r[1], str))
-formula_discharge = sum(1 for r in data if isinstance(r[2], str))
-formula_volume    = sum(1 for r in data if isinstance(r[3], str))
-formula_load      = sum(1 for r in data if isinstance(r[11], str))
-none_height       = sum(1 for r in data if r[1] is None)
-none_load         = sum(1 for r in data if r[11] is None)
+formula_height = sum(1 for r in data if isinstance(r[1], str))
+none_height    = sum(1 for r in data if r[1] is None)
 
 # --- Write clean CSV ---
 print("Escribiendo CSV limpio...")
@@ -84,21 +80,15 @@ os.makedirs(os.path.dirname(OUTPUT_CSV), exist_ok=True)
 
 with open(OUTPUT_CSV, "w", newline="", encoding="utf-8") as f:
     writer = csv.writer(f)
-    writer.writerow(["TIMESTAMP", "HEIGHT_m", "DISCHARGE_m3s", "VOLUME_m3", "LOAD_kg"])
+    writer.writerow(["TIMESTAMP", "HEIGHT_m"])
     for row in data:
-        ts        = clean_ts(row[14])
-        height    = to_float(row[1])
-        discharge = to_float(row[2])
-        volume    = to_float(row[3])
-        load      = to_float(row[11])
+        ts     = clean_ts(row[14])
+        height = to_float(row[1])
 
-        ts_str        = ts.strftime("%Y-%m-%d %H:%M:%S") if ts is not None else ""
-        height_str    = "" if height is None else str(round(height, 6))
-        discharge_str = "" if discharge is None else str(round(discharge, 6))
-        volume_str    = "" if volume is None else str(round(volume, 6))
-        load_str      = "" if load is None else str(round(load, 6))
+        ts_str     = ts.strftime("%Y-%m-%d %H:%M:%S") if ts is not None else ""
+        height_str = "" if height is None else str(round(height, 6))
 
-        writer.writerow([ts_str, height_str, discharge_str, volume_str, load_str])
+        writer.writerow([ts_str, height_str])
 
 print(f"CSV guardado en: {OUTPUT_CSV}")
 
@@ -107,7 +97,7 @@ print("Escribiendo metadatos...")
 with open(OUTPUT_META, "w", encoding="utf-8") as f:
     f.write("ESTACIÓN: STM06 - Sant Miquel\n")
     f.write("TIPO: Hidrológica\n")
-    f.write("VARIABLES: Water level (m), Discharge (m³/s), Volume (m³), Load (kg)\n")
+    f.write("VARIABLES: Water level (m) — HEIGHT...2 (filtered/validated)\n")
     f.write("\n")
     f.write(f"T0 (primer registro):    {first_ts}\n")
     f.write(f"T_end (último registro): {last_ts}\n")
@@ -126,12 +116,8 @@ with open(OUTPUT_META, "w", encoding="utf-8") as f:
     f.write("  - Solo se procesa la primera hoja ('Sheet 1'); el resto son eventos individuales.\n")
     f.write("  - Microsegundos artificiales en TIMESTAMP eliminados (artefacto del Excel).\n")
     f.write("  - Valores nulos (None) exportados como celdas vacías.\n")
-    f.write(f"  - HEIGHT_m: {formula_height} celdas con caché vacía + {none_height} celdas None → exportadas como vacías.\n")
-    f.write(f"  - DISCHARGE: {formula_discharge} celdas con caché de fórmula vacía (sin valor guardado) → exportadas como vacías.\n")
-    f.write(f"  - VOLUME: {formula_volume} celdas con caché de fórmula vacía (sin valor guardado) → exportadas como vacías.\n")
-    f.write(f"  - LOAD: {formula_load} celdas con caché de fórmula vacía + {none_load} celdas None → exportadas como vacías.\n")
-    f.write("  - Cargado con data_only=True: se recuperan los valores cacheados por Excel en el último guardado.\n")
-    f.write("  - Columnas renombradas: HEIGHT...2 → HEIGHT_m, DISCHARGE → DISCHARGE_m3s, VOLUME → VOLUME_m3, LOAD → LOAD_kg.\n")
+    f.write(f"  - HEIGHT_m (HEIGHT...2): {formula_height} celdas con caché vacía + {none_height} celdas None → exportadas como vacías.\n")
+    f.write("  - Solo se extrae HEIGHT...2 (nivel validado). DISCHARGE, VOLUME y LOAD se derivarán posteriormente con curvas de aforo.\n")
     f.write("  - Frecuencia mixta conservada (no se ha realizado resampling).\n")
     f.write(f"  - Total de filas exportadas: {len(data)}\n")
 

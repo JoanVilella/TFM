@@ -5,6 +5,95 @@
 
 ---
 
+## Iteration 2 — 2026-08-06
+
+### Changes made
+
+**Data source change: staging DB → production DB (prod_data)**
+
+The old `data/raw/db_exports/waterlevel/`, `precipitation/`, and the combined AEMET CSV (from staging) have been replaced with CSVs from the production database in `data/raw/db_exports/prod_data/`. The prod_data files have better quality (fewer artifacts, validated records).
+
+**CSV format change: hydro stations now contain only HEIGHT_m**
+
+The hydro cleaning scripts (`clean_STM03–STM08.py`) now extract only `HEIGHT...2` (the validated/filtered water level). DISCHARGE, VOLUME, and LOAD columns are no longer exported from Excel. These will be derived later from rating curves.
+
+**Modified scripts**
+
+| Script | Changes |
+|--------|---------|
+| `scripts/cleaning/clean_STM03.py` | Only extracts HEIGHT_m (col 1) + DATE.UTC (col 16). |
+| `scripts/cleaning/clean_STM04.py` | Only extracts HEIGHT_m (col 1) + DATE.UTC (col 14). |
+| `scripts/cleaning/clean_STM05.py` | Only extracts HEIGHT_m (col 1) + DATE.UTC (col 14). |
+| `scripts/cleaning/clean_STM06.py` | Only extracts HEIGHT...2 (col 1) + DATE UTC (col 14). |
+| `scripts/cleaning/clean_STM07.py` | Only extracts HEIGHT_m (col 1) + DATE.UTC (col 15). |
+| `scripts/cleaning/clean_STM08.py` | Only extracts HEIGHT...2 (col 1) + DATE.UTC (col 14). |
+| `scripts/extension/extend_STM_waterlevel.py` | Source: `prod_data/{code.lower()}.csv`. Writes only HEIGHT_m column. |
+| `scripts/extension/extend_STM_meteo.py` | Source: `prod_data/{code.lower()}.csv`. |
+| `scripts/extension/extend_AEMET_DB.py` | Source: `prod_data/{code}.csv` (per-station, not combined). Added `Rain60m` variable filter. |
+
+**Regenerated all clean CSVs**
+
+All 11 clean CSVs were regenerated from scratch:
+1. Re-ran `clean_UIB_Estrany.py` (AEMET phor → clean)
+2. Re-ran `clean_STM01.py`, `clean_STM02.py` (meteo Excel → clean)
+3. Re-ran `clean_STM03–STM08.py` (hydro Excel → clean — HEIGHT_m only)
+4. Re-ran `extend_AEMET_DB.py` (prod_data → merge into clean)
+5. Re-ran `extend_STM_meteo.py` (prod_data → append)
+6. Re-ran `extend_STM_waterlevel.py` (prod_data → append)
+
+**Updated 01_eda.ipynb**
+
+- Loader adds empty `DISCHARGE_m3s`, `VOLUME_m3`, `LOAD_kg` columns (NaN-filled) to prevent KeyErrors in downstream code
+- Intermittency stats now use only `HEIGHT_m` (DISCHARGE unavailable)
+- Plausibility screening simplified to HEIGHT_m only (removed DISCHARGE screening + QC dict)
+- STM08 overview shows only HEIGHT_m (single panel); rating curve figure removed
+- Notebook re-executed: 0 errors
+- 13 figures regenerated (`stm08_rating_curve.png` removed since DISCHARGE is unavailable)
+
+### Data state after regeneration
+
+| Station | Rows | T0 | T_end |
+|---------|------|----|----|
+| STM03 | 595,356 | 2012-10-01 | 2026-08-05 |
+| STM04 | 587,756 | 2012-12-06 | 2026-08-05 |
+| STM05 | 569,422 | 2012-10-01 | 2026-08-05 |
+| STM06 | 570,087 | 2012-10-01 | 2026-08-05 |
+| STM07 | 563,449 | 2012-10-01 | 2026-08-05 |
+| STM08 | 563,734 | 2013-03-04 | 2026-08-05 |
+| STM01 | 532,894 | 2012-11-30 | 2026-08-05 |
+| STM02 | 481,211 | 2014-09-26 | 2026-08-05 |
+| B013X | 260,424 | 1993-04-16 | 2026-08-05 |
+| B605X | 177,226 | 2005-04-12 | 2026-08-05 |
+| B691Y | 125,343 | 2011-04-19 | 2026-08-05 |
+
+### Quality flags in prod_data
+
+| Station | Non-zero quality records |
+|---------|-------------------------|
+| STM03 | 51,336 |
+| STM04 | 0 |
+| STM05 | 16,914 |
+| STM06 | 0 |
+| STM07 | 0 |
+| STM08 | 0 |
+| STM01 | 0 |
+| STM02 | 1 |
+| B013X | 582 |
+| B605X | 584 |
+| B691Y | 595 |
+
+### Remaining open issues
+
+- [ ] STM03 has 51,336 records with `quality != 0` — most are in the extension period. The extension section of the EDA (3.1) still flags these as "unvalidated extension" in plots with red shading.
+- [ ] DISCHARGE/VOLUME/LOAD will be derived from HEIGHT_m via rating curves (user's next step).
+- [ ] Quality flag meanings (0/1/...) still undocumented. Flags are counted but not preserved in clean CSVs.
+- [ ] `clean_STM02.py` still has the tipping-bucket formula issue (73 cells with `=0.2*N`). Workaround exists in the notebook loader.
+
+*End of Iteration 2.*
+
+
+---
+
 ## Iteration 1 — 2026-08-05
 
 ### What was done

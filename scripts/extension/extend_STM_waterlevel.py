@@ -1,5 +1,5 @@
 # ABOUTME: Extiende los CSV limpios de STM03–STM08 con datos de nivel de agua nuevos
-# ABOUTME: desde data/raw/db_exports/waterlevel/, integrándolos cronológicamente hasta la fecha actual.
+# ABOUTME: desde data/raw/db_exports/prod_data/, integrándolos cronológicamente hasta la fecha actual.
 
 import csv
 import os
@@ -8,7 +8,7 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
-RAW_DIR   = str(REPO_ROOT / "data/raw/db_exports/waterlevel")
+RAW_DIR   = str(REPO_ROOT / "data/raw/db_exports/prod_data")
 CLEAN_DIR = str(REPO_ROOT / "data/clean")
 
 STATIONS = {
@@ -47,11 +47,11 @@ def get_last_clean_ts_and_count(code):
 
 
 def load_new_waterlevel_rows(code):
-    """Load WaterLevel rows for a station from the new raw CSV.
+    """Load WaterLevel rows for a station from the prod_data CSV.
 
     Returns a dict {datetime: height_str} and a count of non-zero quality records.
     """
-    path = os.path.join(RAW_DIR, f"{code}_new.csv")
+    path = os.path.join(RAW_DIR, f"{code.lower()}.csv")
     records = {}
     non_zero_quality = 0
     with open(path, "r", encoding="utf-8") as f:
@@ -80,16 +80,15 @@ def load_new_waterlevel_rows(code):
 
 
 def append_to_clean_csv(code, rows_sorted):
-    """Append new (timestamp, height_str) pairs to the clean CSV.
+    """Append new (timestamp, height_str) tuples to the clean CSV.
 
-    DISCHARGE, VOLUME and LOAD are left empty since the new source only
-    provides water level.
+    Only HEIGHT_m is written; DISCHARGE, VOLUME and LOAD are left empty.
     """
     path = os.path.join(CLEAN_DIR, f"{code}.csv")
     with open(path, "a", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
         for ts, height_str in rows_sorted:
-            writer.writerow([ts.strftime("%Y-%m-%d %H:%M:%S"), height_str, "", "", ""])
+            writer.writerow([ts.strftime("%Y-%m-%d %H:%M:%S"), height_str])
 
 
 def update_metadata(code, new_last_ts, new_count, non_zero_quality, total_rows):
@@ -98,7 +97,6 @@ def update_metadata(code, new_last_ts, new_count, non_zero_quality, total_rows):
     with open(path, "r", encoding="utf-8") as f:
         lines = f.readlines()
 
-    # Guard against re-running the script: skip if already extended
     already_extended = any("Extensión con datos de nivel de agua" in l for l in lines)
 
     new_lines = []
@@ -110,15 +108,14 @@ def update_metadata(code, new_last_ts, new_count, non_zero_quality, total_rows):
         else:
             new_lines.append(line)
 
-    # Ensure the file ends with a newline before the extension note
     if new_lines and not new_lines[-1].endswith("\n"):
         new_lines[-1] += "\n"
 
     if not already_extended:
-        new_lines.append(f"  - Extensión con datos de nivel de agua (base de datos interna): "
+        new_lines.append(f"  - Extensión con datos de nivel de agua (base de datos interna — prod_data): "
                          f"{new_count} registros nuevos añadidos hasta {new_last_ts}.\n")
         new_lines.append(f"  - Solo HEIGHT_m disponible en la extensión; "
-                         f"DISCHARGE_m3s, VOLUME_m3 y LOAD_kg quedan vacíos.\n")
+                         f"DISCHARGE_m3s, VOLUME_m3 y LOAD_kg se derivarán posteriormente con curvas de aforo.\n")
         if non_zero_quality:
             new_lines.append(f"  - AVISO extensión: {non_zero_quality} registro(s) con quality != 0 incluidos.\n")
 
@@ -133,11 +130,10 @@ def process_station(code, name):
     print(f"  Último timestamp en limpio: {last_ts}  ({existing_count} filas)")
 
     all_new, non_zero_quality = load_new_waterlevel_rows(code)
-    print(f"  Registros en fichero nuevo (BD): {len(all_new)}")
+    print(f"  Registros en fichero nuevo (prod_data): {len(all_new)}")
     if non_zero_quality:
         print(f"  AVISO: {non_zero_quality} registros con quality != 0")
 
-    # Keep only records strictly after the last existing timestamp
     to_append = sorted(
         [(ts, val) for ts, val in all_new.items() if ts > last_ts],
         key=lambda x: x[0],
