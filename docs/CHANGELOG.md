@@ -1,0 +1,98 @@
+# CHANGELOG — Project Diary
+
+> Quick-reference log of what has been done, decisions made, and open issues.
+> Each iteration appends a new entry at the top. Scan this before doing any work.
+
+---
+
+## Iteration 1 — 2026-08-05
+
+### What was done
+
+| Task | Details |
+|------|---------|
+| **Environment setup** | Created `.venv` with Python 3.14. Added packages: pandas 3.0.5, numpy 2.5.1, matplotlib 3.11.1, scipy 1.18.0, seaborn, pyarrow, jupyter, nbclient 0.11.0, ipykernel, openpyxl. See `requirements.txt`. |
+| **EDA notebook** | Created `notebooks/01_eda.ipynb` — 8 sections, 29 cells (22 code + 7 markdown), all executed without errors. |
+| **Figures generated** | 14 figures saved to `results/figures/eda/` (see below). |
+| **Plan update** | `docs/plan_TFM.md` Fase 1 checkboxes ticked. Advisor feedback from `docs/advisor_feedback.md` integrated: quality flags, event definition, 4 required tables, ARIMA/SARIMAX, hybrid model, evaluation metrics, new bibliography, RiscBal group reference. |
+
+### Notebook sections (`01_eda.ipynb`)
+
+| # | Section | What it does |
+|---|---------|-------------|
+| 1 | Station inventory | Parses 11 metadata files + sensor registry; produces station table + map (`station_map.png`) |
+| 2 | Data loading & integrity | Loads all 11 CSVs; detects invalid timestamps (4 in STM03), duplicates (1712 in STM03, 674 in STM05, 441 in STM01), recovers 73 Excel tipping-bucket formulas in STM02 `PRECIP_mm` |
+| 3 | Missing-data analysis | Null rates per station/variable (STM03: 43% `LOAD_kg`, STM02: 29% `TEMP_C`); monthly heatmap; STM08 gap analysis (31 NaN runs); intermittency stats (STM08: 85% zero discharge); **physical-plausibility screening** (see key findings) |
+| 4 | Full time-series visualization | Water level (HYDRO), daily precipitation (METEO + AEMET), temperature, STM08 overview + rating curve (`hydro_height_full.png`, `meteo_precip_daily.png`, `meteo_temp_full.png`, `stm08_overview.png`, `stm08_rating_curve.png`) |
+| 5 | Lagged cross-correlation | Hydro-hydro on 10-min grid (lags −2h to +72h); precip-level at 1h resolution. **STM04 is best predictor** (r=0.908, lag≈30min); STM06 next (r=0.887, lag≈1h) (`ccf_hydro_vs_stm08.png`, `ccf_precip_vs_stm08.png`) |
+| 6 | Flood event identification | Literature-based rule (quasi-peak-over-threshold on discharge); ~30 events detected in validated window; top-5 events characterized; **events overlapping gaps are flagged** (`events_summary.png`, `events_top5.png`). Identified events exported to `data/processed/events_stm08.csv`. |
+| 7 | Seasonality | Monthly climatology: precip peaks Sep–Nov; STM08 level peaks Nov–Dec; dry summer (Jun–Aug) (`seasonality.png`) |
+| 8 | Summary | Key findings auto-generated; action items for Phase 2 |
+
+### Figures in `results/figures/eda/`
+
+```
+station_map.png           — Station network map (hydro/metéo/AEMET color-coded)
+null_rate_heatmap_height.png — Monthly null-rate heatmap for HEIGHT_m
+stm08_gap_distribution.png   — STM08 gap-length histogram (log-log)
+stm08_overview.png        — STM08: HEIGHT, DISCHARGE, VOLUME, LOAD (full series)
+stm08_rating_curve.png    — STM08 rating curve (HEIGHT vs DISCHARGE, color=year)
+extension_raw_levels.png  — Raw DB-extension HEIGHT_m vs plausible band [-0.5, 5] m
+hydro_height_full.png     — Plausibility-screened water level (6 hydro stations)
+meteo_precip_daily.png    — Daily precipitation sums (all meteo/AEMET stations)
+meteo_temp_full.png       — Air temperature (STM01, STM02)
+ccf_hydro_vs_stm08.png    — Cross-correlation: hydro level vs STM08
+ccf_precip_vs_stm08.png   — Cross-correlation: precipitation vs STM08
+events_summary.png        — Flood events: H/Q time series + event markers
+events_top5.png           — Top-5 events: zoomed hydrographs
+seasonality.png           — Monthly climatology (precip, level, temperature)
+```
+
+### Key findings
+
+1. **DB extension is unvalidated**: 2025–2026 data has non-physical artifacts (spikes up to 177 m, negative plateaus, daily sawtooth oscillations). 100% of out-of-range values are in 2025–2026. Quantitative analyses in the EDA restricted to validated window **2014-09-26 → 2025-07-22**.
+
+2. **STM02 Excel formulas**: 73 cells of `PRECIP_mm` contain raw `=0.2*N` formulas (tipping-bucket counts). Recovered in the notebook loader, but the upstream cleaning script (`clean_STM02.py`) needs to be fixed.
+
+3. **Quality flags not preserved**: The clean CSVs do not include `quality` column. Flags were counted but not exported (STM03 ≈ 45 k non-zero, STM05 ≈ 3 k). **Advisor requires flags to be preserved and documented.**
+
+4. **STM08 is highly intermittent**: 85% of valid discharge is zero; 79% of level ≤ 0.01 m. The peak event (Dec 2016) reached 2.83 m.
+
+5. **Best predictors of STM08**: STM04 (r=0.908, lag≈30 min) and STM06 (r=0.887, lag≈1 h) show strongest linear correlation. This provides a first estimate of basin concentration time.
+
+6. **~30 flood events detected** (preliminary) in the validated window. Events spanning data gaps are flagged — the definitive count must come from Phase 2 on the consolidated 10-min grid.
+
+### Configuration & parameters
+
+- **Analysis windows**: Full common 2014-09-26 → 2026-07-02; validated-hist 2014-09-26 → 2025-07-22
+- **Plausibility screening**: HEIGHT_m ∈ [−0.5, 5.0] m; DISCHARGE_m3s ∈ [0, 200] m³/s
+- **Cross-correlation**: 10-min grid (hydro), 1-h resolution (precip), lags up to +72 h
+- **Flood detection**: literature-based quasi-POT on discharge
+- **Station groups**: HYDRO=[STM03…STM08], METEO=[STM01,STM02], AEMET=[B013X,B605X,B691Y]
+
+### Open issues (carry to Phase 2)
+
+- [ ] Fix `clean_STM02.py` to recover tipping-bucket formulas upstream
+- [ ] Clarify quality flag meanings (0/1/...) and treatment policy (advisor requirement)
+- [ ] Harmonize DB extension datums/units (coordinate with data provider)
+- [ ] Preserve quality flags in clean CSVs
+- [ ] Define reproducible event start/end criteria and count events on the 10-min grid
+- [ ] Build the 4 required tables: stations, measurements, events, training
+- [ ] Decide precipitation disaggregation method (hourly → 10 min) with justification
+- [ ] Confirm basin topology: which stations are upstream of STM08 (Fase 0 checkbox)
+
+### Files modified/created
+
+| File | Action |
+|------|--------|
+| `.venv/` | Created (Python 3.14 + all deps from `requirements.txt`) |
+| `requirements.txt` | Updated with all dependencies |
+| `notebooks/01_eda.ipynb` | Created (8 sections, 22 executed code cells) |
+| `docs/plan_TFM.md` | Fase 1 ticked; advisor feedback integrated; action items added |
+| `docs/CHANGELOG.md` | Created (this file) |
+| `results/figures/eda/` | 14 figures saved |
+| `data/processed/events_stm08.csv` | Generated (event identification output) |
+
+---
+
+*End of Iteration 1.*

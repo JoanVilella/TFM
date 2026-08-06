@@ -57,7 +57,7 @@ Este TFM tiene **tres objetivos complementarios**:
 | B605X | Muro-S'albufera | 2005-04-12 | 2026-07-02 | 60 min |
 | B691Y | Sa Pobla-Sa Canova | 2011-04-19 | 2026-07-02 | 60 min |
 
-> **Fuentes**: hasta 2023-01-01 proceden de UIB-Estrany (formato phor, décimas de mm → mm); desde 2023-01-01 se extienden con datos de la BD interna (`Rain60m`, ya en mm). Se detectaron ~582–584 registros con `quality != 0` por estación en el tramo BD (incluidos en el CSV, pendiente de revisar si deben filtrarse).
+> **Fuentes**: hasta 2023-01-01 proceden de UIB-Estrany (formato phor, décimas de mm → mm) — grupo de investigación **RiscBal** (https://www.uib.eu/research/structures/structure/RiscBal/); desde 2023-01-01 se extienden con datos de la BD interna (`Rain60m`, ya en mm). Se detectaron ~582–584 registros con `quality != 0` por estación en el tramo BD (incluidos en el CSV, pendiente de revisar si deben filtrarse).
 
 ---
 
@@ -78,12 +78,14 @@ Esto da **~12 años** de datos solapados con todas las fuentes activas. Todas la
 
 ## 3. Retos principales
 
-1. **Frecuencias mixtas**: 5 min / 10 min / 15 min (STM según período) vs 60 min (AEMET). Se adopta una rejilla común de **10 min**, desagregando las series de menor resolución (60 min → 10 min) en lugar de agregar a la más gruesa.
+1. **Frecuencias mixtas**: 5 min / 10 min / 15 min (STM según período) vs 60 min (AEMET). Se adopta una rejilla común de **10 min**. Terminología precisa (no intercambiable): *aggregating*, *resampling*, *downsampling* y *disaggregating*. **No se debe** dividir ingenuamente la precipitación horaria entre 6 para generar datos cada 10 min (asume distribución uniforme y puede distorsionar eventos de crecida rápida). El método concreto de desagregación debe justificarse.
 2. **Datos faltantes**: Algunas estaciones tienen miles de celdas nulas (p.ej. STM03 tiene >130 k nulos en `LOAD_kg`). `LOAD_kg` es la variable con más nulos; el tramo extendido solo tiene `HEIGHT_m`.
 3. **Heterogeneidad del tramo extendido**: Desde ~2025-07/2026-02 solo está disponible `HEIGHT_m` (sin caudal ni volumen); el split de train/val/test debe tener esto en cuenta.
 4. **Leakage temporal**: En series temporales es crítico hacer el split cronológico estricto.
 5. **Eventos de crecida esporádicos**: El caudal es cero la mayor parte del tiempo; el modelo debe capturar bien los picos.
 6. **Quality != 0 en BD**: STM03 (~45 k registros) y STM05 (~3 k registros) tienen datos con calidad no validada en el tramo extendido; revisar si deben filtrarse.
+7. **Definición de evento hidrológico**: Debe definirse de forma objetiva y reproducible (umbrales de inicio/fin, criterio de estabilización). Un mismo evento **no puede partirse entre train y test** (leakage). La identificación en el EDA es preliminar; la definitiva se hará en la Fase 2 sobre la rejilla consolidada.
+8. **Quality flags (requisito del tutor)**: Los flags de calidad deben documentarse (qué significa cada valor: válido, inválido, missing, fallo de sensor, corregido/interpolado/estimado) y **preservarse** para distinguir mediciones originales de modificadas. Los CSVs limpios actuales no conservan los flags — **acción prioritaria para Fase 2**.
 
 ---
 
@@ -103,15 +105,30 @@ Esto da **~12 años** de datos solapados con todas las fuentes activas. Todas la
 
 **Objetivo**: Entender la calidad y estructura de los datos antes de modelizar.
 
-- [ ] Cargar todos los CSVs y calcular tasas de nulos por estación y variable.
-- [ ] Visualizar las series temporales completas de cada estación.
-- [ ] Calcular la correlación cruzada con desfase temporal (*cross-correlation*) entre cada predictor y STM08 para identificar:
+- [x] Cargar todos los CSVs y calcular tasas de nulos por estación y variable.
+- [x] Visualizar las series temporales completas de cada estación.
+- [x] Calcular la correlación cruzada con desfase temporal (*cross-correlation*) entre cada predictor y STM08 para identificar:
   - Qué estaciones explican mejor el nivel en STM08.
   - El lag óptimo (tiempo de concentración).
-- [ ] Identificar y caracterizar los eventos de crecida históricos.
-- [ ] Analizar la estacionalidad (invierno vs verano en clima mediterráneo).
+- [x] Identificar y caracterizar los eventos de crecida históricos.
+- [x] Analizar la estacionalidad (invierno vs verano en clima mediterráneo).
 
-**Entregable**: Notebook `01_eda.ipynb`
+**Entregable**: Notebook `01_eda.ipynb` ✅ Completado (2026-08-05). 8 secciones, 14 figuras en `results/figures/eda/`.
+
+> **Hallazgos principales del EDA**: (1) La extensión de BD (2025–2026) contiene datos **sin validar** con spikes de hasta 177 m, mesetas negativas y oscilaciones diarias no físicas → los análisis cuantitativos se restringen a la ventana histórica validada (2014-09-26 → 2025-07-22). (2) Se recuperaron 73 celdas de fórmulas Excel de tipping-bucket en STM02 (`PRECIP_mm`). (3) Las correlaciones cruzadas muestran que STM04 (r=0.908, lag ≈ 30 min) y STM06 (r=0.887, lag ≈ 1 h) son los mejores predictores lineales de STM08. (4) STM08 tiene un 85% de caudal cero — régimen altamente intermitente. (5) El EDA identificó eventos preliminares con una regla reproducible basada en literatura, pero los eventos que solapan con gaps de datos pueden estar fragmentados; la identificación definitiva debe hacerse en la Fase 2 sobre la rejilla de 10 min consolidada.
+
+### 4b. Tablas requeridas (*advisor feedback*)
+
+El tutor solicita cuatro tablas como entregables mínimos antes de cualquier modelización:
+
+| Tabla | Columnas clave |
+|---|---|
+| **Stations** | ID, tipo de sensor, variable medida, ubicación, altitud, frecuencia de muestreo, posición relativa a STM08 |
+| **Measurements** | datetime, estación, precipitación, nivel, temperatura, quality flag, tipo de dato (observed/corrected/imputed/simulated) |
+| **Events** | event ID, start/end datetime, precipitación acumulada, intensidad máxima, nivel máximo en STM08, tiempo al pico, duración |
+| **Training** | una fila por timestamp, con observaciones actuales + pasadas, más columnas target: `nivel_STM08_30min`, `nivel_STM08_60min`, `nivel_STM08_120min` |
+
+También se requiere una tabla que asigne cada **evento** (no cada fila) a **train / validation / test**.
 
 ### Fase 2 — Preprocesado y construcción del dataset
 
@@ -154,8 +171,9 @@ Esto da **~12 años** de datos solapados con todas las fuentes activas. Todas la
 
 **Objetivo**: Establecer límites inferiores de rendimiento.
 
-- [ ] **Persistencia**: `y_pred(t) = y(t-1)` — línea base trivial.
+- [ ] **Persistencia**: `y_pred(t) = y(t-1)` — línea base trivial (obligatoria como referencia mínima).
 - [ ] **Regresión lineal** con lags seleccionados.
+- [ ] **ARIMA / SARIMAX**: ARIMA usa solo la historia del nivel; ARIMAX añade variables exógenas (precipitación, niveles aguas arriba).
 - [ ] **Random Forest / Gradient Boosting (XGBoost/LightGBM)**: robustos, interpretables, manejan nulos bien.
 
 **Métricas** (estándar en hidrología):
@@ -163,6 +181,10 @@ Esto da **~12 años** de datos solapados con todas las fuentes activas. Todas la
 - KGE (*Kling-Gupta Efficiency*).
 - RMSE y MAE.
 - PBIAS (sesgo volumétrico).
+- **Error en el pico** (magnitud) y **error en el timing del pico**.
+- **Detección de excedencia de umbrales** y tasa de **falsas alarmas**.
+- **Lead time / anticipación efectiva** de crecidas.
+- Evaluación **por evento** (no solo agregada).
 
 **Entregable**: `04_baselines.ipynb`
 
@@ -176,6 +198,15 @@ Esto da **~12 años** de datos solapados con todas las fuentes activas. Todas la
 - [ ] Evaluación desglosada por horizonte de predicción (cuantificar la degradación de las métricas al aumentar el horizonte).
 
 **Entregable**: `05_deep_learning.ipynb`
+
+### Fase 5b — Modelo híbrido (HEC-HMS + ML)
+
+**Objetivo**: Usar ML para corregir los errores del modelo físico.
+
+- [ ] Entrenar un modelo ML (XGBoost o similar) que tome las salidas de HEC-HMS como features y aprenda a predecir el residual (diferencia entre nivel observado y simulado por HEC-HMS).
+- [ ] Evaluar si la corrección híbrida mejora las métricas del modelo físico solo.
+
+**Entregable**: Notebook `05b_hybrid.ipynb` (opcional, si el tiempo lo permite).
 
 ### Fase 6 — Interpretabilidad y análisis de resultados
 
@@ -251,4 +282,32 @@ Esto da **~12 años** de datos solapados con todas las fuentes activas. Todas la
 - Belina, Y., et al. (2024). *Comparative analysis of HEC-HMS and machine learning models for rainfall-runoff prediction in the upper Baro watershed, Ethiopia*. Hydrology Research. — ANN NSE 0.98 vs HEC-HMS 0.85 en cuenca con datos escasos.
 - Khan, I. (2026). *Comparative Analysis of HEC-HMS and Temporal Fusion Transformer for Streamflow Prediction under Climate Change Scenarios (Swat River Basin)*. — HEC-HMS subestima picos de crecida; TFT captura eventos extremos.
 - Cho, M., et al. (2022). *Water Level Prediction Model Applying an LSTM–GRU Method for Flood Prediction*. Water, 14(14). — NSE 0.94 prediciendo nivel de agua.
+- Frame, J. M., et al. (2022). *Deep learning rainfall–runoff predictions of extreme events*. Hydrol. Earth Syst. Sci., 26, 3377–3392. — Comportamiento de LSTM durante eventos extremos.
+- Xiang, Z. & Demir, I. (2020). *Distributed long-term hourly streamflow predictions using deep learning*. Environmental Modelling & Software, 131, 104788. — LSTM seq2seq para rainfall–runoff.
+- Koya, S. R. & Roy, T. (2024). *Temporal Fusion Transformer for streamflow prediction*. Journal of Hydrology, 631, 130694. — TFT vs. LSTM/Transformers.
+- Fordjour, A. & Kalyanapu, A. (2024). *GRU-based flood prediction using multi-station water levels*. Water, 16(7), 993.
+- Agaj, T., et al. (2024). *ARIMA/ETS for water level forecasting*. Water Practice & Technology, 19(3), 925–938.
+- Szczepanek, R. (2022). *XGBoost/LightGBM/CatBoost for daily streamflow forecasting*. Applied Sciences, 12(14), 7045.
+- USACE HEC-HMS case study — *Kaskaskia basin flood forecasting*.
+- USACE HEC-HMS Applications Guide (documentación oficial).
 - Trabajo futuro (híbridos): Makhloufi, N. (2026) — XGBoost como corrector de errores de HEC-HMS (KGE 0.65 → 0.83); Solanki, H., et al. (2025, Water Resources Research) — post-procesado de modelos hidrológicos con ML.
+
+---
+
+## 8. Action items (próximos pasos)
+
+### Inmediatos (antes de modelizar)
+- [x] EDA completado (`01_eda.ipynb`).
+- [ ] Clarificar y documentar el significado de los **quality flags** y su política de tratamiento.
+- [ ] Definir la **regla de detección de eventos** (criterios de inicio/fin) de forma reproducible.
+- [ ] Construir las **4 tablas requeridas** por el tutor: stations, measurements, events, training.
+- [ ] Generar la tabla de asignación de **eventos** (no filas) a train / validation / test.
+- [ ] Contar y evaluar el número de **eventos de crecida utilizables** en el registro histórico (~12 años, régimen altamente intermitente — el TFT necesita suficientes eventos para entrenar).
+
+### Fase 2 (preprocesado)
+- [ ] Recuperar y preservar los **quality flags** en los CSVs limpios (actualmente no incluidos).
+- [ ] Corregir el script `clean_STM02.py` para recuperar las fórmulas Excel de tipping-bucket en `PRECIP_mm`.
+- [ ] Armonizar unidades/datums del tramo de extensión BD (spikes de 177 m, mesetas negativas, oscilaciones) — coordinar con el proveedor de datos.
+
+### Documentación
+- [ ] Referenciar al grupo como **RiscBal** (https://www.uib.eu/research/structures/structure/RiscBal/) en la memoria.

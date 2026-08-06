@@ -1,1 +1,10 @@
 openpyxl>=3.1
+pandas>=2.2
+numpy>=2.0
+matplotlib>=3.9
+seaborn>=0.13
+scipy>=1.14
+pyarrow>=17.0
+jupyter>=1.1
+nbclient>=0.10
+ipykernel>=6.29
