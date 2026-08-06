@@ -4,6 +4,7 @@
 import openpyxl
 import csv
 import os
+import re
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -24,7 +25,40 @@ wb.close()
 # Keep only cols 0 (TIMESTAMP), 2 (Precip), 3 (Temp); drop serial, empty cols
 data = rows[1:]
 
-# --- Clean timestamps: strip microsecond artifacts ---
+# --- Recover tipping-bucket formulas -------------------------------------------------
+_TIP_BUCKET_RE = re.compile(r"^=(?:0\.2\*(\d+)|(\d+)\*0\.2)$")
+
+def recover_precip(val):
+    """Evaluate raw Excel tipping-bucket formulas (=0.2*N or =N*0.2).
+    Returns the numeric value (0.2*N) as a float, or the original value if it's
+    a plain number, or None if it's an untreatable string/None."""
+    if val is None:
+        return None
+    if isinstance(val, (int, float)):
+        return float(val)
+    if isinstance(val, str):
+        if val.upper() == "NAN":
+            return None
+        m = _TIP_BUCKET_RE.match(val.strip())
+        if m:
+            n = int(m.group(1) or m.group(2))
+            return round(0.2 * n, 4)
+        # Other formula strings (not tipping-bucket) → null
+        if val.startswith("="):
+            return None
+        try:
+            return float(val)
+        except ValueError:
+            return None
+    return None
+
+# Run formula-pattern scan on the whole column before writing (for metadata)
+_tip_count = 0
+for row in data:
+    precip_raw = row[2]
+    if isinstance(precip_raw, str) and _TIP_BUCKET_RE.match(precip_raw.strip()):
+        _tip_count += 1
+
 def clean_ts(ts):
     """Remove microsecond artifacts introduced by the Excel export."""
     if ts is None:
@@ -64,10 +98,10 @@ with open(OUTPUT_CSV, "w", newline="", encoding="utf-8") as f:
     writer.writerow(["TIMESTAMP", "PRECIP_mm", "TEMP_C"])
     for row in data:
         ts = clean_ts(row[0])
-        precip = row[2]
+        precip_val = recover_precip(row[2])
         temp = row[3]
         ts_str = ts.strftime("%Y-%m-%d %H:%M:%S") if ts is not None else ""
-        precip_str = "" if precip is None else str(precip)
+        precip_str = "" if precip_val is None else str(precip_val)
         # Treat None, 'NAN', and Excel formula strings as empty (null)
         if temp is None or isinstance(temp, str):
             temp_str = ""
@@ -100,6 +134,7 @@ with open(OUTPUT_META, "w", encoding="utf-8") as f:
     f.write("NOTAS DE LIMPIEZA:\n")
     f.write("  - Columna de serial Excel (DATE.UTC duplicado numérico) eliminada.\n")
     f.write("  - 1 celda de Temp contenía una fórmula Excel (=AVERAGE); tratada como nulo.\n")
+    f.write(f"  - {_tip_count} celdas de Precip contenían fórmulas Excel de tipping-bucket (=0.2*N); evaluadas y recuperadas.\n")
     f.write("  - 22261 celdas de Temp contenían el string 'NAN'; tratadas como nulo.\n")
     f.write("  - Dos columnas vacías/basura al final eliminadas.\n")
     f.write("  - Microsegundos artificiales en TIMESTAMP eliminados (artefacto del Excel).\n")

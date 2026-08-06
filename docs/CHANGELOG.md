@@ -5,6 +5,45 @@
 
 ---
 
+## Iteration 4 — 2026-08-06
+
+### Changes made
+
+**Fixed `clean_STM02.py` tipping-bucket formula handling**
+
+`clean_STM02.py` (line ~70) was writing raw Excel formula strings (`=0.2*N`, `=N*0.2`) verbatim to the `PRECIP_mm` column of `STM02.csv`. The `TEMP_C` column already had a string guard (`isinstance(temp, str)`) that nullified formula strings, but `PRECIP_mm` did not.
+
+| Change | Detail |
+|--------|--------|
+| Added `import re` | For tipping-bucket regex matching |
+| Added `recover_precip()` | Evaluates `=0.2*N` / `=N*0.2` → numeric `0.2*N` mm; nullifies other formula strings and `"NAN"` |
+| Pre-export scan | Counts tipping-bucket cells for metadata (73 found) |
+| Updated CSV writing | `recover_precip(row[2])` replaces the old `str(precip)` |
+| Updated metadata | Added note: "73 celdas de Precip contenían fórmulas Excel de tipping-bucket (=0.2*N); evaluadas y recuperadas." |
+
+**Removed formula-recovery workaround from notebook loader**
+
+- `_coerce_numeric()` in `01_eda.ipynb` cell 4 simplified: removed `FORMULA_RE`, regex extraction, and recovery logic. Now just `pd.to_numeric(s, errors="coerce")`.
+- Updated §2 and §8 markdown comments to reflect the fix is upstream.
+- Dead `load_station` v1 still present in cell 4 (harmless, overridden).
+
+**Re-executed notebook**
+
+- Notebook re-executed after `clean_STM02.py` regeneration → **"WARNING PRECIP_mm: recovered 73 raw Excel tipping-bucket formulas" is gone.**
+- All 22 cells executed successfully with 0 errors.
+- All 14 figures regenerated.
+
+### Remaining open issues
+
+- [ ] STM03 has 51,336 records with `quality != 0` — most are in the extension period.
+- [ ] DISCHARGE/VOLUME/LOAD will be derived from HEIGHT_m via rating curves (user's next step).
+- [ ] Quality flag meanings (0/1/...) still undocumented. Flags are counted but not preserved in clean CSVs.
+
+*End of Iteration 4.*
+
+
+---
+
 ## Iteration 3 — 2026-08-06
 
 ### Changes made
@@ -24,7 +63,7 @@ The notebook was re-executed after the v2 CSV format change (HEIGHT_m only), but
 - [ ] STM03 has 51,336 records with `quality != 0` — most are in the extension period.
 - [ ] DISCHARGE/VOLUME/LOAD will be derived from HEIGHT_m via rating curves (user's next step).
 - [ ] Quality flag meanings (0/1/...) still undocumented. Flags are counted but not preserved in clean CSVs.
-- [ ] `clean_STM02.py` still has the tipping-bucket formula issue (73 cells with `=0.2*N`). Workaround exists in the notebook loader.
+- [x] ~~`clean_STM02.py` still has the tipping-bucket formula issue (73 cells with `=0.2*N`)~~ → **Fixed in Iteration 4.**
 
 *End of Iteration 3.*
 
@@ -113,7 +152,7 @@ All 11 clean CSVs were regenerated from scratch:
 - [ ] STM03 has 51,336 records with `quality != 0` — most are in the extension period. The extension section of the EDA (3.1) still flags these as "unvalidated extension" in plots with red shading.
 - [ ] DISCHARGE/VOLUME/LOAD will be derived from HEIGHT_m via rating curves (user's next step).
 - [ ] Quality flag meanings (0/1/...) still undocumented. Flags are counted but not preserved in clean CSVs.
-- [ ] `clean_STM02.py` still has the tipping-bucket formula issue (73 cells with `=0.2*N`). Workaround exists in the notebook loader.
+- [x] ~~`clean_STM02.py` still has the tipping-bucket formula issue (73 cells with `=0.2*N`)~~ → **Fixed in Iteration 4.**
 
 *End of Iteration 2.*
 
