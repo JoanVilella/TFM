@@ -5,6 +5,50 @@
 
 ---
 
+## Iteration 6 — 2026-08-07
+
+### Changes made
+
+**10-min grid construction (Phase 2 — resampling)**
+
+Built the uniform 10-minute grid from all 11 clean CSVs using the validated window
+2014-09-26 → 2025-07-22 (~11 years, 569,089 timestamps, 24 columns).
+
+| Change | Detail |
+|--------|--------|
+| `scripts/preprocessing/resample.py` | Reusable module: `build_10min_grid()`, parameterized for start/end dates and quality filter |
+| Instantaneous (HEIGHT_m, TEMP_C) | 5→10 min: mean aggregation; 15→10 min: linear interpolation (gap-capped at 3 h) |
+| Precip — STM (cumulative) | Cumsum → interpolate cumulative → diff on 10-min grid (mass-conserving) |
+| Precip — AEMET (hourly → 10-min) | Template-based disaggregation using STM01/STM02 10-min patterns; fallback to conservative cumulative interpolation |
+| Quality columns | Forward-filled from source data to 10-min grid (NaN = Excel data with no flag) |
+| Output | `data/processed/grid_10min.parquet` (120.1 MB) |
+| Notebook | `notebooks/02_preprocessing.ipynb` — loads grid, verifies resampling, gap analysis, mass conservation checks |
+
+### Grid summary
+
+| Stat | Value |
+|------|-------|
+| Rows | 569,089 (10-min) |
+| Columns | 24 (13 measurements + 11 quality) |
+| Period | 2014-09-26 → 2025-07-22 |
+| Duration | ~10.8 years |
+| Null rates (worst) | STM02_TEMP_C 28.7%, STM01_TEMP_C 18.3%, STM05_HEIGHT_m 13.8% |
+| Null rates (best) | STM08_HEIGHT_m 0.8%, STM02_PRECIP_mm 1.9%, STM07_HEIGHT_m 2.4% |
+
+### Remaining open issues
+
+- [ ] Feature engineering (lags, cumulative precip, temporal features) → Training table
+- [ ] Chronological split (train up to 2020-12-31, val 2021–2022-06, test 2022-07+)
+- [ ] Define reproducible event detection rule
+- [ ] Build the 4 required advisor tables (stations, measurements, events, training)
+- [ ] DISCHARGE/VOLUME/LOAD derivation via rating curves
+- [ ] DB extension data harmonization (blocked on data provider)
+
+*End of Iteration 6.*
+
+
+---
+
 ## Iteration 5 — 2026-08-07
 
 ### Changes made

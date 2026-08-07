@@ -134,7 +134,7 @@ A table assigning each **event** (not each row) to **train / validation / test**
 
 **Objective**: Produce a modeling-ready DataFrame.
 
-- [ ] **Resampling**: Build the dataset on a **uniform 10-min grid**: temporal disaggregation of hourly AEMET series (60 → 10 min), downsampling of STM historical 15-min period, and aggregation of recent 5-min records. Precipitation treated as cumulative; level and temperature as instantaneous states. (Specific disaggregation method pending decision; justify the choice.)
+- [x] **Resampling**: Build the dataset on a **uniform 10-min grid**: temporal disaggregation of hourly AEMET series (60 → 10 min), downsampling of STM historical 15-min period, and aggregation of recent 5-min records. Precipitation treated as cumulative; level and temperature as instantaneous states. [Done — Iteration 6: template-based disaggregation for AEMET, cumulative-curve interpolation for STM precip, linear interpolation for instantaneous variables. See `scripts/preprocessing/resample.py`.]
 - [ ] **Temporal alignment**: Index by common `TIMESTAMP UTC`, fill index gaps.
 - [ ] **Null imputation**:
   - Short gaps (< 3 h): linear interpolation.
