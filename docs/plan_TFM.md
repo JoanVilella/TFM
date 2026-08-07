@@ -99,7 +99,7 @@ This yields **~12 years** of overlapping data with all sources active. All STM s
 - [x] ~~Prediction horizon~~ — **Multi-horizon: t+1h, t+6h and t+24h** (multi-step architectures: LSTM/GRU encoder-decoder and TFT).
 - [x] ~~Hybrid model (ML correcting HEC-HMS)~~ — Discarded as own contribution; kept as future work. The TFM is a strict physical vs. data-driven comparison.
 - [x] ~~Thesis language~~ — English.
-- [ ] Confirm basin topology: which stations are upstream of STM08 and what is the approximate concentration time (important for defining prediction horizon and lags).
+- [ ] Confirm basin topology: which stations are upstream of STM08 and what is the approximate concentration time (important for defining prediction horizon and lags). **Pending: geo team needs to confirm whether STM03–07 are parallel tributaries or if some are in series. Currently `UPSTREAM_Q` sums all five assuming parallel configuration.**
 
 ### Phase 1 — Exploratory Data Analysis (EDA)
 
@@ -139,11 +139,11 @@ A table assigning each **event** (not each row) to **train / validation / test**
 - [ ] **Null imputation**:
   - Short gaps (< 3 h): linear interpolation.
   - Long gaps: flag or exclude from training.
-- [ ] **Feature engineering**:
-  - Lags of each predictor: *t-1h, t-2h, t-3h, t-6h, t-12h, t-24h*.
-  - Cumulative precipitation: last 3 h, 6 h, 12 h, 24 h, 48 h (antecedent precipitation index).
-  - Cumulative upstream discharge (sum of STM03–STM07 at t-lag).
-  - Temporal variables: hour of day, month, day of year (useful for models that don't implicitly capture seasonality).
+- [x] **Feature engineering**:
+  - Lags of each predictor: *t-1h, t-2h, t-3h, t-6h, t-12h, t-24h*. [Done — Iteration 8]
+  - Cumulative precipitation: last 3 h, 6 h, 12 h, 24 h, 48 h (antecedent precipitation index). [Done — Iteration 8]
+  - Cumulative upstream discharge (sum of STM03–STM07 at t-lag). [Done — Iteration 8: `UPSTREAM_Q` assumes parallel tributaries; pending basin topology confirmation from geo team]
+  - Temporal variables: hour of day, month, day of year (sin/cos encoding for hour and doy, raw for month). [Done — Iteration 8]
 - [ ] **Chronological split**:
   - Train: up to 2020-12-31
   - Validation: 2021-01-01 → 2022-06-30

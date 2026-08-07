@@ -5,6 +5,56 @@
 
 ---
 
+## Iteration 8 — 2026-08-07
+
+### Changes made
+
+**Feature engineering — training table built**
+
+| Change | Detail |
+|--------|--------|
+| `scripts/preprocessing/feature_engineering.py` | New module: `build_training_table()` transforms the 10-min grid into a modelling-ready DataFrame |
+| Lagged predictors | HEIGHT_m (6 stations), TEMP_C (2 stations), PRECIP_mm (5 stations) at t-1h, t-2h, t-3h, t-6h, t-12h, t-24h |
+| Cumulative precipitation | Rolling sums over 3h, 6h, 12h, 24h, 48h (antecedent precipitation index) for 5 stations |
+| Upstream discharge | `UPSTREAM_Q` = sum of STM03–STM07 DISCHARGE_m3s |
+| Temporal features | `hour_sin`, `hour_cos`, `doy_sin`, `doy_cos` (sin/cos encoding), `month` (raw integer) |
+| Targets | `TARGET_t+1h`, `TARGET_t+6h`, `TARGET_t+24h` (STM08_HEIGHT_m shifted by +6, +36, +144 steps) |
+| Output | `data/processed/training_table.parquet` (96 MB, 563,698 rows × 142 columns) |
+
+### Design decisions
+
+| Decision | Justification |
+|----------|--------------|
+| DISCHARGE lags skipped | Q = f(H) via rating curve → exact multicollinearity with HEIGHT lags. Only upstream-aggregated sum included. (Kratzert et al. 2019, HESS 23, 5089–5110) |
+| sin/cos for cyclical time | Preserves circular topology of daily and annual cycles for models that don't learn it implicitly (Lim et al. 2021, Int. J. Forecasting) |
+| Month as raw integer | Only 12 categories; tree models split on it; DL models embed it |
+
+### Training table summary
+
+| Stat | Value |
+|------|-------|
+| Rows | 563,698 (dropped 5,391 for missing targets at series end) |
+| Columns | 142 (30 base + 112 engineered) |
+| Column groups | 30 base, 78 lags, 25 cumulative precip, 1 upstream Q, 5 temporal, 3 targets |
+| Size | 96.0 MB (Parquet) |
+
+### Pending questions
+
+- [ ] **Basin topology**: `UPSTREAM_Q` currently sums STM03–STM07 DISCHARGE assuming all are parallel tributaries. If stations are in series, the sum double-counts. Pending confirmation from the geo team. When confirmed, update `UPSTREAM_STATIONS` in `feature_engineering.py`.
+
+### Remaining open issues
+
+- [ ] Chronological split (train up to 2020-12-31, val 2021–2022-06, test 2022-07+)
+- [ ] Define reproducible event detection rule
+- [ ] Build the 4 required advisor tables (stations, measurements, events, training)
+- [ ] DB extension data harmonization (blocked on data provider)
+- [ ] `flow_to_meters` inverse rating curve (needed for HEC-HMS validation)
+
+*End of Iteration 8.*
+
+
+---
+
 ## Iteration 7 — 2026-08-07
 
 ### Changes made

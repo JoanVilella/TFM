@@ -136,7 +136,7 @@ This normalised schema supports both the spatial operations required for physics
 
 \subsection{Data quality and challenges}
 
-The common observation window after temporal alignment spans approximately twelve years (September~2014 to July~2026). A systematic exploratory data analysis (EDA)~\cite{} was conducted over the full historical record and revealed four interrelated quality issues that shape the preprocessing and modelling strategy.
+The common observation window after temporal alignment spans approximately twelve years (September~2014 to July~2026). A systematic exploratory data analysis (EDA) was conducted over the full historical record and revealed four interrelated quality issues that shape the preprocessing and modelling strategy.
 
 \subsubsection{Mixed temporal resolutions}
 
@@ -193,16 +193,42 @@ Figure~\ref{fig:pipeline} summarises the end-to-end preprocessing chain implemen
     \textbf{Clean CSVs} (11 files, TIMESTAMP + variables + QUALITY + DATA\_TYPE) \\
     $\downarrow$ \textit{3 extension scripts (prod\_data append)} \\
     \textbf{Extended CSVs} (same schema, extended to 2026-08-05) \\
-    $\downarrow$ \textit{resample.py: 10-min grid builder} \\
-    \textbf{10-min grid} (parquet, 569\,089 rows $\times$ 24 columns, 2014-09-26 to 2025-07-22) \\
-    $\downarrow$ \textit{feature engineering (lags, cumulative variables, temporal features)} \\
-    \textbf{Training table} (to be constructed in Phase~2)
+    $\downarrow$ \textit{resample.py + rating\_curve.py} \\
+    \textbf{10-min grid} (parquet, 569\,089 rows $\times$ 30 columns, 2014-09-26 to 2025-07-22) \\
+    $\downarrow$ \textit{feature\_engineering.py} \\
+    \textbf{Training table} (parquet, 563\,698 rows $\times$ 142 columns, multi-horizon targets)
     }}
-    \caption{End-to-end preprocessing pipeline from raw observations to the modelling-ready 10-minute grid. Each stage is fully scripted and reproducible.}
+    \caption{End-to-end preprocessing pipeline from raw observations to the modelling-ready training table. Each stage is fully scripted and reproducible; the training table is the single input artefact for all downstream models.}
     \label{fig:pipeline}
 \end{figure}
 
-The resulting 10-minute grid contains 569\,089 timestamps over approximately 10.8~years, with 13 measurement columns (six \texttt{HEIGHT\_m} + two \texttt{TEMP\_C} + five \texttt{PRECIP\_mm}) and 11 quality-flag columns. The grid is stored as a compressed Parquet file (120~MB) and is the single entry point for all downstream modelling: feature engineering, chronological splitting, baseline models, and deep learning architectures consume the same artefact, guaranteeing reproducibility across experiments.
+The resulting 10-minute grid contains 569\,089 timestamps over approximately 10.8~years, with 13 raw measurement columns (six \texttt{HEIGHT\_m} + six \texttt{DISCHARGE\_m$^{3}$~s$^{-1}$} + two \texttt{TEMP\_C} + five \texttt{PRECIP\_mm}) and 11 quality-flag columns. Discharge is derived from water level via station-specific piecewise-polynomial rating curves $\texttt{Q(H)} = \sum_i \text{base}_i \cdot H^{\,\text{exp}_i}$ parameterised over 1--3 segments per station using drone-based cross-section surveys. The grid is stored as a compressed Parquet file (120~MB) and constitutes the single entry point for feature engineering.
+
+\subsection{Feature engineering\label{sec:features}}
+
+The 10-minute grid is transformed into a supervised learning table through four categories of engineered predictors, following established practices in hydrological machine learning~\cite{Kratzert2019}.
+
+\subsubsection{Lagged predictors}
+
+For each measurement variable at each station, the raw value is shifted backward in time to create a look-back window at lags of 1, 2, 3, 6, 12, and 24 hours. This yields 78 lagged columns: 36 for water level (six hydro stations), 12 for air temperature (two meteo stations), and 30 for precipitation (five stations). These lags allow the model to capture the propagation delay of flow through the channel network and the memory effect of antecedent moisture conditions. The choice of 24 hours as the maximum lag is supported by the EDA cross-correlation analysis, which found the strongest linear relationships at lags of 30~min to 1~h and negligible correlation beyond approximately 12~h.
+
+Discharge lags are intentionally excluded: since $\texttt{DISCHARGE} = f(\texttt{HEIGHT})$ via the monotonic rating curve, including both would introduce exact functional multicollinearity without adding information~\cite{Kratzert2019}. Instead, a single basin-integrated discharge metric is constructed (see below).
+
+\subsubsection{Cumulative precipitation}
+
+The antecedent precipitation index (API) encodes catchment wetness as the rolling sum of precipitation over windows of 3, 6, 12, 24, and 48 hours, computed for each of the five precipitation stations (25 columns). The API has been shown to be a critical predictor for runoff generation in semi-arid Mediterranean basins, where initial soil moisture strongly modulates the rainfall--runoff response~\cite{Estrany2010}.
+
+\subsubsection{Upstream discharge sum}
+
+A single aggregate feature $\mathrm{UPSTREAM\_Q} = \sum_{i=3}^{7} Q_{\mathrm{STM}i}$ sums the instantaneous discharge of all five upstream hydro stations into a basin-integrated flow proxy. This follows the common practice in distributed hydrological modelling of aggregating contributions from parallel tributaries~\cite{USACE2000}. The assumption of parallel drainage -- that none of STM03--STM07 lie in series on the same reach -- is pending confirmation from the geo-morphological analysis of the Sant Miquel network; the feature engineering pipeline can be trivially updated once the validated topology is available.
+
+\subsubsection{Temporal encoding}
+
+Cyclical time features use sine--cosine encoding: $\sin(2\pi h/24)$ and $\cos(2\pi h/24)$ for hour of day, and $\sin(2\pi d/365.25)$ and $\cos(2\pi d/365.25)$ for day of year. This representation preserves the circular topology of daily and annual cycles, ensuring that 23:00 and 01:00 are adjacent in feature space -- a property that raw integer encoding violates~\cite{Lim2021}. The month is included as a raw integer (1--12), appropriate as a categorical variable for tree-based models and as an embedding input for deep learning architectures.
+
+\subsubsection{Target definition}
+
+The prediction target is the water level at STM08, shifted forward in time to produce three multi-horizon target columns: $h(t{+}\mathrm{1h})$, $h(t{+}\mathrm{6h})$, and $h(t{+}\mathrm{24h})$. This corresponds to leads of 6, 36, and 144 time steps on the 10-minute grid. Rows where any target is undefined (the trailing 24 hours of the series) are dropped, yielding a final training table of 563\,698 rows and 142 columns (96~MB compressed).
 
 
 
@@ -216,7 +242,7 @@ For the Sant Miquel basin, the model will be delineated and parameterised using 
 
 \section{Problem Statement\label{sec:problem}}
 
-Let $h(t)$ denote the water level (m) recorded at STM08 at discrete time step $t$ on the uniform 10-minute grid. Let $\mathbf{x}(t) \in \mathbb{R}^{p}$ be the vector of $p$ predictor variables at time $t$, comprising 10-minute precipitation depths, upstream water levels, and air temperatures from all available stations. The prediction task is defined as:
+Let $h(t)$ denote the water level (m) recorded at STM08 at discrete time step $t$ on the uniform 10-minute grid. Let $\mathbf{x}(t) \in \mathbb{R}^{p}$, $p = 139$, be the vector of $p$ predictor variables at time $t$, comprising 10-minute precipitation depths, upstream water levels, air temperatures, cumulative antecedent precipitation indices, the aggregated upstream discharge proxy, and temporal features (hour-of-day, day-of-year, and month encoding). The prediction task is defined as:
 
 \begin{equation}
     \hat{h}(t + \Delta) = f\!\left(\mathbf{x}(t),\, \mathbf{x}(t{-}1),\, \ldots,\, \mathbf{x}(t{-}L)\right)
@@ -225,11 +251,11 @@ Let $h(t)$ denote the water level (m) recorded at STM08 at discrete time step $t
 
 \noindent where $\Delta$ is the forecast horizon, an integer multiple of the 10-minute base interval, $L$ is the look-back window in time steps, and $f(\cdot)$ is the model function. Two instantiations of $f$ are investigated: (i)~the physics-based HEC-HMS model, in which $f$ encapsulates calibrated process equations for rainfall--runoff transformation and channel routing; and (ii)~a family of data-driven models, in which $f$ is learned from observations by statistical optimisation.
 
-The dataset is partitioned chronologically to avoid temporal leakage:
+The supervised dataset comprises 563\,698 training samples over the validated period September~2014 to July~2025, each with 139 predictor features and three multi-horizon targets $h(t{+}\mathrm{1h})$, $h(t{+}\mathrm{6h})$, and $h(t{+}\mathrm{24h})$. The dataset is partitioned chronologically to avoid temporal leakage:
 \begin{itemize}
     \item \textbf{Training:} September~2014 -- December~2020
     \item \textbf{Validation:} January~2021 -- June~2022
-    \item \textbf{Test:} July~2022 -- July~2026
+    \item \textbf{Test:} July~2022 -- July~2025
 \end{itemize}
 
 Model performance is quantified using four metrics standard in operational hydrology: Nash--Sutcliffe Efficiency (NSE), Kling--Gupta Efficiency (KGE), root mean squared error (RMSE), and percent bias (PBIAS). Results are reported separately for the full test period and for identified flood events, to distinguish performance on rare high-flow conditions from overall average accuracy.
