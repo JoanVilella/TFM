@@ -5,6 +5,54 @@
 
 ---
 
+## Iteration 5 — 2026-08-07
+
+### Changes made
+
+**Added QUALITY and DATA_TYPE columns to all clean CSVs**
+
+| Change | Detail |
+|--------|--------|
+| Quality flag meanings | 0 = good data, 1 = suspicious data, 2 = wrong data (only from prod_data DB exports; Excel data has no flags) |
+| Cleaning scripts (9) | All now write `QUALITY` (empty for Excel data) and `DATA_TYPE` ("observed") columns |
+| Extension scripts (3) | `extend_STM_waterlevel.py`, `extend_STM_meteo.py`, `extend_AEMET_DB.py` now preserve the `quality` field from prod_data CSVs and write `QUALITY` + `DATA_TYPE` columns |
+| CSVs regenerated | All 11 clean CSVs regenerated from scratch (cleaning → extension), matching previous Iteration 2 row counts |
+| Notebook loader | `01_eda.ipynb` cell 4 updated: `QUALITY` kept as nullable `Int64`, `DATA_TYPE` as string; both excluded from `_coerce_numeric()` |
+| Quality summary | Notebook now prints a quality-flag distribution table per station on load |
+| Metadata | All 11 `_metadata.txt` files now include a `CALIDAD (QUALITY)` section documenting flag meanings |
+
+### Modified files
+
+| File | Changes |
+|------|---------|
+| `scripts/cleaning/clean_STM01.py` | Header → `TIMESTAMP, PRECIP_mm, TEMP_C, QUALITY, DATA_TYPE`; rows write `"", "observed"` |
+| `scripts/cleaning/clean_STM02.py` | Same as STM01 |
+| `scripts/cleaning/clean_STM03.py` | Header → `TIMESTAMP, HEIGHT_m, QUALITY, DATA_TYPE`; rows write `"", "observed"` |
+| `scripts/cleaning/clean_STM04.py` | Same as STM03 |
+| `scripts/cleaning/clean_STM05.py` | Same as STM03 |
+| `scripts/cleaning/clean_STM06.py` | Same as STM03 |
+| `scripts/cleaning/clean_STM07.py` | Same as STM03 |
+| `scripts/cleaning/clean_STM08.py` | Same as STM03 |
+| `scripts/cleaning/clean_UIB_Estrany.py` | Header → `TIMESTAMP, PRECIP_mm, QUALITY, DATA_TYPE`; rows write `"", "observed"` |
+| `scripts/extension/extend_STM_waterlevel.py` | `load_new_waterlevel_rows()` returns quality_map; `append_to_clean_csv()` writes QUALITY + DATA_TYPE |
+| `scripts/extension/extend_STM_meteo.py` | Tracks quality per variable (Rain10m/AirTemp), merges as max(worst) per timestamp |
+| `scripts/extension/extend_AEMET_DB.py` | Tracks quality alongside value; rewrites full CSV with QUALITY + DATA_TYPE |
+| `notebooks/01_eda.ipynb` | Cell 4: QUALITY → Int64, DATA_TYPE → string; quality summary table |
+| `data/clean/*_metadata.txt` | All 11 files: added CALIDAD (QUALITY) section |
+
+### Remaining open issues
+
+- [ ] DISCHARGE/VOLUME/LOAD will be derived from HEIGHT_m via rating curves (user's next step).
+- [ ] STM03 has 51,336 records with `quality != 0` — most are in the extension period.
+- [ ] Define reproducible event detection rule (start/end criteria).
+- [ ] Build the 4 required tables: stations, measurements, events, training.
+- [ ] DB extension data (2025–2026) still has unvalidated artifacts (177 m spikes, etc.).
+
+*End of Iteration 5.*
+
+
+---
+
 ## Iteration 4 — 2026-08-06
 
 ### Changes made

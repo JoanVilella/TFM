@@ -29,9 +29,10 @@ def parse_db_timestamp(ts_str):
 
 
 def load_existing_clean(code):
-    """Load existing clean CSV into a dict {datetime: precip_str}."""
+    """Load existing clean CSV into (records dict, quality dict)."""
     path = os.path.join(CLEAN_DIR, f"{code}.csv")
     records = {}
+    quality_map = {}
     with open(path, "r", encoding="utf-8") as f:
         reader = csv.reader(f)
         next(reader)  # skip header
@@ -40,17 +41,19 @@ def load_existing_clean(code):
                 continue
             ts = datetime.datetime.strptime(row[0], "%Y-%m-%d %H:%M:%S")
             records[ts] = row[1]
-    return records
+            quality_map[ts] = row[2] if len(row) > 2 else ""
+    return records, quality_map
 
 
 def load_new_db_rows(code):
     """Load Rain60m rows for a station from prod_data CSV.
 
-    Returns a dict {datetime: precip_str}. Values are already in mm.
-    Records with empty or non-numeric values are stored as empty string.
+    Returns a dict {datetime: precip_str}, a dict {datetime: quality_str},
+    and a count of non-zero quality records. Values are already in mm.
     """
     path = os.path.join(RAW_DIR, f"{code}.csv")
     records = {}
+    quality_map = {}
     non_zero_quality = 0
     with open(path, "r", encoding="utf-8") as f:
         reader = csv.reader(f)
@@ -74,17 +77,20 @@ def load_new_db_rows(code):
                 except ValueError:
                     val_str = ""
             records[ts] = val_str
-    return records, non_zero_quality
+            quality_map[ts] = quality
+    return records, quality_map, non_zero_quality
 
 
-def write_clean_csv(code, merged):
+def write_clean_csv(code, merged, quality_merged):
     """Write merged records to the clean CSV, sorted chronologically."""
     path = os.path.join(CLEAN_DIR, f"{code}.csv")
     with open(path, "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
-        writer.writerow(["TIMESTAMP", "PRECIP_mm"])
+        writer.writerow(["TIMESTAMP", "PRECIP_mm", "QUALITY", "DATA_TYPE"])
         for ts in sorted(merged.keys()):
-            writer.writerow([ts.strftime("%Y-%m-%d %H:%M:%S"), merged[ts]])
+            q = quality_merged.get(ts, "")
+            data_type = "observed" if q != "" else "observed"
+            writer.writerow([ts.strftime("%Y-%m-%d %H:%M:%S"), merged[ts], q, data_type])
     return path
 
 
@@ -125,10 +131,10 @@ def update_metadata(code, name, merged, new_count, non_zero_quality, overlap_cou
 def process_station(code, name):
     print(f"\nProcesando {code} - {name}...")
 
-    existing = load_existing_clean(code)
+    existing, existing_quality = load_existing_clean(code)
     print(f"  Registros existentes: {len(existing)}")
 
-    new_records, non_zero_quality = load_new_db_rows(code)
+    new_records, new_quality, non_zero_quality = load_new_db_rows(code)
     print(f"  Registros nuevos (prod_data): {len(new_records)}")
     if non_zero_quality:
         print(f"  AVISO: {non_zero_quality} registros con quality != 0")
@@ -137,8 +143,9 @@ def process_station(code, name):
     print(f"  Solapamiento en la unión: {len(overlap)} timestamp(s)")
 
     merged = {**new_records, **existing}
+    quality_merged = {**new_quality, **existing_quality}
 
-    csv_path  = write_clean_csv(code, merged)
+    csv_path  = write_clean_csv(code, merged, quality_merged)
     meta_path = update_metadata(code, name, merged, len(new_records), non_zero_quality, len(overlap))
 
     print(f"  Total filas en CSV resultante: {len(merged)}")

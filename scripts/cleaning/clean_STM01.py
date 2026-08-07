@@ -62,7 +62,7 @@ os.makedirs(os.path.dirname(OUTPUT_CSV), exist_ok=True)
 
 with open(OUTPUT_CSV, "w", newline="", encoding="utf-8") as f:
     writer = csv.writer(f)
-    writer.writerow(["TIMESTAMP", "PRECIP_mm", "TEMP_C"])
+    writer.writerow(["TIMESTAMP", "PRECIP_mm", "TEMP_C", "QUALITY", "DATA_TYPE"])
     for row in data:
         ts = clean_ts(row[0])
         precip = row[1]
@@ -72,7 +72,7 @@ with open(OUTPUT_CSV, "w", newline="", encoding="utf-8") as f:
         # Keep NaN as empty string for traceability
         precip_str = "" if precip is None else str(precip)
         temp_str = "" if temp is None else str(round(temp, 4))
-        writer.writerow([ts_str, precip_str, temp_str])
+        writer.writerow([ts_str, precip_str, temp_str, "", "observed"])
 
 print(f"CSV guardado en: {OUTPUT_CSV}")
 

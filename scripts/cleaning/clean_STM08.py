@@ -94,7 +94,7 @@ os.makedirs(os.path.dirname(OUTPUT_CSV), exist_ok=True)
 
 with open(OUTPUT_CSV, "w", newline="", encoding="utf-8") as f:
     writer = csv.writer(f)
-    writer.writerow(["TIMESTAMP", "HEIGHT_m"])
+    writer.writerow(["TIMESTAMP", "HEIGHT_m", "QUALITY", "DATA_TYPE"])
     for row in data:
         ts     = clean_ts(row[COL_DATE])
         height = to_float(row[COL_HEIGHT])
@@ -102,7 +102,7 @@ with open(OUTPUT_CSV, "w", newline="", encoding="utf-8") as f:
         ts_str     = ts.strftime("%Y-%m-%d %H:%M:%S") if ts is not None else ""
         height_str = "" if height is None else str(round(height, 6))
 
-        writer.writerow([ts_str, height_str])
+        writer.writerow([ts_str, height_str, "", "observed"])
 
 print(f"CSV guardado en: {OUTPUT_CSV}")
 

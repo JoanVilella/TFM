@@ -45,12 +45,15 @@ def get_last_clean_ts_and_count(code):
 def load_new_meteo_rows(code):
     """Load Rain10m and AirTemp rows for a station from the new raw CSV.
 
-    Returns a dict {datetime: (precip_str, temp_str)} and a count of non-zero
-    quality records. Timestamps with only one variable present keep the other empty.
+    Returns a dict {datetime: (precip_str, temp_str, quality_str)} and a count
+    of non-zero quality records. Quality is the worst (max) of the two variables
+    when both exist at the same timestamp.
     """
     path = os.path.join(RAW_DIR, f"{code.lower()}.csv")
     precip = {}
     temp = {}
+    precip_q = {}
+    temp_q = {}
     non_zero_quality = 0
 
     with open(path, "r", encoding="utf-8") as f:
@@ -75,22 +78,34 @@ def load_new_meteo_rows(code):
 
             if variable == "Rain10m":
                 precip[ts] = val_str
+                precip_q[ts] = quality
             elif variable == "AirTemp":
                 temp[ts] = val_str
+                temp_q[ts] = quality
 
-    # Merge per timestamp
+    # Merge per timestamp; quality = worst (max int) of the two
     all_ts = set(precip.keys()) | set(temp.keys())
-    records = {ts: (precip.get(ts, ""), temp.get(ts, "")) for ts in all_ts}
+    records = {}
+    for ts in all_ts:
+        p = precip.get(ts, "")
+        t = temp.get(ts, "")
+        q_ints = []
+        if ts in precip_q:
+            q_ints.append(int(precip_q[ts]))
+        if ts in temp_q:
+            q_ints.append(int(temp_q[ts]))
+        q_str = str(max(q_ints)) if q_ints else ""
+        records[ts] = (p, t, q_str)
     return records, non_zero_quality
 
 
 def append_to_clean_csv(code, rows_sorted):
-    """Append new (timestamp, precip_str, temp_str) tuples to the clean CSV."""
+    """Append new (timestamp, precip_str, temp_str, quality_str) tuples to the clean CSV."""
     path = os.path.join(CLEAN_DIR, f"{code}.csv")
     with open(path, "a", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
-        for ts, precip_str, temp_str in rows_sorted:
-            writer.writerow([ts.strftime("%Y-%m-%d %H:%M:%S"), precip_str, temp_str])
+        for ts, precip_str, temp_str, quality_str in rows_sorted:
+            writer.writerow([ts.strftime("%Y-%m-%d %H:%M:%S"), precip_str, temp_str, quality_str, "observed"])
 
 
 def update_metadata(code, new_last_ts, new_count, non_zero_quality, total_rows):
@@ -137,7 +152,7 @@ def process_station(code, name):
 
     # Keep only records strictly after the last existing timestamp
     to_append = sorted(
-        [(ts, precip, temp) for ts, (precip, temp) in all_new.items() if ts > last_ts],
+        [(ts, precip, temp, quality) for ts, (precip, temp, quality) in all_new.items() if ts > last_ts],
         key=lambda x: x[0],
     )
     print(f"  Registros a añadir (después de {last_ts}): {len(to_append)}")

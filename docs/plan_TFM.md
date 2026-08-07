@@ -85,7 +85,7 @@ This yields **~12 years** of overlapping data with all sources active. All STM s
 5. **Sporadic flood events**: Discharge is zero most of the time; the model must capture peaks well.
 6. **Quality != 0 in DB**: STM03 (~45 k records) and STM05 (~3 k records) have unvalidated-quality data in the extended segment; review whether to filter.
 7. **Hydrological event definition**: Must be defined objectively and reproducibly (start/end thresholds, stabilization criterion). A single event **cannot be split across train and test** (leakage). EDA identification is preliminary; the definitive one will be done in Phase 2 on the consolidated grid.
-8. **Quality flags (advisor requirement)**: Quality flags must be documented (meaning of each value: valid, invalid, missing, sensor failure, corrected/interpolated/estimated) and **preserved** to distinguish original from modified measurements. Current clean CSVs do not retain flags — **priority action for Phase 2**.
+8. **Quality flags (advisor requirement)**: ✅ Resolved (Iteration 5). Quality flags documented (0=good, 1=suspicious, 2=wrong) and preserved as `QUALITY` column in all clean CSVs. `DATA_TYPE` column ("observed") also added for future use (corrected/imputed/simulated). Excel-origin data has empty quality (no flag available).
 
 ---
 
@@ -298,14 +298,14 @@ A table assigning each **event** (not each row) to **train / validation / test**
 
 ### Immediate (before modeling)
 - [x] EDA completed (`01_eda.ipynb`).
-- [ ] Clarify and document the meaning of **quality flags** and their treatment policy.
+- [x] Clarify and document the meaning of **quality flags** and their treatment policy. [Done — Iteration 5: 0=good, 1=suspicious, 2=wrong; documented in metadata and CSV columns]
 - [ ] Define the **event detection rule** (start/end criteria) in a reproducible manner.
 - [ ] Build the **4 tables required** by the advisor: stations, measurements, events, training.
 - [ ] Generate the **event** (not row) assignment table to train / validation / test.
 - [ ] Count and evaluate the number of **usable flood events** in the historical record (~12 years, highly intermittent regime — TFT needs enough events to train).
 
 ### Phase 2 (preprocessing)
-- [ ] Recover and preserve **quality flags** in clean CSVs (currently not included).
+- [x] Recover and preserve **quality flags** in clean CSVs (currently not included). [Done — Iteration 5: QUALITY and DATA_TYPE columns added to all 11 CSVs]
 - [ ] Fix `clean_STM02.py` script to recover Excel tipping-bucket formulas in `PRECIP_mm`. [Already done — Iteration 4]
 - [ ] Harmonize DB extension units/datums (177 m spikes, negative plateaus, oscillations) — coordinate with data provider.
 

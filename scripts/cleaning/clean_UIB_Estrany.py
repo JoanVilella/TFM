@@ -124,12 +124,12 @@ def process_station(code, info):
 
     with open(csv_path, "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
-        writer.writerow(["TIMESTAMP", "PRECIP_mm"])
+        writer.writerow(["TIMESTAMP", "PRECIP_mm", "QUALITY", "DATA_TYPE"])
         for ts, val in all_records:
             ts_str = ts.strftime("%Y-%m-%d %H:%M:%S")
             # Convert from tenths of mm to mm; keep nulls as empty strings
             val_str = "" if val is None else str(round(val / 10, 4))
-            writer.writerow([ts_str, val_str])
+            writer.writerow([ts_str, val_str, "", "observed"])
 
     print(f"  CSV guardado en: {csv_path}")
 

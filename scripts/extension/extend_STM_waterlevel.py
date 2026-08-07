@@ -49,10 +49,12 @@ def get_last_clean_ts_and_count(code):
 def load_new_waterlevel_rows(code):
     """Load WaterLevel rows for a station from the prod_data CSV.
 
-    Returns a dict {datetime: height_str} and a count of non-zero quality records.
+    Returns a dict {datetime: height_str}, a dict {datetime: quality_str},
+    and a count of non-zero quality records.
     """
     path = os.path.join(RAW_DIR, f"{code.lower()}.csv")
     records = {}
+    quality_map = {}
     non_zero_quality = 0
     with open(path, "r", encoding="utf-8") as f:
         reader = csv.reader(f)
@@ -76,19 +78,21 @@ def load_new_waterlevel_rows(code):
                 except ValueError:
                     val_str = ""
             records[ts] = val_str
-    return records, non_zero_quality
+            quality_map[ts] = quality
+    return records, quality_map, non_zero_quality
 
 
 def append_to_clean_csv(code, rows_sorted):
-    """Append new (timestamp, height_str) tuples to the clean CSV.
+    """Append new (timestamp, height_str, quality_str) tuples to the clean CSV.
 
     Only HEIGHT_m is written; DISCHARGE, VOLUME and LOAD are left empty.
+    QUALITY comes from the DB export (0/1/2); DATA_TYPE is always "observed".
     """
     path = os.path.join(CLEAN_DIR, f"{code}.csv")
     with open(path, "a", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
-        for ts, height_str in rows_sorted:
-            writer.writerow([ts.strftime("%Y-%m-%d %H:%M:%S"), height_str])
+        for ts, height_str, quality_str in rows_sorted:
+            writer.writerow([ts.strftime("%Y-%m-%d %H:%M:%S"), height_str, quality_str, "observed"])
 
 
 def update_metadata(code, new_last_ts, new_count, non_zero_quality, total_rows):
@@ -129,13 +133,13 @@ def process_station(code, name):
     last_ts, existing_count = get_last_clean_ts_and_count(code)
     print(f"  Último timestamp en limpio: {last_ts}  ({existing_count} filas)")
 
-    all_new, non_zero_quality = load_new_waterlevel_rows(code)
+    all_new, quality_map, non_zero_quality = load_new_waterlevel_rows(code)
     print(f"  Registros en fichero nuevo (prod_data): {len(all_new)}")
     if non_zero_quality:
         print(f"  AVISO: {non_zero_quality} registros con quality != 0")
 
     to_append = sorted(
-        [(ts, val) for ts, val in all_new.items() if ts > last_ts],
+        [(ts, val, quality_map[ts]) for ts, val in all_new.items() if ts > last_ts],
         key=lambda x: x[0],
     )
     print(f"  Registros a añadir (después de {last_ts}): {len(to_append)}")
