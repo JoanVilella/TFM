@@ -387,6 +387,12 @@ def build_10min_grid(start=DEFAULT_START, end=DEFAULT_END_VALIDATED,
     # Add QUALITY columns (forward-fill from source, aligned to 10-min)
     grid = _add_quality_columns(grid, data, target_idx, start, end)
 
+    # Add DISCHARGE_m3s via rating curves
+    print("  Computing DISCHARGE_m3s for all hydro stations ...")
+    from scripts.preprocessing.rating_curve import load_rating_curves, apply_discharge
+    curves = load_rating_curves()
+    grid = apply_discharge(grid, curves)
+
     print(f"\nGrid built: {len(grid)} rows, {len(grid.columns)} columns")
     print(f"  {start} -> {end}")
     return grid, gap_info

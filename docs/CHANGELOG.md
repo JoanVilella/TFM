@@ -5,6 +5,54 @@
 
 ---
 
+## Iteration 7 — 2026-08-07
+
+### Changes made
+
+**DISCHARGE_m3s derived from HEIGHT_m via rating curves**
+
+| Change | Detail |
+|--------|--------|
+| `scripts/preprocessing/rating_curve.py` | New module: parses `data/rating_curves/rating_curves.csv`, builds piecewise polynomial functions (meters_to_flow direction only) |
+| `scripts/preprocessing/resample.py` | `build_10min_grid()` now calls `apply_discharge()` automatically |
+| 10-min grid | 6 new `{STATION}_DISCHARGE_m3s` columns added (30 cols total, up from 24) |
+
+### Rating curve format
+
+- Piecewise polynomial: Q(H) = Σ(base_i · H^exp_i) over interval [x0, x1)
+- 6 stations (STM03–STM08), 1–3 segments each
+- Last segment has no upper bound (NULL = ∞)
+- H values outside all segments return NaN
+
+### Discharge statistics
+
+| Station | Max Q (m³/s) | Null rate | Notes |
+|---------|-------------|-----------|-------|
+| STM03 | 8.85 | 10.0% | |
+| STM04 | 26.87 | 3.0% | |
+| STM05 | 155.97 | 13.8% | Highest peak |
+| STM06 | 112.09 | 6.9% | |
+| STM07 | 45.48 | 2.5% | |
+| STM08 | 19.81 | 0.8% | Target station (wetland outlet) |
+
+### Deferred to future
+
+- [ ] `flow_to_meters` (inverse direction, Q→H): needed for HEC-HMS validation.
+
+### Remaining open issues
+
+- [ ] Feature engineering (lags, cumulative precip, temporal features) → Training table
+- [ ] Chronological split (train up to 2020-12-31, val 2021–2022-06, test 2022-07+)
+- [ ] Define reproducible event detection rule
+- [ ] Build the 4 required advisor tables (stations, measurements, events, training)
+- [ ] DB extension data harmonization (blocked on data provider)
+- [ ] `flow_to_meters` inverse rating curve (needed for HEC-HMS validation)
+
+*End of Iteration 7.*
+
+
+---
+
 ## Iteration 6 — 2026-08-07
 
 ### Changes made

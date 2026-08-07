@@ -135,7 +135,7 @@ A table assigning each **event** (not each row) to **train / validation / test**
 **Objective**: Produce a modeling-ready DataFrame.
 
 - [x] **Resampling**: Build the dataset on a **uniform 10-min grid**: temporal disaggregation of hourly AEMET series (60 → 10 min), downsampling of STM historical 15-min period, and aggregation of recent 5-min records. Precipitation treated as cumulative; level and temperature as instantaneous states. [Done — Iteration 6: template-based disaggregation for AEMET, cumulative-curve interpolation for STM precip, linear interpolation for instantaneous variables. See `scripts/preprocessing/resample.py`.]
-- [ ] **Temporal alignment**: Index by common `TIMESTAMP UTC`, fill index gaps.
+- [x] **Temporal alignment**: Index by common `TIMESTAMP UTC`, fill index gaps. [Done — Iteration 6-7: 10-min grid built and augmented with DISCHARGE from rating curves. See `scripts/preprocessing/resample.py` and `rating_curve.py`.]
 - [ ] **Null imputation**:
   - Short gaps (< 3 h): linear interpolation.
   - Long gaps: flag or exclude from training.
@@ -307,7 +307,9 @@ A table assigning each **event** (not each row) to **train / validation / test**
 ### Phase 2 (preprocessing)
 - [x] Recover and preserve **quality flags** in clean CSVs (currently not included). [Done — Iteration 5: QUALITY and DATA_TYPE columns added to all 11 CSVs]
 - [x] Fix `clean_STM02.py` script to recover Excel tipping-bucket formulas in `PRECIP_mm`. [Already done — Iteration 4]
+- [x] Derive DISCHARGE_m3s from HEIGHT_m via rating curves. [Done — Iteration 7: `scripts/preprocessing/rating_curve.py`]
+- [ ] Implement `flow_to_meters` inverse rating curve (Q→H) — needed for HEC-HMS validation.
 - [ ] Harmonize DB extension units/datums (177 m spikes, negative plateaus, oscillations) — coordinate with data provider.
 
 ### Documentation
-- [ ] Reference the group as **RiscBal** (https://www.uib.eu/research/structures/structure/RiscBal/) in the thesis.
+- [x] Reference the group as **RiscBal** (https://www.uib.eu/research/structures/structure/RiscBal/) in the thesis. [Done — Iteration 6: all references updated in `thesis/document.tex`]
