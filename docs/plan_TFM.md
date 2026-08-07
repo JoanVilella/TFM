@@ -1,38 +1,38 @@
-# Plan TFM — Predicción del nivel de agua en STM08 (Sa Marjal)
+# TFM Plan — Water Level Prediction at STM08 (Sa Marjal)
 
-## Objetivo
+## Objective
 
-Este TFM tiene **tres objetivos complementarios**:
+This TFM has **three complementary objectives**:
 
-1. **Modelo físico (HEC-HMS)**: Construir un modelo hidrológico de base física de la cuenca de Sant Miquel con el software **HEC-HMS** (Hydrologic Engineering Center – Hydrologic Modeling System), calibrado y validado con las series observadas en las estaciones STM03–STM08.
-2. **Modelos basados en datos (ML/IA)**: Desarrollar modelos de aprendizaje automático e inteligencia artificial para predecir el **nivel de agua** (`HEIGHT_m`) en la estación hidrológica **STM08 - Sa Marjal** en horizontes de predicción de **t+1h, t+6h y t+24h**, utilizando como predictores las series temporales del resto de estaciones meteorológicas e hidrológicas disponibles.
-3. **Comparación**: Evaluar y comparar el rendimiento de ambas familias de modelos (físico vs. datos) bajo las métricas estándar en hidrología (NSE, KGE, RMSE, PBIAS), desglosada por horizonte de predicción y por tipo de evento (crecida/estiaje), analizando sus ventajas, limitaciones y contextos de aplicación.
+1. **Physical model (HEC-HMS)**: Build a physically-based hydrological model of the Sant Miquel basin using **HEC-HMS** software (Hydrologic Engineering Center – Hydrologic Modeling System), calibrated and validated against observed series at stations STM03–STM08.
+2. **Data-driven models (ML/AI)**: Develop machine learning and artificial intelligence models to predict **water level** (`HEIGHT_m`) at hydrological station **STM08 - Sa Marjal** at prediction horizons of **t+1h, t+6h and t+24h**, using time series from the remaining available meteorological and hydrological stations as predictors.
+3. **Comparison**: Evaluate and compare the performance of both model families (physical vs. data-driven) under standard hydrological metrics (NSE, KGE, RMSE, PBIAS), broken down by prediction horizon and event type (flood/low-flow), analyzing their advantages, limitations, and application contexts.
 
-### Preguntas de investigación
+### Research questions
 
-- **RQ1**: ¿Con qué precisión reproduce un modelo físico calibrado (HEC-HMS) los niveles y eventos de crecida observados en STM08?
-- **RQ2**: ¿Hasta qué punto los modelos basados en datos (baselines → RF/XGBoost → LSTM/GRU → TFT) mejoran esa precisión, en particular en los picos de crecida y en los horizontes t+1h, t+6h y t+24h?
-- **RQ3**: ¿Cómo afectan al rendimiento las decisiones de preprocesado (resolución temporal, lags, tratamiento de la intermitencia) y qué predictores dominan la predicción?
+- **RQ1**: How accurately does a calibrated physical model (HEC-HMS) reproduce observed levels and flood events at STM08?
+- **RQ2**: To what extent do data-driven models (baselines → RF/XGBoost → LSTM/GRU → TFT) improve that accuracy, particularly for flood peaks and at t+1h, t+6h and t+24h horizons?
+- **RQ3**: How do preprocessing decisions (temporal resolution, lags, intermittency treatment) affect performance, and which predictors dominate the prediction?
 
-> **Contexto y novedad**: La literatura comparativa HEC-HMS vs. ML usa mayoritariamente datos diarios y cuencas perennes. Este TFM estudia una **cuenca de torrente mediterráneo** con régimen intermitente (serie mayoritariamente nula y crecidas relámpago), con datos **sub-horarios** de una red densa de estaciones, y con objetivo el **nivel de agua en un humedal** (Sa Marjal, junto a s'Albufera).
+> **Context and novelty**: The comparative HEC-HMS vs. ML literature predominantly uses daily data and perennial basins. This TFM studies a **Mediterranean torrential basin** with intermittent regime (largely zero series and flash floods), **sub-hourly** data from a dense station network, and with the objective of **water level in a wetland** (Sa Marjal, adjacent to s'Albufera).
 
 ---
 
-## 1. Inventario de datos
+## 1. Data inventory
 
-### 1.1 Estación objetivo
+### 1.1 Target station
 
-| Estación | Nombre | Tipo | Variable objetivo | Período | Frecuencia |
+| Station | Name | Type | Target variable | Period | Frequency |
 |---|---|---|---|---|---|
-| STM08 | Sa Marjal | Hidrológica | `HEIGHT_m` / `DISCHARGE_m3s` | 2013-03-04 → 2026-07-15 | 15 min (→ 10 min desde 2022-05-05; → 5 min desde 2026-02-17) |
+| STM08 | Sa Marjal | Hydrological | `HEIGHT_m` / `DISCHARGE_m3s` | 2013-03-04 → 2026-07-15 | 15 min (→ 10 min from 2022-05-05; → 5 min from 2026-02-17) |
 
-> **Nota sobre la variable objetivo**: Los CSVs limpios exportan `HEIGHT_m`, `DISCHARGE_m3s`, `VOLUME_m3` y `LOAD_kg`. Para el período extendido (2026-02-17 → 2026-07-15), procedente de la BD interna, **solo `HEIGHT_m` está disponible**; `DISCHARGE_m3s`, `VOLUME_m3` y `LOAD_kg` quedan vacíos. `HEIGHT_m` es la variable a usar como objetivo (nivel de agua directamente medido); `DISCHARGE_m3s` es una transformación monotónica vía curva de aforo y puede usarse como complemento en el período histórico.
+> **Note on the target variable**: Clean CSVs export `HEIGHT_m`, `DISCHARGE_m3s`, `VOLUME_m3` and `LOAD_kg`. For the extended period (2026-02-17 → 2026-07-15), sourced from the internal DB, **only `HEIGHT_m` is available**; `DISCHARGE_m3s`, `VOLUME_m3` and `LOAD_kg` are empty. `HEIGHT_m` is the variable to use as target (directly measured water level); `DISCHARGE_m3s` is a monotonic transformation via rating curve and may be used as a complement in the historical period.
 
-### 1.2 Estaciones predictoras
+### 1.2 Predictor stations
 
-#### Hidrológicas (HEIGHT_m / DISCHARGE_m3s / VOLUME_m3 / LOAD_kg)
+#### Hydrological (HEIGHT_m / DISCHARGE_m3s / VOLUME_m3 / LOAD_kg)
 
-| Estación | Nombre | T0 | T_end | Frecuencia |
+| Station | Name | T0 | T_end | Frequency |
 |---|---|---|---|---|
 | STM03 | Es Fangar | 2012-10-01 | 2026-07-15 | 15 min → 10 min (2022) → 5 min (2025-07-23+) |
 | STM04 | Gabelli | 2012-12-06 | 2026-07-15 | 15 min → 10 min (2022) → 5 min (2025-09-18+) |
@@ -40,274 +40,274 @@ Este TFM tiene **tres objetivos complementarios**:
 | STM06 | Sant Miquel | 2012-10-01 | 2026-07-15 | 15 min → 10 min (2022) → 5 min (2025-09-18+) |
 | STM07 | Búger | 2012-10-01 | 2026-07-15 | 15 min → 10 min (2022) → 5 min (2026-02-20+) |
 
-> **Nota extensión BD**: El tramo extendido desde la BD interna solo contiene `HEIGHT_m` (nivel de agua); `DISCHARGE_m3s`, `VOLUME_m3` y `LOAD_kg` quedan vacíos. STM03 tiene ~45 k registros con `quality != 0` en el tramo extendido; STM05 tiene ~3 k.
+> **DB extension note**: The extended segment from the internal DB only contains `HEIGHT_m` (water level); `DISCHARGE_m3s`, `VOLUME_m3` and `LOAD_kg` are empty. STM03 has ~45 k records with `quality != 0` in the extended segment; STM05 has ~3 k.
 
-#### Meteorológicas STM (PRECIP_mm, TEMP_C)
+#### STM Meteorological (PRECIP_mm, TEMP_C)
 
-| Estación | Nombre | T0 | T_end | Frecuencia |
+| Station | Name | T0 | T_end | Frequency |
 |---|---|---|---|---|
 | STM01 | Coll des Telègraf | 2012-11-30 | 2026-07-15 | 15 min → 10 min (2022) |
 | STM02 | Míner Gran | 2014-09-26 | 2026-07-15 | 15 min → 10 min (2022) |
 
-#### Meteorológicas AEMET (PRECIP_mm, horaria)
+#### AEMET Meteorological (PRECIP_mm, hourly)
 
-| Estación | Nombre | T0 | T_end | Frecuencia |
+| Station | Name | T0 | T_end | Frequency |
 |---|---|---|---|---|
 | B013X | Lluc | 1993-04-16 | 2026-07-02 | 60 min |
 | B605X | Muro-S'albufera | 2005-04-12 | 2026-07-02 | 60 min |
 | B691Y | Sa Pobla-Sa Canova | 2011-04-19 | 2026-07-02 | 60 min |
 
-> **Fuentes**: hasta 2023-01-01 proceden de UIB-Estrany (formato phor, décimas de mm → mm) — grupo de investigación **RiscBal** (https://www.uib.eu/research/structures/structure/RiscBal/); desde 2023-01-01 se extienden con datos de la BD interna (`Rain60m`, ya en mm). Se detectaron ~582–584 registros con `quality != 0` por estación en el tramo BD (incluidos en el CSV, pendiente de revisar si deben filtrarse).
+> **Sources**: up to 2023-01-01 from UIB-Estrany (phor format, tenths of mm → mm) — **RiscBal** research group (https://www.uib.eu/research/structures/structure/RiscBal/); from 2023-01-01 onward extended with internal DB data (`Rain60m`, already in mm). ~582–584 records with `quality != 0` per station were detected in the DB segment (included in CSV, pending review on whether they should be filtered).
 
 ---
 
-## 2. Ventana temporal común
+## 2. Common time window
 
-Tras extender las series STM03–STM08 con datos de la BD interna, la intersección de todos los conjuntos es:
+After extending the STM03–STM08 series with internal DB data, the intersection of all datasets is:
 
 ```
-Inicio:  2014-09-26  (STM02 arranca en sept-2014)
-Fin:     2026-07-02  (límite AEMET; el resto de estaciones llegan a 2026-07-15)
+Start:  2014-09-26  (STM02 starts in Sept-2014)
+End:    2026-07-02  (AEMET limit; remaining stations reach 2026-07-15)
 ```
 
-Esto da **~12 años** de datos solapados con todas las fuentes activas. Todas las series STM (hidrológicas y meteorológicas) llegan ahora a **2026-07-15**; las AEMET hasta **2026-07-02**.
+This yields **~12 years** of overlapping data with all sources active. All STM series (hydrological and meteorological) now reach **2026-07-15**; AEMET series reach **2026-07-02**.
 
-> **Nota**: En el tramo extendido de las estaciones hidrológicas (desde ~2025-07 / 2026-02 según estación), solo `HEIGHT_m` está disponible; `DISCHARGE_m3s`, `VOLUME_m3` y `LOAD_kg` quedan vacíos.
-
----
-
-## 3. Retos principales
-
-1. **Frecuencias mixtas**: 5 min / 10 min / 15 min (STM según período) vs 60 min (AEMET). Se adopta una rejilla común de **10 min**. Terminología precisa (no intercambiable): *aggregating*, *resampling*, *downsampling* y *disaggregating*. **No se debe** dividir ingenuamente la precipitación horaria entre 6 para generar datos cada 10 min (asume distribución uniforme y puede distorsionar eventos de crecida rápida). El método concreto de desagregación debe justificarse.
-2. **Datos faltantes**: Algunas estaciones tienen miles de celdas nulas (p.ej. STM03 tiene >130 k nulos en `LOAD_kg`). `LOAD_kg` es la variable con más nulos; el tramo extendido solo tiene `HEIGHT_m`.
-3. **Heterogeneidad del tramo extendido**: Desde ~2025-07/2026-02 solo está disponible `HEIGHT_m` (sin caudal ni volumen); el split de train/val/test debe tener esto en cuenta.
-4. **Leakage temporal**: En series temporales es crítico hacer el split cronológico estricto.
-5. **Eventos de crecida esporádicos**: El caudal es cero la mayor parte del tiempo; el modelo debe capturar bien los picos.
-6. **Quality != 0 en BD**: STM03 (~45 k registros) y STM05 (~3 k registros) tienen datos con calidad no validada en el tramo extendido; revisar si deben filtrarse.
-7. **Definición de evento hidrológico**: Debe definirse de forma objetiva y reproducible (umbrales de inicio/fin, criterio de estabilización). Un mismo evento **no puede partirse entre train y test** (leakage). La identificación en el EDA es preliminar; la definitiva se hará en la Fase 2 sobre la rejilla consolidada.
-8. **Quality flags (requisito del tutor)**: Los flags de calidad deben documentarse (qué significa cada valor: válido, inválido, missing, fallo de sensor, corregido/interpolado/estimado) y **preservarse** para distinguir mediciones originales de modificadas. Los CSVs limpios actuales no conservan los flags — **acción prioritaria para Fase 2**.
+> **Note**: In the extended segment of hydrological stations (from ~2025-07 / 2026-02 depending on station), only `HEIGHT_m` is available; `DISCHARGE_m3s`, `VOLUME_m3` and `LOAD_kg` are empty.
 
 ---
 
-## 4. Plan de trabajo
+## 3. Main challenges
 
-### Fase 0 — Revisión y decisiones previas
+1. **Mixed frequencies**: 5 min / 10 min / 15 min (STM depending on period) vs 60 min (AEMET). A common **10-min** grid is adopted. Precise terminology (non-interchangeable): *aggregating*, *resampling*, *downsampling* and *disaggregating*. Hourly precipitation **must not** be naively divided by 6 to generate 10-min data (assumes uniform distribution and may distort flash-flood events). The specific disaggregation method must be justified.
+2. **Missing data**: Some stations have thousands of null cells (e.g., STM03 has >130 k nulls in `LOAD_kg`). `LOAD_kg` is the variable with most nulls; the extended segment has only `HEIGHT_m`.
+3. **Extended-segment heterogeneity**: From ~2025-07/2026-02 only `HEIGHT_m` is available (no discharge or volume); the train/val/test split must account for this.
+4. **Temporal leakage**: In time series, a strict chronological split is critical.
+5. **Sporadic flood events**: Discharge is zero most of the time; the model must capture peaks well.
+6. **Quality != 0 in DB**: STM03 (~45 k records) and STM05 (~3 k records) have unvalidated-quality data in the extended segment; review whether to filter.
+7. **Hydrological event definition**: Must be defined objectively and reproducibly (start/end thresholds, stabilization criterion). A single event **cannot be split across train and test** (leakage). EDA identification is preliminary; the definitive one will be done in Phase 2 on the consolidated grid.
+8. **Quality flags (advisor requirement)**: Quality flags must be documented (meaning of each value: valid, invalid, missing, sensor failure, corrected/interpolated/estimated) and **preserved** to distinguish original from modified measurements. Current clean CSVs do not retain flags — **priority action for Phase 2**.
 
-- [x] ~~Decidir variable objetivo~~: `HEIGHT_m` es la variable objetivo (nivel de agua, disponible en todo el período incluido el tramo extendido). `DISCHARGE_m3s` complementario para el período histórico.
-- [x] ~~Decidir si incluir estaciones AEMET~~ — Series AEMET extendidas hasta 2026-07-02 con datos de BD; se incluyen todas.
-- [x] ~~Datos para HEC-HMS~~ — MDT, cartografía de usos del suelo y tipos de suelo **disponibles**; el modelo físico es un pilar completo del TFM.
-- [x] ~~Horizonte de predicción~~ — **Multi-horizonte: t+1h, t+6h y t+24h** (arquitecturas multi-step: LSTM/GRU encoder-decoder y TFT).
-- [x] ~~Modelo híbrido (ML corrigiendo HEC-HMS)~~ — Descartado como contribución propia; queda como trabajo futuro. El TFM es una comparación estricta físico vs. datos.
-- [x] ~~Idioma de la memoria~~ — Inglés.
-- [ ] Confirmar la topología de la cuenca: qué estaciones son aguas arriba de STM08 y cuál es el tiempo de concentración aproximado (importante para definir el horizonte de predicción y los lags).
+---
 
-### Fase 1 — Análisis exploratorio (EDA)
+## 4. Work plan
 
-**Objetivo**: Entender la calidad y estructura de los datos antes de modelizar.
+### Phase 0 — Review and preliminary decisions
 
-- [x] Cargar todos los CSVs y calcular tasas de nulos por estación y variable.
-- [x] Visualizar las series temporales completas de cada estación.
-- [x] Calcular la correlación cruzada con desfase temporal (*cross-correlation*) entre cada predictor y STM08 para identificar:
-  - Qué estaciones explican mejor el nivel en STM08.
-  - El lag óptimo (tiempo de concentración).
-- [x] Identificar y caracterizar los eventos de crecida históricos.
-- [x] Analizar la estacionalidad (invierno vs verano en clima mediterráneo).
+- [x] ~~Decide target variable~~: `HEIGHT_m` is the target variable (water level, available throughout the entire period including the extended segment). `DISCHARGE_m3s` complementary for the historical period.
+- [x] ~~Decide whether to include AEMET stations~~ — AEMET series extended to 2026-07-02 with DB data; all included.
+- [x] ~~Data for HEC-HMS~~ — DEM, land-use and soil-type cartography **available**; the physical model is a full pillar of the TFM.
+- [x] ~~Prediction horizon~~ — **Multi-horizon: t+1h, t+6h and t+24h** (multi-step architectures: LSTM/GRU encoder-decoder and TFT).
+- [x] ~~Hybrid model (ML correcting HEC-HMS)~~ — Discarded as own contribution; kept as future work. The TFM is a strict physical vs. data-driven comparison.
+- [x] ~~Thesis language~~ — English.
+- [ ] Confirm basin topology: which stations are upstream of STM08 and what is the approximate concentration time (important for defining prediction horizon and lags).
 
-**Entregable**: Notebook `01_eda.ipynb` ✅ Completado (2026-08-05). 8 secciones, 14 figuras en `results/figures/eda/`.
+### Phase 1 — Exploratory Data Analysis (EDA)
 
-> **Hallazgos principales del EDA**: (1) La extensión de BD (2025–2026) contiene datos **sin validar** con spikes de hasta 177 m, mesetas negativas y oscilaciones diarias no físicas → los análisis cuantitativos se restringen a la ventana histórica validada (2014-09-26 → 2025-07-22). (2) Se recuperaron 73 celdas de fórmulas Excel de tipping-bucket en STM02 (`PRECIP_mm`). (3) Las correlaciones cruzadas muestran que STM04 (r=0.908, lag ≈ 30 min) y STM06 (r=0.887, lag ≈ 1 h) son los mejores predictores lineales de STM08. (4) STM08 tiene un 85% de caudal cero — régimen altamente intermitente. (5) El EDA identificó eventos preliminares con una regla reproducible basada en literatura, pero los eventos que solapan con gaps de datos pueden estar fragmentados; la identificación definitiva debe hacerse en la Fase 2 sobre la rejilla de 10 min consolidada.
+**Objective**: Understand data quality and structure before modeling.
 
-### 4b. Tablas requeridas (*advisor feedback*)
+- [x] Load all CSVs and compute null rates per station and variable.
+- [x] Visualize full time series for each station.
+- [x] Compute lagged cross-correlation between each predictor and STM08 to identify:
+  - Which stations best explain STM08 water level.
+  - The optimal lag (concentration time).
+- [x] Identify and characterize historical flood events.
+- [x] Analyze seasonality (winter vs. summer in Mediterranean climate).
 
-El tutor solicita cuatro tablas como entregables mínimos antes de cualquier modelización:
+**Deliverable**: Notebook `01_eda.ipynb` ✅ Completed (2026-08-05). 8 sections, 14 figures in `results/figures/eda/`.
 
-| Tabla | Columnas clave |
+> **Key EDA findings**: (1) The DB extension (2025–2026) contains **unvalidated** data with spikes up to 177 m, negative plateaus and non-physical daily oscillations → quantitative analyses restricted to the validated historical window (2014-09-26 → 2025-07-22). (2) 73 Excel tipping-bucket formula cells recovered in STM02 (`PRECIP_mm`). (3) Cross-correlations show STM04 (r=0.908, lag ≈ 30 min) and STM06 (r=0.887, lag ≈ 1 h) as the best linear predictors of STM08. (4) STM08 has 85% zero discharge — highly intermittent regime. (5) EDA identified preliminary events with a reproducible literature-based rule, but events overlapping data gaps may be fragmented; definitive identification must be done in Phase 2 on the consolidated 10-min grid.
+
+### 4b. Required tables (*advisor feedback*)
+
+The advisor requests four tables as minimum deliverables before any modeling:
+
+| Table | Key columns |
 |---|---|
-| **Stations** | ID, tipo de sensor, variable medida, ubicación, altitud, frecuencia de muestreo, posición relativa a STM08 |
-| **Measurements** | datetime, estación, precipitación, nivel, temperatura, quality flag, tipo de dato (observed/corrected/imputed/simulated) |
-| **Events** | event ID, start/end datetime, precipitación acumulada, intensidad máxima, nivel máximo en STM08, tiempo al pico, duración |
-| **Training** | una fila por timestamp, con observaciones actuales + pasadas, más columnas target: `nivel_STM08_30min`, `nivel_STM08_60min`, `nivel_STM08_120min` |
+| **Stations** | ID, sensor type, measured variable, location, altitude, sampling frequency, relative position to STM08 |
+| **Measurements** | datetime, station, precipitation, level, temperature, quality flag, data type (observed/corrected/imputed/simulated) |
+| **Events** | event ID, start/end datetime, accumulated precipitation, maximum intensity, maximum level at STM08, time to peak, duration |
+| **Training** | one row per timestamp, with current + past observations, plus target columns: `level_STM08_30min`, `level_STM08_60min`, `level_STM08_120min` |
 
-También se requiere una tabla que asigne cada **evento** (no cada fila) a **train / validation / test**.
+A table assigning each **event** (not each row) to **train / validation / test** is also required.
 
-### Fase 2 — Preprocesado y construcción del dataset
+### Phase 2 — Preprocessing and dataset construction
 
-**Objetivo**: Producir un DataFrame listo para modelizar.
+**Objective**: Produce a modeling-ready DataFrame.
 
-- [ ] **Remuestreo**: Construir el dataset sobre una **rejilla uniforme de 10 min**: desagregación temporal de las series horarias AEMET (60 → 10 min), remuestreo del período histórico STM de 15 min y agregación de los registros recientes de 5 min. Precipitación tratada como acumulado; nivel y temperatura como estados instantáneos. (Método concreto de desagregación pendiente de decidir; justificar la elección.)
-- [ ] **Alineación temporal**: Indexar por `TIMESTAMP UTC` común, rellenar huecos de índice.
-- [ ] **Imputación de nulos**:
-  - Huecos cortos (< 3 h): interpolación lineal.
-  - Huecos largos: marcar con flag o excluir del entrenamiento.
+- [ ] **Resampling**: Build the dataset on a **uniform 10-min grid**: temporal disaggregation of hourly AEMET series (60 → 10 min), downsampling of STM historical 15-min period, and aggregation of recent 5-min records. Precipitation treated as cumulative; level and temperature as instantaneous states. (Specific disaggregation method pending decision; justify the choice.)
+- [ ] **Temporal alignment**: Index by common `TIMESTAMP UTC`, fill index gaps.
+- [ ] **Null imputation**:
+  - Short gaps (< 3 h): linear interpolation.
+  - Long gaps: flag or exclude from training.
 - [ ] **Feature engineering**:
-  - Lags de cada predictor: *t-1h, t-2h, t-3h, t-6h, t-12h, t-24h*.
-  - Precipitación acumulada: últimas 3 h, 6 h, 12 h, 24 h, 48 h (índice de precipitación antecedente).
-  - Caudal acumulado aguas arriba (suma de STM03–STM07 en t-lag).
-  - Variables temporales: hora del día, mes, día del año (útiles para modelos que no capturan estacionalidad implícitamente).
-- [ ] **Split cronológico**:
-  - Train: hasta 2020-12-31
+  - Lags of each predictor: *t-1h, t-2h, t-3h, t-6h, t-12h, t-24h*.
+  - Cumulative precipitation: last 3 h, 6 h, 12 h, 24 h, 48 h (antecedent precipitation index).
+  - Cumulative upstream discharge (sum of STM03–STM07 at t-lag).
+  - Temporal variables: hour of day, month, day of year (useful for models that don't implicitly capture seasonality).
+- [ ] **Chronological split**:
+  - Train: up to 2020-12-31
   - Validation: 2021-01-01 → 2022-06-30
-  - Test: 2022-07-01 → fin de ventana
+  - Test: 2022-07-01 → end of window
 
-**Entregable**: `02_preprocessing.ipynb` + `data/processed/dataset_10min.parquet`
+**Deliverable**: `02_preprocessing.ipynb` + `data/processed/dataset_10min.parquet`
 
-### Fase 3 — Modelo físico con HEC-HMS
+### Phase 3 — Physical model with HEC-HMS
 
-**Objetivo**: Construir un modelo hidrológico de base física de la cuenca de Sant Miquel calibrado con datos observados.
+**Objective**: Build a physically-based hydrological model of the Sant Miquel basin calibrated with observed data.
 
-- [ ] **Delineación de la cuenca**: Obtener el MDT (Modelo Digital del Terreno) de la zona y delimitar la cuenca hidrográfica y las subcuencas drenantes hacia STM08.
-- [ ] **Configuración del modelo HEC-HMS**:
-  - Definir los parámetros morfométricos de cada subcuenca (área, pendiente, longitud de cauce).
-  - Seleccionar los métodos de transformación lluvia-escorrentía (p.ej. SCS Curve Number) y de tránsito de avenidas (p.ej. Muskingum).
-  - Asignar las series de precipitación de las estaciones STM01, STM02 y AEMET como entrada forzante.
-- [ ] **Calibración y validación**:
-  - Calibrar los parámetros del modelo (CN, Manning, tiempos de concentración) frente a caudales observados en STM06 / STM08 mediante optimización automática (p.ej. algoritmo DCEA integrado en HEC-HMS).
-  - Validar con eventos de crecida independientes del período de calibración.
-- [ ] **Análisis de incertidumbre**: Identificar los parámetros más sensibles y sus rangos de variación.
+- [ ] **Basin delineation**: Obtain the DEM (Digital Elevation Model) for the area and delineate the watershed and sub-basins draining toward STM08.
+- [ ] **HEC-HMS model setup**:
+  - Define morphometric parameters for each sub-basin (area, slope, channel length).
+  - Select rainfall-runoff transformation methods (e.g., SCS Curve Number) and flood routing methods (e.g., Muskingum).
+  - Assign precipitation series from stations STM01, STM02 and AEMET as forcing input.
+- [ ] **Calibration and validation**:
+  - Calibrate model parameters (CN, Manning, concentration times) against observed discharge at STM06 / STM08 using automatic optimization (e.g., DCEA algorithm built into HEC-HMS).
+  - Validate with independent flood events from the calibration period.
+- [ ] **Uncertainty analysis**: Identify the most sensitive parameters and their variation ranges.
 
-**Entregable**: Proyecto HEC-HMS calibrado (`hec_hms/`) + notebook de análisis de resultados `03_hec_hms.ipynb`
+**Deliverable**: Calibrated HEC-HMS project (`hec_hms/`) + results analysis notebook `03_hec_hms.ipynb`
 
-### Fase 4 — Modelos de referencia (*baselines*)
+### Phase 4 — Baseline models
 
-**Objetivo**: Establecer límites inferiores de rendimiento.
+**Objective**: Establish lower-bound performance baselines.
 
-- [ ] **Persistencia**: `y_pred(t) = y(t-1)` — línea base trivial (obligatoria como referencia mínima).
-- [ ] **Regresión lineal** con lags seleccionados.
-- [ ] **ARIMA / SARIMAX**: ARIMA usa solo la historia del nivel; ARIMAX añade variables exógenas (precipitación, niveles aguas arriba).
-- [ ] **Random Forest / Gradient Boosting (XGBoost/LightGBM)**: robustos, interpretables, manejan nulos bien.
+- [ ] **Persistence**: `y_pred(t) = y(t-1)` — trivial baseline (mandatory as minimum reference).
+- [ ] **Linear regression** with selected lags.
+- [ ] **ARIMA / SARIMAX**: ARIMA uses only level history; ARIMAX adds exogenous variables (precipitation, upstream levels).
+- [ ] **Random Forest / Gradient Boosting (XGBoost/LightGBM)**: robust, interpretable, handle nulls well.
 
-**Métricas** (estándar en hidrología):
-- NSE (*Nash-Sutcliffe Efficiency*) — métrica principal.
+**Metrics** (standard in hydrology):
+- NSE (*Nash-Sutcliffe Efficiency*) — primary metric.
 - KGE (*Kling-Gupta Efficiency*).
-- RMSE y MAE.
-- PBIAS (sesgo volumétrico).
-- **Error en el pico** (magnitud) y **error en el timing del pico**.
-- **Detección de excedencia de umbrales** y tasa de **falsas alarmas**.
-- **Lead time / anticipación efectiva** de crecidas.
-- Evaluación **por evento** (no solo agregada).
+- RMSE and MAE.
+- PBIAS (volumetric bias).
+- **Peak error** (magnitude) and **peak timing error**.
+- **Threshold exceedance detection** and **false alarm rate**.
+- **Lead time / effective flood anticipation**.
+- **Per-event evaluation** (not just aggregate).
 
-**Entregable**: `04_baselines.ipynb`
+**Deliverable**: `04_baselines.ipynb`
 
-### Fase 5 — Modelos secuenciales
+### Phase 5 — Sequential models
 
-**Objetivo**: Capturar las dependencias temporales de largo alcance y producir predicciones **multi-horizonte (t+1h, t+6h, t+24h)**.
+**Objective**: Capture long-range temporal dependencies and produce **multi-horizon predictions (t+1h, t+6h, t+24h)**.
 
-- [ ] **LSTM / GRU**: arquitectura encoder-decoder para predicción multi-step (salida simultánea a t+1/6/24h).
-- [ ] **Temporal Fusion Transformer (TFT)**: estado del arte en series temporales multivariables, maneja covariables conocidas (meteo) y pasadas (hidro); multi-horizonte de forma nativa.
-- [ ] Ajuste de hiperparámetros con *Optuna* o *Ray Tune*.
-- [ ] Evaluación desglosada por horizonte de predicción (cuantificar la degradación de las métricas al aumentar el horizonte).
+- [ ] **LSTM / GRU**: encoder-decoder architecture for multi-step prediction (simultaneous output at t+1/6/24h).
+- [ ] **Temporal Fusion Transformer (TFT)**: state of the art in multivariate time series, handles known covariates (meteo) and past inputs (hydro); natively multi-horizon.
+- [ ] Hyperparameter tuning with *Optuna* or *Ray Tune*.
+- [ ] Evaluation broken down by prediction horizon (quantify metric degradation as horizon increases).
 
-**Entregable**: `05_deep_learning.ipynb`
+**Deliverable**: `05_deep_learning.ipynb`
 
-### Fase 5b — Modelo híbrido (HEC-HMS + ML)
+### Phase 5b — Hybrid model (HEC-HMS + ML)
 
-**Objetivo**: Usar ML para corregir los errores del modelo físico.
+**Objective**: Use ML to correct physical model errors.
 
-- [ ] Entrenar un modelo ML (XGBoost o similar) que tome las salidas de HEC-HMS como features y aprenda a predecir el residual (diferencia entre nivel observado y simulado por HEC-HMS).
-- [ ] Evaluar si la corrección híbrida mejora las métricas del modelo físico solo.
+- [ ] Train an ML model (XGBoost or similar) that takes HEC-HMS outputs as features and learns to predict the residual (difference between observed and HEC-HMS-simulated level).
+- [ ] Evaluate whether the hybrid correction improves physical-model-only metrics.
 
-**Entregable**: Notebook `05b_hybrid.ipynb` (opcional, si el tiempo lo permite).
+**Deliverable**: Notebook `05b_hybrid.ipynb` (optional, if time permits).
 
-### Fase 6 — Interpretabilidad y análisis de resultados
+### Phase 6 — Interpretability and results analysis
 
-- [ ] Feature importance (SHAP values) para entender qué predictores dominan.
-- [ ] Análisis de errores: ¿el modelo falla más en crecidas o en estiajes?
-- [ ] Curvas de error por umbral de caudal.
-- [ ] Comparación de predicciones vs observaciones en eventos seleccionados.
+- [ ] Feature importance (SHAP values) to understand which predictors dominate.
+- [ ] Error analysis: does the model fail more during floods or low-flow periods?
+- [ ] Error curves by discharge threshold.
+- [ ] Prediction vs. observation comparison for selected events.
 
-**Entregable**: `06_interpretability.ipynb`
+**Deliverable**: `06_interpretability.ipynb`
 
-### Fase 7 — Comparación HEC-HMS vs. ML/IA
+### Phase 7 — HEC-HMS vs. ML/AI comparison
 
-**Objetivo**: Confrontar el modelo físico con los modelos basados en datos sobre los mismos eventos y períodos.
+**Objective**: Confront the physical model with data-driven models on the same events and periods.
 
-- [ ] Evaluar ambas familias con las métricas comunes (NSE, KGE, RMSE, MAE, PBIAS) en train/val/test, desglosadas por horizonte de predicción (t+1/6/24h) en el caso de los modelos ML.
-- [ ] Análisis por tipo de evento: crecidas, estiajes y condiciones ordinarias.
-- [ ] Discutir los requisitos de datos de cada enfoque (datos de entrada, esfuerzo de calibración, transferibilidad).
-- [ ] Identificar en qué escenarios el modelo físico supera a los datos y viceversa.
+- [ ] Evaluate both families with common metrics (NSE, KGE, RMSE, MAE, PBIAS) on train/val/test, broken down by prediction horizon (t+1/6/24h) for ML models.
+- [ ] Analysis by event type: floods, low-flows and ordinary conditions.
+- [ ] Discuss data requirements of each approach (input data, calibration effort, transferability).
+- [ ] Identify scenarios where the physical model outperforms data-driven ones and vice versa.
 
-**Entregable**: `07_comparison.ipynb`
+**Deliverable**: `07_comparison.ipynb`
 
-### Fase 8 — Escritura de la memoria
+### Phase 8 — Thesis writing
 
-- [ ] Introducción y contexto hidrológico de la cuenca de Sant Miquel.
-- [ ] Descripción del modelo físico HEC-HMS: metodología, calibración y resultados.
-- [ ] Descripción de los datos y del preprocesado para los modelos ML/IA.
-- [ ] Resultados y comparación entre el modelo físico y los modelos basados en datos.
-- [ ] Discusión: ventajas, limitaciones y recomendaciones de uso de cada enfoque.
-- [ ] Conclusiones.
+- [ ] Introduction and hydrological context of the Sant Miquel basin.
+- [ ] Description of the HEC-HMS physical model: methodology, calibration and results.
+- [ ] Description of data and preprocessing for ML/AI models.
+- [ ] Results and comparison between physical and data-driven models.
+- [ ] Discussion: advantages, limitations and usage recommendations for each approach.
+- [ ] Conclusions.
 
 ---
 
-## 5. Stack tecnológico propuesto
+## 5. Proposed tech stack
 
-| Categoría | Herramienta |
+| Category | Tool |
 |---|---|
-| Manipulación de datos | `pandas`, `polars` (opcional para velocidad) |
-| Visualización | `matplotlib`, `seaborn`, `plotly` |
-| Modelo físico | **HEC-HMS** (USACE) |
-| SIG / MDT | QGIS o ArcGIS + HEC-GeoHMS para delineación de cuenca |
-| ML clásico | `scikit-learn`, `xgboost`, `lightgbm` |
+| Data manipulation | `pandas`, `polars` (optional for speed) |
+| Visualization | `matplotlib`, `seaborn`, `plotly` |
+| Physical model | **HEC-HMS** (USACE) |
+| GIS / DEM | QGIS or ArcGIS + HEC-GeoHMS for basin delineation |
+| Classic ML | `scikit-learn`, `xgboost`, `lightgbm` |
 | Deep Learning | `PyTorch` + `pytorch-forecasting` (TFT) |
-| Hiperparámetros | `optuna` |
-| Métricas hidrológicas | `hydroeval` o implementación propia |
-| Entorno | Jupyter Notebooks, Python ≥ 3.10 |
+| Hyperparameters | `optuna` |
+| Hydrological metrics | `hydroeval` or custom implementation |
+| Environment | Jupyter Notebooks, Python ≥ 3.10 |
 
 ---
 
-## 6. Preguntas abiertas / pendientes de Fran
+## 6. Open questions / pending from Fran
 
-### Específicas de HEC-HMS
+### HEC-HMS specific
 
-- ~~¿Está disponible un MDT de alta resolución (LiDAR o similar) para la cuenca de Sant Miquel?~~ — **Resuelto: disponible.**
-- ~~¿Existe cartografía de usos del suelo y tipos de suelo para calcular el CN (Curve Number)?~~ — **Resuelto: disponible.**
-- ¿Se dispone de aforos de caudales punta en eventos históricos para calibrar el modelo?
-- ¿Las estaciones aguas arriba (STM03–STM07) actúan como puntos de control internos en la cuenca?
+- ~~Is a high-resolution DEM (LiDAR or similar) available for the Sant Miquel basin?~~ — **Resolved: available.**
+- ~~Is land-use and soil-type cartography available for computing CN (Curve Number)?~~ — **Resolved: available.**
+- Are peak discharge measurements from historical events available for model calibration?
+- Do the upstream stations (STM03–STM07) act as internal checkpoints within the basin?
 
-### Generales
+### General
 
-- Curvas de aforo de STM08: ¿están calibradas para todo el período o cambian con el tiempo?
-- Confirmación de la topología de la cuenca: ¿todas las STM drenan hacia Sa Marjal?
-- STM09, STM10, STM11 (mencionadas en la bitácora): ¿están disponibles? Podrían añadir información.
-- ~~Horizonte de predicción deseado: ¿nowcasting (t+1h) o previsión a t+6h, t+24h?~~ — **Resuelto: multi-horizonte t+1h, t+6h y t+24h.**
+- Rating curves for STM08: are they calibrated for the entire period or do they change over time?
+- Confirmation of basin topology: do all STM stations drain toward Sa Marjal?
+- STM09, STM10, STM11 (mentioned in the logbook): are they available? They could add information.
+- ~~Desired prediction horizon: nowcasting (t+1h) or forecasting at t+6h, t+24h?~~ — **Resolved: multi-horizon t+1h, t+6h and t+24h.**
 
 ---
 
-## 7. Referencias clave (estado del arte)
+## 7. Key references (state of the art)
 
-- Kratzert, F., et al. (2018). *Rainfall–runoff modelling using Long Short-Term Memory (LSTM) networks*. Hydrol. Earth Syst. Sci., 22, 6005–6022. — LSTM supera al modelo conceptual SAC-SMA en 241 cuencas (CAMELS).
-- Lim, B., et al. (2021). *Temporal Fusion Transformers for interpretable multi-horizon time series forecasting*. International Journal of Forecasting. — Arquitectura TFT: multi-horizonte nativo e interpretable.
-- Marasini, U. & Pokhrel, M. (2024). *Comparative analysis of rainfall-runoff simulation using an LSTM deep learning model and HEC-HMS: mountainous basin of Nepal*. Discover Civil Engineering. — LSTM > HEC-HMS en cuenca montañosa.
-- Manjitha, H.H.U. & Perera, D. (2025). *HEC-HMS and machine learning approaches for streamflow forecasting: a comparative study* (Sri Lanka). — LSTM gana en cuencas húmeda y seca; HEC-HMS cae a NSE 0.49 en régimen seco.
-- Belina, Y., et al. (2024). *Comparative analysis of HEC-HMS and machine learning models for rainfall-runoff prediction in the upper Baro watershed, Ethiopia*. Hydrology Research. — ANN NSE 0.98 vs HEC-HMS 0.85 en cuenca con datos escasos.
-- Khan, I. (2026). *Comparative Analysis of HEC-HMS and Temporal Fusion Transformer for Streamflow Prediction under Climate Change Scenarios (Swat River Basin)*. — HEC-HMS subestima picos de crecida; TFT captura eventos extremos.
-- Cho, M., et al. (2022). *Water Level Prediction Model Applying an LSTM–GRU Method for Flood Prediction*. Water, 14(14). — NSE 0.94 prediciendo nivel de agua.
-- Frame, J. M., et al. (2022). *Deep learning rainfall–runoff predictions of extreme events*. Hydrol. Earth Syst. Sci., 26, 3377–3392. — Comportamiento de LSTM durante eventos extremos.
-- Xiang, Z. & Demir, I. (2020). *Distributed long-term hourly streamflow predictions using deep learning*. Environmental Modelling & Software, 131, 104788. — LSTM seq2seq para rainfall–runoff.
+- Kratzert, F., et al. (2018). *Rainfall–runoff modelling using Long Short-Term Memory (LSTM) networks*. Hydrol. Earth Syst. Sci., 22, 6005–6022. — LSTM outperforms the conceptual SAC-SMA model across 241 basins (CAMELS).
+- Lim, B., et al. (2021). *Temporal Fusion Transformers for interpretable multi-horizon time series forecasting*. International Journal of Forecasting. — TFT architecture: natively multi-horizon and interpretable.
+- Marasini, U. & Pokhrel, M. (2024). *Comparative analysis of rainfall-runoff simulation using an LSTM deep learning model and HEC-HMS: mountainous basin of Nepal*. Discover Civil Engineering. — LSTM > HEC-HMS in a mountainous basin.
+- Manjitha, H.H.U. & Perera, D. (2025). *HEC-HMS and machine learning approaches for streamflow forecasting: a comparative study* (Sri Lanka). — LSTM wins in both wet and dry basins; HEC-HMS drops to NSE 0.49 in dry regime.
+- Belina, Y., et al. (2024). *Comparative analysis of HEC-HMS and machine learning models for rainfall-runoff prediction in the upper Baro watershed, Ethiopia*. Hydrology Research. — ANN NSE 0.98 vs HEC-HMS 0.85 in a data-scarce basin.
+- Khan, I. (2026). *Comparative Analysis of HEC-HMS and Temporal Fusion Transformer for Streamflow Prediction under Climate Change Scenarios (Swat River Basin)*. — HEC-HMS underestimates flood peaks; TFT captures extreme events.
+- Cho, M., et al. (2022). *Water Level Prediction Model Applying an LSTM–GRU Method for Flood Prediction*. Water, 14(14). — NSE 0.94 predicting water level.
+- Frame, J. M., et al. (2022). *Deep learning rainfall–runoff predictions of extreme events*. Hydrol. Earth Syst. Sci., 26, 3377–3392. — LSTM behavior during extreme events.
+- Xiang, Z. & Demir, I. (2020). *Distributed long-term hourly streamflow predictions using deep learning*. Environmental Modelling & Software, 131, 104788. — LSTM seq2seq for rainfall–runoff.
 - Koya, S. R. & Roy, T. (2024). *Temporal Fusion Transformer for streamflow prediction*. Journal of Hydrology, 631, 130694. — TFT vs. LSTM/Transformers.
 - Fordjour, A. & Kalyanapu, A. (2024). *GRU-based flood prediction using multi-station water levels*. Water, 16(7), 993.
 - Agaj, T., et al. (2024). *ARIMA/ETS for water level forecasting*. Water Practice & Technology, 19(3), 925–938.
 - Szczepanek, R. (2022). *XGBoost/LightGBM/CatBoost for daily streamflow forecasting*. Applied Sciences, 12(14), 7045.
 - USACE HEC-HMS case study — *Kaskaskia basin flood forecasting*.
-- USACE HEC-HMS Applications Guide (documentación oficial).
-- Trabajo futuro (híbridos): Makhloufi, N. (2026) — XGBoost como corrector de errores de HEC-HMS (KGE 0.65 → 0.83); Solanki, H., et al. (2025, Water Resources Research) — post-procesado de modelos hidrológicos con ML.
+- USACE HEC-HMS Applications Guide (official documentation).
+- Future work (hybrids): Makhloufi, N. (2026) — XGBoost as HEC-HMS error corrector (KGE 0.65 → 0.83); Solanki, H., et al. (2025, Water Resources Research) — ML post-processing of hydrological models.
 
 ---
 
-## 8. Action items (próximos pasos)
+## 8. Action items (next steps)
 
-### Inmediatos (antes de modelizar)
-- [x] EDA completado (`01_eda.ipynb`).
-- [ ] Clarificar y documentar el significado de los **quality flags** y su política de tratamiento.
-- [ ] Definir la **regla de detección de eventos** (criterios de inicio/fin) de forma reproducible.
-- [ ] Construir las **4 tablas requeridas** por el tutor: stations, measurements, events, training.
-- [ ] Generar la tabla de asignación de **eventos** (no filas) a train / validation / test.
-- [ ] Contar y evaluar el número de **eventos de crecida utilizables** en el registro histórico (~12 años, régimen altamente intermitente — el TFT necesita suficientes eventos para entrenar).
+### Immediate (before modeling)
+- [x] EDA completed (`01_eda.ipynb`).
+- [ ] Clarify and document the meaning of **quality flags** and their treatment policy.
+- [ ] Define the **event detection rule** (start/end criteria) in a reproducible manner.
+- [ ] Build the **4 tables required** by the advisor: stations, measurements, events, training.
+- [ ] Generate the **event** (not row) assignment table to train / validation / test.
+- [ ] Count and evaluate the number of **usable flood events** in the historical record (~12 years, highly intermittent regime — TFT needs enough events to train).
 
-### Fase 2 (preprocesado)
-- [ ] Recuperar y preservar los **quality flags** en los CSVs limpios (actualmente no incluidos).
-- [ ] Corregir el script `clean_STM02.py` para recuperar las fórmulas Excel de tipping-bucket en `PRECIP_mm`.
-- [ ] Armonizar unidades/datums del tramo de extensión BD (spikes de 177 m, mesetas negativas, oscilaciones) — coordinar con el proveedor de datos.
+### Phase 2 (preprocessing)
+- [ ] Recover and preserve **quality flags** in clean CSVs (currently not included).
+- [ ] Fix `clean_STM02.py` script to recover Excel tipping-bucket formulas in `PRECIP_mm`. [Already done — Iteration 4]
+- [ ] Harmonize DB extension units/datums (177 m spikes, negative plateaus, oscillations) — coordinate with data provider.
 
-### Documentación
-- [ ] Referenciar al grupo como **RiscBal** (https://www.uib.eu/research/structures/structure/RiscBal/) en la memoria.
+### Documentation
+- [ ] Reference the group as **RiscBal** (https://www.uib.eu/research/structures/structure/RiscBal/) in the thesis.
