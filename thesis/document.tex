@@ -91,7 +91,7 @@ The terminal node of the catchment is the Sa~Marjal wetland (STM08), a Site of C
 
 \subsection{Monitoring stations}
 
-The basin is instrumented by eight stations (STM01--STM08) operated by the Estrany Hydrology Group at the UIB. Stations STM01 and STM02 are meteorological, recording precipitation and air temperature. Stations STM03--STM08 are hydrological gauges equipped with pressure transducers that measure water surface level continuously; volumetric discharge is derived via station-specific rating curves. Suspended sediment concentration and electrical conductivity are also recorded at hydrological stations. Three complementary rain-gauge records from the AEMET national network extend precipitation coverage to the lower basin and coastal plain. Table~\ref{tab:stations} summarises the complete station inventory.
+The basin is instrumented by eight stations (STM01--STM08) operated by the RiscBal hydrological risk observatory of the Universitat de les Illes Balears (\url{https://www.uib.eu/research/structures/structure/RiscBal/}). Stations STM01 and STM02 are meteorological, recording precipitation and air temperature. Stations STM03--STM08 are hydrological gauges equipped with pressure transducers that measure water surface level continuously; volumetric discharge is derived via station-specific rating curves. Suspended sediment concentration and electrical conductivity are also recorded at hydrological stations. Three complementary rain-gauge records from the AEMET national network extend precipitation coverage to the lower basin and coastal plain. Table~\ref{tab:stations} summarises the complete station inventory.
 
 \begin{table*}[!t]
     \caption{Monitoring station inventory: identifier, sensor type, measured variables, location, altitude, sampling frequency, and position relative to STM08 (Sa~Marjal). Distances are planar (UTM zone~31N).}
@@ -136,15 +136,73 @@ This normalised schema supports both the spatial operations required for physics
 
 \subsection{Data quality and challenges}
 
-The common observation window after temporal alignment spans approximately twelve years (September~2014 to July~2026). Four quality issues are particularly significant:
+The common observation window after temporal alignment spans approximately twelve years (September~2014 to July~2026). A systematic exploratory data analysis (EDA)~\cite{} was conducted over the full historical record and revealed four interrelated quality issues that shape the preprocessing and modelling strategy.
 
-\textbf{(1) Mixed temporal resolutions.} STM stations originally sampled at 15-minute intervals; the frequency was upgraded to 10~min in May~2022 and to 5~min at most stations from mid-2025 onward, while AEMET gauges provide hourly data. Degrading all series to the coarsest (hourly) resolution would discard precisely the fast-response dynamics that characterise flash floods in small Mediterranean catchments. The modelling dataset is therefore built on a uniform 10-minute grid: the hourly AEMET records are temporally disaggregated, the legacy 15-minute STM records are resampled onto the finer grid, and the recent 5-minute records are aggregated, treating precipitation as an accumulated depth and water level and temperature as instantaneous states.
+\subsubsection{Mixed temporal resolutions}
 
-\textbf{(2) Missing records and quality flags.} Sensor malfunctions, maintenance periods, and telecommunication failures generate data gaps of varying duration. A binary \texttt{quality} flag marks records requiring expert validation: station STM03 exhibits approximately 45\,000 flagged entries in the extended (2025--2026) period, and STM05 approximately 3\,000. The decision to retain, impute, or exclude flagged records must be made carefully to avoid introducing systematic bias into model training.
+STM stations originally sampled at 15-minute intervals; the frequency was upgraded to 10~min in May~2022 and to 5~min at most stations from mid-2025 onward, while AEMET gauges provide hourly data. Degrading all series to the coarsest (hourly) resolution would discard precisely the fast-response dynamics that characterise flash floods in small Mediterranean catchments. The modelling dataset is therefore built on a \textbf{uniform 10-minute grid} (2014-09-26 to 2025-07-22), selected as the finest resolution at which all variables can be meaningfully represented given the available data density. The resampling strategy distinguishes between two physical measurement types:
 
-\textbf{(3) Incomplete variable coverage in the extended period.} From approximately mid-2025 onward, only \texttt{HEIGHT\_m} is available from the hydrological stations; derived variables (\texttt{DISCHARGE\_m$^{3}$~s$^{-1}$}, \texttt{VOLUME\_m$^{3}$}, \texttt{LOAD\_kg}) are absent because the rating-curve computation pipeline has not yet been applied to the most recent records. Since \texttt{HEIGHT\_m} is the target variable and remains continuously available, this does not affect the core prediction task but limits the use of discharge as a secondary validation metric.
+\textit{Instantaneous quantities (HEIGHT\_m, TEMP\_C).} Water level and air temperature are point measurements whose value at time $t$ represents the state at that instant, independent of the preceding sampling interval. For these variables, the following transformations are applied:
 
-\textbf{(4) Highly intermittent flow regime.} Discharge is zero for the majority of the record. The resulting heavily right-skewed distribution of \texttt{HEIGHT\_m} means that standard loss functions minimising average error will implicitly favour dry-period performance over flood events. Metric selection, class-stratified evaluation, and event-based analysis are therefore essential components of the model assessment framework.
+\begin{itemize}
+    \item \textbf{5~min $\rightarrow$ 10~min:} arithmetic mean of two consecutive values. This avoids artificially introducing variance from the higher-frequency record while preserving the average dynamics over the 10-minute window.
+    \item \textbf{15~min $\rightarrow$ 10~min:} linear interpolation with a gap cap of 3~h. Interpolation is justified because the 15-minute rate already captures the sub-hourly variability of Mediterranean flash floods, and the introduction of intermediate points at 10-minute spacing does not fabricate new extrema beyond those observable in the coarser record.
+    \item \textbf{10~min $\rightarrow$ 10~min:} direct alignment (no transformation).
+\end{itemize}
+
+\textit{Cumulative quantities (PRECIP\_mm).} Precipitation is reported as the accumulated depth over the preceding sampling interval. Treating it as an instantaneous value (e.g.\ by simple linear interpolation of rain amounts) would violate mass conservation: a 15-minute total of 3~mm would be spread across two 10-minute slots, yielding spurious rainfall during rainless periods. The adopted approach converts each cumulative series to an accumulated-depth curve ($P(t) = \sum_{\tau \leq t} p(\tau)$), interpolates this curve onto the 10-minute grid, and differentiates back to recover 10-minute accumulation depths. This method is mass-conserving by construction: the integral of the disaggregated series over any source interval exactly equals the original total.
+
+\textit{Hourly-to-10-minute AEMET disaggregation.} Naively dividing hourly precipitation totals by six assumes uniform rainfall intensity throughout the hour, thereby attenuating peak intensities -- a critical distortion when the same hour contains both intense convective bursts and quiescent periods. A \textbf{template-based disaggregation} scheme is implemented instead. For each hourly AEMET record, the algorithm searches for a contemporaneous 10-minute precipitation pattern from either STM01 or STM02 (both of which operate at the target resolution) and distributes the hourly total proportionally to that temporal template. When neither STM station reports precipitation in the same hour, the algorithm falls back to the conservative cumulative-curve interpolation described above. This hybrid strategy exploits the physical coherence of the sub-daily rainfall field (convective cells have spatial extent) while guaranteeing mass conservation in all cases.
+
+\subsubsection{Missing records and quality flags}
+
+Sensor malfunctions, maintenance periods, and telecommunication failures generate data gaps of varying duration. Two principal missing-data regimes exist:
+
+\textbf{Short gaps ($<$ 3~h):} linear interpolation is applied during resampling, as the 10-minute dynamics of water level and temperature are sufficiently smooth at this scale. Short gaps in precipitation are interpolated through the cumulative-curve method described above.
+
+\textbf{Long gaps ($\geq$ 3~h):} no interpolation is attempted. The corresponding 10-minute grid cells are left as \texttt{NaN} and will be excluded from training. The frequency of extended gaps varies by station: STM02\_TEMP\_C shows the highest null rate at 28.7~\%, while STM08\_HEIGHT\_m (the target station) exhibits the lowest at 0.8~\%.
+
+Data quality is encoded through a \texttt{QUALITY} flag preserved in all clean CSV files and carried into the 10-minute grid. The flag meanings, provided by the data manager, are:
+
+\begin{itemize}
+    \item \textbf{0:} data validated as correct (good).
+    \item \textbf{1:} data marked as suspicious and requiring expert review.
+    \item \textbf{2:} data identified as erroneous (wrong).
+    \item \textbf{empty:} quality flag not available (historical data sourced from Excel files rather than the production database).
+\end{itemize}
+
+A companion \texttt{DATA\_TYPE} column tags each observation as \texttt{observed} (original measurement), reserving \texttt{corrected}, \texttt{imputed}, and \texttt{simulated} for future use as preprocessing actions are applied. Station STM03 registers 51\,336 records with $\texttt{QUALITY} \neq 0$ in the extension period (2025--2026); STM05 registers 16\,914. These records are retained in the dataset for the current analysis, but a quality-aware filtering function is built into the resampling pipeline so that excluding suspicious data requires only a parameter change when the data provider confirms their treatment policy.
+
+\subsubsection{Incomplete variable coverage in the extended period}
+
+From approximately mid-2025 onward, only \texttt{HEIGHT\_m} is available from the hydrological stations; derived variables (\texttt{DISCHARGE\_m$^{3}$~s$^{-1}$}, \texttt{VOLUME\_m$^{3}$}, \texttt{LOAD\_kg}) are absent because the rating-curve computation pipeline has not yet been applied to the most recent records. Since \texttt{HEIGHT\_m} is the target variable and remains continuously available, this does not affect the core prediction task but limits the use of discharge as a secondary validation metric.
+
+\subsubsection{Highly intermittent flow regime}
+
+Discharge is zero for the majority of the record (85\,\% of validated measurements at STM08). The resulting heavily right-skewed distribution of \texttt{HEIGHT\_m} means that standard loss functions minimising average error will implicitly favour dry-period performance over flood events. Metric selection, class-stratified evaluation, and event-based analysis are therefore essential components of the model assessment framework.
+
+\subsection{Preprocessing pipeline\label{sec:preprocessing}}
+
+Figure~\ref{fig:pipeline} summarises the end-to-end preprocessing chain implemented for this study.
+
+\begin{figure}[!t]
+    \centering
+    \fbox{\parbox{0.9\linewidth}{\small%
+    \textbf{Raw data} (Excel files + production DB) \\
+    $\downarrow$ \textit{9 cleaning scripts} \\
+    \textbf{Clean CSVs} (11 files, TIMESTAMP + variables + QUALITY + DATA\_TYPE) \\
+    $\downarrow$ \textit{3 extension scripts (prod\_data append)} \\
+    \textbf{Extended CSVs} (same schema, extended to 2026-08-05) \\
+    $\downarrow$ \textit{resample.py: 10-min grid builder} \\
+    \textbf{10-min grid} (parquet, 569\,089 rows $\times$ 24 columns, 2014-09-26 to 2025-07-22) \\
+    $\downarrow$ \textit{feature engineering (lags, cumulative variables, temporal features)} \\
+    \textbf{Training table} (to be constructed in Phase~2)
+    }}
+    \caption{End-to-end preprocessing pipeline from raw observations to the modelling-ready 10-minute grid. Each stage is fully scripted and reproducible.}
+    \label{fig:pipeline}
+\end{figure}
+
+The resulting 10-minute grid contains 569\,089 timestamps over approximately 10.8~years, with 13 measurement columns (six \texttt{HEIGHT\_m} + two \texttt{TEMP\_C} + five \texttt{PRECIP\_mm}) and 11 quality-flag columns. The grid is stored as a compressed Parquet file (120~MB) and is the single entry point for all downstream modelling: feature engineering, chronological splitting, baseline models, and deep learning architectures consume the same artefact, guaranteeing reproducibility across experiments.
 
 
 

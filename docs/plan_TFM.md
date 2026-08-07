@@ -306,7 +306,7 @@ A table assigning each **event** (not each row) to **train / validation / test**
 
 ### Phase 2 (preprocessing)
 - [x] Recover and preserve **quality flags** in clean CSVs (currently not included). [Done — Iteration 5: QUALITY and DATA_TYPE columns added to all 11 CSVs]
-- [ ] Fix `clean_STM02.py` script to recover Excel tipping-bucket formulas in `PRECIP_mm`. [Already done — Iteration 4]
+- [x] Fix `clean_STM02.py` script to recover Excel tipping-bucket formulas in `PRECIP_mm`. [Already done — Iteration 4]
 - [ ] Harmonize DB extension units/datums (177 m spikes, negative plateaus, oscillations) — coordinate with data provider.
 
 ### Documentation
