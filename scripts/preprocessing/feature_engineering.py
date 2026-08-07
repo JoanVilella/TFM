@@ -155,8 +155,48 @@ def build_training_table(grid, horizons_h=(1, 6, 24)):
     n_dropped = n_before - len(df)
     print(f"  Dropped {n_dropped:,} rows with NaN targets "
           f"(end-of-series, {horizons_h[-1]}h horizon)")
+
+    # --- Chronological split ---
+    df = add_chronological_split(df)
+
     print(f"  Output: {df.shape[1]} columns, {df.shape[0]:,} rows")
 
+    return df
+
+
+def add_chronological_split(df, train_end="2020-12-31",
+                            val_end="2022-06-30"):
+    """Add a ``split`` column (train/val/test) via strict chronological cut.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Training table with DatetimeIndex.
+    train_end : str
+        Last timestamp in training set.
+    val_end : str
+        Last timestamp in validation set.
+
+    Returns
+    -------
+    df : pd.DataFrame
+        Same DataFrame with ``split`` column added.
+    """
+    ts = pd.Timestamp
+    train_mask = df.index <= ts(train_end)
+    val_mask = (df.index > ts(train_end)) & (df.index <= ts(val_end))
+    test_mask = df.index > ts(val_end)
+
+    df["split"] = "test"
+    df.loc[train_mask, "split"] = "train"
+    df.loc[val_mask, "split"] = "validation"
+    df["split"] = df["split"].astype("category")
+
+    n_train = train_mask.sum()
+    n_val = val_mask.sum()
+    n_test = test_mask.sum()
+    print(f"  Chronological split: train={n_train:,}  "
+          f"val={n_val:,}  test={n_test:,}")
     return df
 
 

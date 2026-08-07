@@ -5,6 +5,40 @@
 
 ---
 
+## Iteration 9 — 2026-08-07
+
+### Changes made
+
+**Chronological split added to training table**
+
+| Change | Detail |
+|--------|--------|
+| `feature_engineering.py` | `add_chronological_split()` added; called automatically by `build_training_table()` |
+| `split` column | Categorical: `train` / `validation` / `test` (strictly chronological) |
+| Training table | Now 143 columns (1 new), 96 MB |
+
+### Split breakdown
+
+| Partition | Period | Rows | % |
+|-----------|--------|------|---|
+| Train | 2014-09-26 → 2020-12-31 | 324,594 | 57.6% |
+| Validation | 2021-01-01 → 2022-06-30 | 78,576 | 13.9% |
+| Test | 2022-07-01 → 2025-07-22 | 160,528 | 28.5% |
+
+### Remaining open issues
+
+- [ ] Define reproducible event detection rule
+- [ ] Build the 4 required advisor tables (stations [done in thesis], measurements, events, training)
+- [ ] Count usable flood events
+- [ ] DB extension data harmonization (blocked on data provider)
+- [ ] `flow_to_meters` inverse rating curve (needed for HEC-HMS validation)
+- [ ] Basin topology confirmation (geo team — affects UPSTREAM_Q calculation)
+
+*End of Iteration 9.*
+
+
+---
+
 ## Iteration 8 — 2026-08-07
 
 ### Changes made

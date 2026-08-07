@@ -144,10 +144,10 @@ A table assigning each **event** (not each row) to **train / validation / test**
   - Cumulative precipitation: last 3 h, 6 h, 12 h, 24 h, 48 h (antecedent precipitation index). [Done — Iteration 8]
   - Cumulative upstream discharge (sum of STM03–STM07 at t-lag). [Done — Iteration 8: `UPSTREAM_Q` assumes parallel tributaries; pending basin topology confirmation from geo team]
   - Temporal variables: hour of day, month, day of year (sin/cos encoding for hour and doy, raw for month). [Done — Iteration 8]
-- [ ] **Chronological split**:
-  - Train: up to 2020-12-31
-  - Validation: 2021-01-01 → 2022-06-30
-  - Test: 2022-07-01 → end of window
+- [x] **Chronological split**:
+  - Train: up to 2020-12-31 [Done — Iteration 9: 324,594 rows, 57.6%]
+  - Validation: 2021-01-01 → 2022-06-30 [Done — Iteration 9: 78,576 rows, 13.9%]
+  - Test: 2022-07-01 → end of window [Done — Iteration 9: 160,528 rows, 28.5%]
 
 **Deliverable**: `02_preprocessing.ipynb` + `data/processed/dataset_10min.parquet`
 
