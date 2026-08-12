@@ -393,6 +393,16 @@ def build_10min_grid(start=DEFAULT_START, end=DEFAULT_END_VALIDATED,
     curves = load_rating_curves()
     grid = apply_discharge(grid, curves)
 
+    # Build long-format measurements table
+    print("  Building measurements table (long format) ...")
+    meas = build_measurements_table(grid)
+    meas_path = PROCESSED_DIR / "measurements.parquet"
+    meas_path.parent.mkdir(parents=True, exist_ok=True)
+    meas.to_parquet(meas_path)
+    meas.to_csv(PROCESSED_DIR / "measurements.csv.gz",
+                compression="gzip", index=False)
+    print(f"    Measurements: {meas.shape[0]:,} rows x {meas.shape[1]} cols")
+
     print(f"\nGrid built: {len(grid)} rows, {len(grid.columns)} columns")
     print(f"  {start} -> {end}")
     return grid, gap_info
@@ -432,6 +442,82 @@ def _add_quality_columns(grid, data, target_idx, start, end):
         ).sort_index().ffill().reindex(target_idx)
         grid[f"{code}_QUALITY"] = q_resampled.astype("Int64")
     return grid
+
+
+# ---------------------------------------------------------------------------
+#  Measurements table (long format, advisor requirement)
+# ---------------------------------------------------------------------------
+
+def build_measurements_table(grid):
+    """Build the advisor-required Measurements table in long format.
+
+    Parameters
+    ----------
+    grid : pd.DataFrame
+        The 10-min grid (wide format, 30 columns).
+
+    Returns
+    -------
+    meas : pd.DataFrame
+        Long-format table with columns:
+        TIMESTAMP, STATION, VARIABLE, VALUE, QUALITY, DATA_TYPE
+    """
+    # Variable set to melt
+    VAR_MAP = {}
+    for code in HYDRO:
+        VAR_MAP[f"{code}_HEIGHT_m"] = code
+        VAR_MAP[f"{code}_DISCHARGE_m3s"] = code
+    for code in METEO:
+        VAR_MAP[f"{code}_TEMP_C"] = code
+        VAR_MAP[f"{code}_PRECIP_mm"] = code
+    for code in AEMET:
+        VAR_MAP[f"{code}_PRECIP_mm"] = code
+
+    available = [c for c in VAR_MAP if c in grid.columns]
+    if not available:
+        return pd.DataFrame(columns=["TIMESTAMP", "STATION", "VARIABLE",
+                                     "VALUE", "QUALITY", "DATA_TYPE"])
+
+    # Melt measurement columns
+    meas = grid[available].reset_index().melt(
+        id_vars="TIMESTAMP",
+        var_name="col",
+        value_name="VALUE",
+    )
+    meas["STATION"] = meas["col"].map(VAR_MAP)
+    # Extract variable name: everything after the station prefix + underscore
+    meas["VARIABLE"] = meas["col"].apply(
+        lambda c: "_".join(c.split("_")[1:])
+    )
+
+    # Merge QUALITY from per-station quality columns
+    quality_cols = {f"{code}_QUALITY": code for code in (HYDRO + METEO + AEMET)
+                    if f"{code}_QUALITY" in grid.columns}
+    if quality_cols:
+        q_grid = grid[list(quality_cols)].reset_index().melt(
+            id_vars="TIMESTAMP",
+            var_name="qcol",
+            value_name="QUALITY",
+        )
+        q_grid["STATION"] = q_grid["qcol"].map(quality_cols)
+        q_grid = q_grid.drop(columns=["qcol"])
+        # Some stations share the same quality (e.g. STM01 precip + temp
+        # use the same QUALITY column).  Merging on STATION alone would
+        # duplicate.  We merge on TIMESTAMP + STATION and keep first.
+        meas = meas.merge(
+            q_grid, on=["TIMESTAMP", "STATION"], how="left"
+        ).drop_duplicates(subset=["TIMESTAMP", "STATION", "VARIABLE"])
+
+    # DATA_TYPE: all observed for now
+    meas["DATA_TYPE"] = "observed"
+
+    # Clean up
+    meas = meas.drop(columns=["col"])
+    meas = meas[["TIMESTAMP", "STATION", "VARIABLE", "VALUE",
+                 "QUALITY", "DATA_TYPE"]]
+    meas["QUALITY"] = meas["QUALITY"].astype("Int64")
+
+    return meas
 
 
 # ---------------------------------------------------------------------------

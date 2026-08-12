@@ -5,6 +5,49 @@
 
 ---
 
+## Iteration 11 — 2026-08-07
+
+### Changes made
+
+**Measurements table (advisor requirement)**
+
+| Change | Detail |
+|--------|--------|
+| `scripts/preprocessing/resample.py` | Added `build_measurements_table()` — melts the 10-min grid into long format |
+| Output (parquet) | `data/processed/measurements.parquet` (98.8 MB) |
+| Output (CSV.gz) | `data/processed/measurements.csv.gz` (45.2 MB) |
+
+### Measurements table summary
+
+| Stat | Value |
+|------|-------|
+| Rows | 10,812,691 (19 vars × 569,089 timestamps) |
+| Columns | 6: TIMESTAMP, STATION, VARIABLE, VALUE, QUALITY, DATA_TYPE |
+| Variables | HEIGHT_m, DISCHARGE_m3s, TEMP_C, PRECIP_mm |
+| Stations | 11 (STM01–STM08 + B013X, B605X, B691Y) |
+| QUALITY non-null | 339,705 rows (DB extension data only) |
+| DATA_TYPE | All "observed" |
+
+### Advisor tables status
+
+| Table | Status |
+|-------|--------|
+| Stations | Done (in thesis §3.1, Table 1) |
+| Measurements | Done (this iteration) |
+| Events | Done (Iteration 10) |
+| Training | Done (Iteration 8-9) |
+
+### Remaining open issues
+
+- [ ] `flow_to_meters` inverse rating curve
+- [ ] DB extension data harmonization (blocked)
+- [ ] Basin topology confirmation (geo team)
+
+*End of Iteration 11.*
+
+
+---
+
 ## Iteration 10 — 2026-08-07
 
 ### Changes made

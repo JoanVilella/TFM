@@ -300,7 +300,7 @@ A table assigning each **event** (not each row) to **train / validation / test**
 - [x] EDA completed (`01_eda.ipynb`).
 - [x] Clarify and document the meaning of **quality flags** and their treatment policy. [Done — Iteration 5: 0=good, 1=suspicious, 2=wrong; documented in metadata and CSV columns]
 - [x] Define the **event detection rule** (start/end criteria) in a reproducible manner. [Done — Iteration 10: POT-based detection, Q > 0.2 m³/s trigger, 196 events across ~11 years. See `scripts/preprocessing/event_detection.py`.]
-- [ ] Build the **4 tables required** by the advisor: stations, measurements, events, training.
+- [x] Build the **4 tables required** by the advisor: stations, measurements, events, training. [Done — Stations in thesis §3.1; Measurements in Iteration 11: `measurements.parquet`, 10.8M rows, 6 columns; Events in Iteration 10: `events.csv`, 196 events; Training in Iterations 8-9: `training_table.parquet`, 563k rows, 144 columns]
 - [x] Generate the **event** (not row) assignment table to train / validation / test. [Done — Iteration 10: events.csv includes `split` column based on peak timestamp]
 - [x] Count and evaluate the number of **usable flood events** in the historical record (~12 years, highly intermittent regime — TFT needs enough events to train). [Done — Iteration 10: 196 events detected (100 train, 16 val, 80 test)]
 
