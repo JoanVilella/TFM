@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<SimulationControl name="Control_10min" version="4.0" xsi:noNamespaceSchemaLocation="http://www.hec.usace.army.mil/xml/schema/SHESSchema/SimulationControl.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <SimulationControl Controls Name="Control_10min" Description="10-min interval for event 2016-12-16 to 2016-12-26" Time Interval="10">
+        <SimulationControl Computer Starting Period="1" Ending Period="1">
+            <SimulationControl TimeWindow Name="Event_2016-12-16_2016-12-26" Version="1.0">
+                <TimeWindow Start Time="16 December 2016, 00:00" End Time="26 December 2016, 00:00"/>
+            </SimulationControl>
+        </SimulationControl Computer>
+    </SimulationControl Controls>
+</SimulationControl>
