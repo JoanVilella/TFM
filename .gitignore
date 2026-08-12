@@ -183,3 +183,29 @@ cython_debug/
 # Ignore /data folder
 /data
 
+# HEC-HMS binary data (large files)
+hec_hms/**/*.sqlite
+hec_hms/**/terrain/
+hec_hms/**/gis/
+hec_hms/**/maps/
+
+# HEC-HMS output / test / temp
+hec_hms/**/Simulacio_TR.dss
+hec_hms/**/Validation.dss
+hec_hms/**/event_precip.dss
+hec_hms/**/test_*.dss
+hec_hms/**/*.log
+hec_hms/**/*.out
+hec_hms/**/STM.access
+
+# HEC-HMS empty working directories
+hec_hms/**/basinStates/
+hec_hms/**/data/
+hec_hms/**/datavar/
+hec_hms/**/ensemble/
+hec_hms/**/forecast/
+hec_hms/**/frequency/
+hec_hms/**/montecarlo/
+hec_hms/**/optimizer/
+hec_hms/**/results/
+

@@ -1,0 +1,16 @@
+Run: Simulacio_TR
+     Default Description: Yes
+     Log File: Simulacio_TR.log
+     DSS File: Simulacio_TR.dss
+     Is Save Spatial Results: No
+     Last Modified Date: 12 July 2024
+     Last Modified Time: 14:07:32
+     Basin: STM
+     Precip: Meteo_TR
+     Control: Control_TR
+     Save State Type: None
+     Time-Series Output: Save All
+     Time Series Results Manager Start:
+     Time Series Results Manager End:
+End:
+

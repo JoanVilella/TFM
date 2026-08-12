@@ -1,0 +1,12 @@
+Terrain Data Manager: STM
+     Version: 4.13
+     Filepath Separator: \
+End:
+
+Terrain Data: mdt02_stm
+     Description: 
+     Terrain Directory: terrain\mdt02_stm
+     Vertical Units: Meters
+     Last Modified Date: 4 October 2023
+     Last Modified Time: 07:42:22
+End:

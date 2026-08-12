@@ -1,0 +1,1928 @@
+Basin: STM_val
+     Last Modified Date: 28 November 2023
+     Last Modified Time: 14:40:07
+     Version: 4.11
+     Filepath Separator: \
+     Unit System: Metric
+     Missing Flow To Zero: No
+     Enable Flow Ratio: No
+     Compute Local Flow At Junctions: No
+     Unregulated Output Required: No
+
+     Enable Sediment Routing: No
+
+     Enable Quality Routing: No
+End:
+
+Subbasin: S8
+     Last Modified Date: 3 November 2023
+     Last Modified Time: 08:25:50
+     Latitude Degrees:  39.78860363742446
+     Longitude Degrees: 2.857011951679293
+     Canvas X: 487757.02634143864
+     Canvas Y: 4404304.495672449
+     Area: 8.7126
+     Downstream: J6
+
+     Discretization: Structured
+     File: STM_val.sqlite
+     Projection: 32631
+     Cell Size: 100.0
+
+     Canopy: None
+     Allow Simultaneous Precip Et: No
+     Plant Uptake Method: None
+
+     Surface: None
+
+     LossRate: Gridded SCS
+     Curve Number Grid: Grid 1
+     Potential Retention Scale Factor: 1
+     Initial Abstraction Ratio: 0.2
+
+     Transform: Modified Clark
+     Time of Concentration: 1.720
+     Storage Coefficient: 1.204
+
+     Baseflow: None
+End:
+
+Subbasin: S11
+     Last Modified Date: 3 November 2023
+     Last Modified Time: 08:25:50
+     Latitude Degrees:  39.78290250136232
+     Longitude Degrees: 2.8400633921995593
+     Canvas X: 486304.7198160643
+     Canvas Y: 4403674.203342619
+     Area: 7.0045
+     Downstream: J6
+
+     Discretization: Structured
+     File: STM_val.sqlite
+     Projection: 32631
+     Cell Size: 100.0
+
+     Canopy: None
+     Allow Simultaneous Precip Et: No
+     Plant Uptake Method: None
+
+     Surface: None
+
+     LossRate: Gridded SCS
+     Curve Number Grid: Grid 1
+     Potential Retention Scale Factor: 1
+     Initial Abstraction Ratio: 0.2
+
+     Transform: Modified Clark
+     Time of Concentration: 2.255
+     Storage Coefficient: 1.578
+
+     Baseflow: None
+End:
+
+Junction: J6
+     Last Modified Date: 4 October 2023
+     Last Modified Time: 08:38:36
+     Canvas X: 488222.00012207
+     Canvas Y: 4402166.00012207
+     Downstream: R6
+End:
+
+Reach: R6
+     Description: Torrent de Massanella
+     Last Modified Date: 3 November 2023
+     Last Modified Time: 08:38:46
+     Canvas X: 493802.00012207
+     Canvas Y: 4399830.00012207
+     From Canvas X: 488222.00012207
+     From Canvas Y: 4402166.00012207
+     Downstream: J3
+
+     Route: Muskingum Cunge
+     Channel: Rectangular
+     Length: 9365.96
+     Energy Slope: 0.01388
+     Mannings n: 0.035
+     Width: 4
+     Initial Variable: Combined Inflow
+     Space-Time Method: Automatic DX and DT
+     Index Parameter Type: Index Flow
+     Index Flow: 15
+     Number Subreaches: 1
+     Maximum Depth Iterations: 20
+     Maximum Route Step Iterations: 30
+     Channel Loss: Percolation
+     Channel Loss Percolation Rate: 0.2
+     End Channel Loss:
+End:
+
+Subbasin: S14
+     Last Modified Date: 3 November 2023
+     Last Modified Time: 08:25:50
+     Latitude Degrees:  39.749201062741406
+     Longitude Degrees: 2.8799862857223077
+     Canvas X: 489718.283881579
+     Canvas Y: 4399928.4790451
+     Area: 19.023
+     Downstream: J3
+
+     Discretization: Structured
+     File: STM_val.sqlite
+     Projection: 32631
+     Cell Size: 100.0
+
+     Canopy: None
+     Allow Simultaneous Precip Et: No
+     Plant Uptake Method: None
+
+     Surface: None
+
+     LossRate: Gridded SCS
+     Curve Number Grid: Grid 1
+     Potential Retention Scale Factor: 1
+     Initial Abstraction Ratio: 0.2
+
+     Transform: Modified Clark
+     Time of Concentration: 3.440
+     Storage Coefficient: 2.408
+
+     Baseflow: None
+End:
+
+Subbasin: S10
+     Last Modified Date: 3 November 2023
+     Last Modified Time: 08:25:50
+     Latitude Degrees:  39.777558887951926
+     Longitude Degrees: 2.891279581676009
+     Canvas X: 490689.6139427071
+     Canvas Y: 4403074.5576295145
+     Area: 13.522
+     Downstream: J3
+
+     Discretization: Structured
+     File: STM_val.sqlite
+     Projection: 32631
+     Cell Size: 100.0
+
+     Canopy: None
+     Allow Simultaneous Precip Et: No
+     Plant Uptake Method: None
+
+     Surface: None
+
+     LossRate: Gridded SCS
+     Curve Number Grid: Grid 1
+     Potential Retention Scale Factor: 1
+     Initial Abstraction Ratio: 0.2
+
+     Transform: Modified Clark
+     Time of Concentration: 2.991
+     Storage Coefficient: 2.094
+
+     Baseflow: None
+End:
+
+Junction: J3
+     Last Modified Date: 4 October 2023
+     Last Modified Time: 08:38:36
+     Canvas X: 493802.00012207
+     Canvas Y: 4399830.00012207
+     Downstream: R3
+End:
+
+Reach: R3
+     Description: Torrent de Massanella
+     Last Modified Date: 29 November 2023
+     Last Modified Time: 06:54:27
+     Canvas X: 498164.00012207
+     Canvas Y: 4400234.00012207
+     From Canvas X: 493802.00012207
+     From Canvas Y: 4399830.00012207
+     Observed Hydrograph Gage: STM07
+     Downstream: J7
+
+     Route: Muskingum Cunge
+     Channel: Rectangular
+     Length: 5492.35
+     Energy Slope: 0.007647
+     Mannings n: 0.035
+     Width: 11
+     Initial Variable: Combined Inflow
+     Space-Time Method: Automatic DX and DT
+     Index Parameter Type: Index Flow
+     Index Flow: 15
+     Number Subreaches: 1
+     Maximum Depth Iterations: 20
+     Maximum Route Step Iterations: 30
+     Channel Loss: Percolation
+     Channel Loss Percolation Rate: 0.2
+     End Channel Loss:
+End:
+
+Subbasin: S23
+     Last Modified Date: 29 November 2023
+     Last Modified Time: 06:54:21
+     Latitude Degrees:  39.75090613082038
+     Longitude Degrees: 2.9408623315000715
+     Canvas X: 494933.73176827154
+     Canvas Y: 4400112.50312334
+     Area: 10.992
+     Observed Hydrograph Gage: STM07
+     Downstream: J7
+
+     Discretization: Structured
+     File: STM_val.sqlite
+     Projection: 32631
+     Cell Size: 100.0
+
+     Canopy: None
+     Allow Simultaneous Precip Et: No
+     Plant Uptake Method: None
+
+     Surface: None
+
+     LossRate: Gridded SCS
+     Curve Number Grid: Grid 1
+     Potential Retention Scale Factor: 1
+     Initial Abstraction Ratio: 0.2
+
+     Transform: Modified Clark
+     Time of Concentration: 3.478
+     Storage Coefficient: 2.435
+
+     Baseflow: None
+End:
+
+Subbasin: S12
+     Last Modified Date: 3 November 2023
+     Last Modified Time: 08:25:50
+     Latitude Degrees:  39.77007800679299
+     Longitude Degrees: 2.936897352378056
+     Canvas X: 494595.55455149466
+     Canvas Y: 4402240.537635232
+     Area: 8.5066
+     Downstream: J7
+
+     Discretization: Structured
+     File: STM_val.sqlite
+     Projection: 32631
+     Cell Size: 100.0
+
+     Canopy: None
+     Allow Simultaneous Precip Et: No
+     Plant Uptake Method: None
+
+     Surface: None
+
+     LossRate: Gridded SCS
+     Curve Number Grid: Grid 1
+     Potential Retention Scale Factor: 1
+     Initial Abstraction Ratio: 0.2
+
+     Transform: Modified Clark
+     Time of Concentration: 3.515
+     Storage Coefficient: 2.460
+
+     Baseflow: None
+End:
+
+Junction: J7
+     Last Modified Date: 4 October 2023
+     Last Modified Time: 08:38:36
+     Canvas X: 498164.00012207
+     Canvas Y: 4400234.00012207
+     Downstream: R12
+End:
+
+Reach: R12
+     Description: Torrent de Massanella
+     Last Modified Date: 3 November 2023
+     Last Modified Time: 08:38:46
+     Canvas X: 498174.00012207
+     Canvas Y: 4400238.00012207
+     From Canvas X: 498164.00012207
+     From Canvas Y: 4400234.00012207
+     Downstream: J15
+
+     Route: Muskingum Cunge
+     Channel: Rectangular
+     Length: 10
+     Energy Slope: 0.00001
+     Mannings n: 0.035
+     Width: 11
+     Initial Variable: Combined Inflow
+     Space-Time Method: Automatic DX and DT
+     Index Parameter Type: Index Flow
+     Index Flow: 15
+     Number Subreaches: 1
+     Maximum Depth Iterations: 20
+     Maximum Route Step Iterations: 30
+     Channel Loss: Percolation
+     Channel Loss Percolation Rate: 0.2
+     End Channel Loss:
+End:
+
+Subbasin: S24
+     Last Modified Date: 3 November 2023
+     Last Modified Time: 08:25:50
+     Latitude Degrees:  39.751972399652914
+     Longitude Degrees: 2.9786438060032543
+     Canvas X: 498170.46327996475
+     Canvas Y: 4400229.389595754
+     Area: 0.0004
+     Downstream: J15
+
+     Discretization: Structured
+     File: STM_val.sqlite
+     Projection: 32631
+     Cell Size: 100.0
+
+     Canopy: None
+     Allow Simultaneous Precip Et: No
+     Plant Uptake Method: None
+
+     Surface: None
+
+     LossRate: Gridded SCS
+     Curve Number Grid: Grid 1
+     Potential Retention Scale Factor: 1
+     Initial Abstraction Ratio: 0.2
+
+     Transform: Modified Clark
+     Time of Concentration: 0.033
+     Storage Coefficient: 0.023
+
+     Baseflow: None
+End:
+
+Junction: J15
+     Last Modified Date: 4 October 2023
+     Last Modified Time: 10:03:18
+     Canvas X: 498174.00012207
+     Canvas Y: 4400238.00012207
+     Computation Point: Yes
+     Downstream: R13
+End:
+
+Reach: R13
+     Description: Torrent de Búger
+     Last Modified Date: 3 November 2023
+     Last Modified Time: 08:38:46
+     Canvas X: 500308.00012207
+     Canvas Y: 4402904.00012207
+     From Canvas X: 498174.00012207
+     From Canvas Y: 4400238.00012207
+     Downstream: J2
+
+     Route: Muskingum Cunge
+     Channel: Rectangular
+     Length: 5476.9
+     Energy Slope: 0.00584
+     Mannings n: 0.035
+     Width: 10
+     Initial Variable: Combined Inflow
+     Space-Time Method: Automatic DX and DT
+     Index Parameter Type: Index Flow
+     Index Flow: 15
+     Number Subreaches: 1
+     Maximum Depth Iterations: 20
+     Maximum Route Step Iterations: 30
+     Channel Loss: Percolation
+     Channel Loss Percolation Rate: 0.2
+     End Channel Loss:
+End:
+
+Subbasin: S9
+     Last Modified Date: 3 November 2023
+     Last Modified Time: 08:25:50
+     Latitude Degrees:  39.77071752447317
+     Longitude Degrees: 2.9793638415547403
+     Canvas X: 498232.62634558417
+     Canvas Y: 4402309.814800521
+     Area: 6.9292
+     Downstream: J2
+
+     Discretization: Structured
+     File: STM_val.sqlite
+     Projection: 32631
+     Cell Size: 100.0
+
+     Canopy: None
+     Allow Simultaneous Precip Et: No
+     Plant Uptake Method: None
+
+     Surface: None
+
+     LossRate: Gridded SCS
+     Curve Number Grid: Grid 1
+     Potential Retention Scale Factor: 1
+     Initial Abstraction Ratio: 0.2
+
+     Transform: Modified Clark
+     Time of Concentration: 3.283
+     Storage Coefficient: 2.298
+
+     Baseflow: None
+End:
+
+Subbasin: S25
+     Last Modified Date: 3 November 2023
+     Last Modified Time: 08:25:50
+     Latitude Degrees:  39.758344686342674
+     Longitude Degrees: 2.9929495436922218
+     Canvas X: 499396.05905027
+     Canvas Y: 4400936.426870589
+     Area: 2.6322
+     Downstream: J2
+
+     Discretization: Structured
+     File: STM_val.sqlite
+     Projection: 32631
+     Cell Size: 100.0
+
+     Canopy: None
+     Allow Simultaneous Precip Et: No
+     Plant Uptake Method: None
+
+     Surface: None
+
+     LossRate: Gridded SCS
+     Curve Number Grid: Grid 1
+     Potential Retention Scale Factor: 1
+     Initial Abstraction Ratio: 0.2
+
+     Transform: Modified Clark
+     Time of Concentration: 2.740
+     Storage Coefficient: 1.918
+
+     Baseflow: None
+End:
+
+Junction: J2
+     Last Modified Date: 4 October 2023
+     Last Modified Time: 08:38:36
+     Canvas X: 500308.00012207
+     Canvas Y: 4402904.00012207
+     Downstream: R2
+End:
+
+Reach: R2
+     Description: Torrent de Búger
+     Last Modified Date: 3 November 2023
+     Last Modified Time: 08:38:46
+     Canvas X: 501158.00012207
+     Canvas Y: 4403716.00012207
+     From Canvas X: 500308.00012207
+     From Canvas Y: 4402904.00012207
+     Downstream: J16
+
+     Route: Muskingum Cunge
+     Channel: Rectangular
+     Length: 1274.7
+     Energy Slope: 0.00863
+     Mannings n: 0.035
+     Width: 8
+     Initial Variable: Combined Inflow
+     Space-Time Method: Automatic DX and DT
+     Index Parameter Type: Index Flow
+     Index Flow: 15
+     Number Subreaches: 1
+     Maximum Depth Iterations: 20
+     Maximum Route Step Iterations: 30
+     Channel Loss: Percolation
+     Channel Loss Percolation Rate: 0.2
+     End Channel Loss:
+End:
+
+Subbasin: S3
+     Last Modified Date: 3 November 2023
+     Last Modified Time: 08:25:50
+     Latitude Degrees:  39.81625079832394
+     Longitude Degrees: 2.919215610376509
+     Canvas X: 493085.820586659
+     Canvas Y: 4407366.299878311
+     Area: 8.6297
+     Downstream: J8
+
+     Discretization: Structured
+     File: STM_val.sqlite
+     Projection: 32631
+     Cell Size: 100.0
+
+     Canopy: None
+     Allow Simultaneous Precip Et: No
+     Plant Uptake Method: None
+
+     Surface: None
+
+     LossRate: Gridded SCS
+     Curve Number Grid: Grid 1
+     Potential Retention Scale Factor: 1
+     Initial Abstraction Ratio: 0.2
+
+     Transform: Modified Clark
+     Time of Concentration: 2.080
+     Storage Coefficient: 1.456
+
+     Baseflow: None
+End:
+
+Subbasin: S7
+     Last Modified Date: 3 November 2023
+     Last Modified Time: 08:25:50
+     Latitude Degrees:  39.80322466974031
+     Longitude Degrees: 2.891498148001772
+     Canvas X: 490711.78337826015
+     Canvas Y: 4405923.08332658
+     Area: 8.3181
+     Downstream: J8
+
+     Discretization: Structured
+     File: STM_val.sqlite
+     Projection: 32631
+     Cell Size: 100.0
+
+     Canopy: None
+     Allow Simultaneous Precip Et: No
+     Plant Uptake Method: None
+
+     Surface: None
+
+     LossRate: Gridded SCS
+     Curve Number Grid: Grid 1
+     Potential Retention Scale Factor: 1
+     Initial Abstraction Ratio: 0.2
+
+     Transform: Modified Clark
+     Time of Concentration: 2.333
+     Storage Coefficient: 1.633
+
+     Baseflow: None
+End:
+
+Junction: J8
+     Last Modified Date: 4 October 2023
+     Last Modified Time: 08:38:36
+     Canvas X: 493034.00012207
+     Canvas Y: 4404638.00012207
+     Downstream: R17
+End:
+
+Reach: R17
+     Description: Torrent de Sant Miquel
+     Last Modified Date: 29 November 2023
+     Last Modified Time: 06:57:05
+     Canvas X: 496860.00012207
+     Canvas Y: 4404652.00012207
+     From Canvas X: 493034.00012207
+     From Canvas Y: 4404638.00012207
+     Observed Hydrograph Gage: STM05
+     Downstream: J12
+
+     Route: Muskingum Cunge
+     Channel: Rectangular
+     Length: 5637.5
+     Energy Slope: 0.015085
+     Mannings n: 0.035
+     Width: 11
+     Initial Variable: Combined Inflow
+     Space-Time Method: Automatic DX and DT
+     Index Parameter Type: Index Flow
+     Index Flow: 15
+     Number Subreaches: 1
+     Maximum Depth Iterations: 20
+     Maximum Route Step Iterations: 30
+     Channel Loss: Percolation
+     Channel Loss Percolation Rate: 0.2
+     End Channel Loss:
+End:
+
+Subbasin: S15
+     Last Modified Date: 29 November 2023
+     Last Modified Time: 06:56:51
+     Latitude Degrees:  39.79074273691726
+     Longitude Degrees: 2.9374086070052376
+     Canvas X: 494640.9442336767
+     Canvas Y: 4404534.002972277
+     Area: 9.2513
+     Observed Hydrograph Gage: STM05
+     Downstream: J12
+
+     Discretization: Structured
+     File: STM_val.sqlite
+     Projection: 32631
+     Cell Size: 100.0
+
+     Canopy: None
+     Allow Simultaneous Precip Et: No
+     Plant Uptake Method: None
+
+     Surface: None
+
+     LossRate: Gridded SCS
+     Curve Number Grid: Grid 1
+     Potential Retention Scale Factor: 1
+     Initial Abstraction Ratio: 0.2
+
+     Transform: Modified Clark
+     Time of Concentration: 2.167
+     Storage Coefficient: 1.517
+
+     Baseflow: None
+End:
+
+Junction: J12
+     Last Modified Date: 4 October 2023
+     Last Modified Time: 10:03:18
+     Canvas X: 496860.00012207
+     Canvas Y: 4404652.00012207
+     Computation Point: Yes
+     Downstream: R9
+End:
+
+Reach: R9
+     Description: Torrent de Sant Miquel
+     Last Modified Date: 3 November 2023
+     Last Modified Time: 08:38:46
+     Canvas X: 497036.00012207
+     Canvas Y: 4404830.00012207
+     From Canvas X: 496860.00012207
+     From Canvas Y: 4404652.00012207
+     Downstream: J13
+
+     Route: Muskingum Cunge
+     Channel: Rectangular
+     Length: 264.96
+     Energy Slope: 0.0224
+     Mannings n: 0.035
+     Width: 6
+     Initial Variable: Combined Inflow
+     Space-Time Method: Automatic DX and DT
+     Index Parameter Type: Index Flow
+     Index Flow: 15
+     Number Subreaches: 1
+     Maximum Depth Iterations: 20
+     Maximum Route Step Iterations: 30
+     Channel Loss: Percolation
+     Channel Loss Percolation Rate: 0.2
+     End Channel Loss:
+End:
+
+Subbasin: S1
+     Last Modified Date: 29 November 2023
+     Last Modified Time: 06:56:04
+     Latitude Degrees:  39.833617743930766
+     Longitude Degrees: 2.967734163680044
+     Canvas X: 497239.124893329
+     Canvas Y: 4409291.179389232
+     Area: 6.8682
+     Observed Hydrograph Gage: STM03
+     Downstream: J10
+
+     Discretization: Structured
+     File: STM_val.sqlite
+     Projection: 32631
+     Cell Size: 100.0
+
+     Canopy: None
+     Allow Simultaneous Precip Et: No
+     Plant Uptake Method: None
+
+     Surface: None
+
+     LossRate: Gridded SCS
+     Curve Number Grid: Grid 1
+     Potential Retention Scale Factor: 1
+     Initial Abstraction Ratio: 0.2
+
+     Transform: Modified Clark
+     Time of Concentration: 1.745
+     Storage Coefficient: 1.222
+
+     Baseflow: None
+End:
+
+Junction: J10
+     Last Modified Date: 4 October 2023
+     Last Modified Time: 10:03:18
+     Canvas X: 498248.00012207
+     Canvas Y: 4407428.00012207
+     Computation Point: Yes
+     Downstream: R16
+End:
+
+Reach: R16
+     Description: Torrent de Sant Miquel
+     Last Modified Date: 3 November 2023
+     Last Modified Time: 08:38:46
+     Canvas X: 497424.00012207
+     Canvas Y: 4406008.00012207
+     From Canvas X: 498248.00012207
+     From Canvas Y: 4407428.00012207
+     Downstream: J5
+
+     Route: Muskingum Cunge
+     Channel: Rectangular
+     Length: 1793.7
+     Energy Slope: 0.008349
+     Mannings n: 0.035
+     Width: 7
+     Initial Variable: Combined Inflow
+     Space-Time Method: Automatic DX and DT
+     Index Parameter Type: Index Flow
+     Index Flow: 15
+     Number Subreaches: 1
+     Maximum Depth Iterations: 20
+     Maximum Route Step Iterations: 30
+     Channel Loss: Percolation
+     Channel Loss Percolation Rate: 0.2
+     End Channel Loss:
+End:
+
+Subbasin: S4
+     Last Modified Date: 3 November 2023
+     Last Modified Time: 08:25:50
+     Latitude Degrees:  39.816476846242004
+     Longitude Degrees: 2.988340925856679
+     Canvas X: 499002.12575791846
+     Canvas Y: 4407388.332028022
+     Area: 5.0302
+     Downstream: J5
+
+     Discretization: Structured
+     File: STM_val.sqlite
+     Projection: 32631
+     Cell Size: 100.0
+
+     Canopy: None
+     Allow Simultaneous Precip Et: No
+     Plant Uptake Method: None
+
+     Surface: None
+
+     LossRate: Gridded SCS
+     Curve Number Grid: Grid 1
+     Potential Retention Scale Factor: 1
+     Initial Abstraction Ratio: 0.2
+
+     Transform: Modified Clark
+     Time of Concentration: 1.907
+     Storage Coefficient: 1.335
+
+     Baseflow: None
+End:
+
+Subbasin: S13
+     Last Modified Date: 3 November 2023
+     Last Modified Time: 08:25:50
+     Latitude Degrees:  39.812953234724525
+     Longitude Degrees: 2.9726955004667133
+     Canvas X: 497662.9492271622
+     Canvas Y: 4406997.5496884035
+     Area: 1.8004
+     Downstream: J5
+
+     Discretization: Structured
+     File: STM_val.sqlite
+     Projection: 32631
+     Cell Size: 100.0
+
+     Canopy: None
+     Allow Simultaneous Precip Et: No
+     Plant Uptake Method: None
+
+     Surface: None
+
+     LossRate: Gridded SCS
+     Curve Number Grid: Grid 1
+     Potential Retention Scale Factor: 1
+     Initial Abstraction Ratio: 0.2
+
+     Transform: Modified Clark
+     Time of Concentration: 1.276
+     Storage Coefficient: 0.893
+
+     Baseflow: None
+End:
+
+Junction: J5
+     Last Modified Date: 4 October 2023
+     Last Modified Time: 08:38:36
+     Canvas X: 497424.00012207
+     Canvas Y: 4406008.00012207
+     Downstream: R5
+End:
+
+Reach: R5
+     Description: Torrent de Sant Miquel
+     Last Modified Date: 3 November 2023
+     Last Modified Time: 08:38:46
+     Canvas X: 497328.00012207
+     Canvas Y: 4405732.00012207
+     From Canvas X: 497424.00012207
+     From Canvas Y: 4406008.00012207
+     Downstream: J9
+
+     Route: Muskingum Cunge
+     Channel: Rectangular
+     Length: 320.24
+     Energy Slope: 0.01249
+     Mannings n: 0.035
+     Width: 6
+     Initial Variable: Combined Inflow
+     Space-Time Method: Automatic DX and DT
+     Index Parameter Type: Index Flow
+     Index Flow: 15
+     Number Subreaches: 1
+     Maximum Depth Iterations: 20
+     Maximum Route Step Iterations: 30
+     Channel Loss: Percolation
+     Channel Loss Percolation Rate: 0.2
+     End Channel Loss:
+End:
+
+Subbasin: S2
+     Last Modified Date: 3 November 2023
+     Last Modified Time: 08:25:50
+     Latitude Degrees:  39.82202221795435
+     Longitude Degrees: 2.9462316704031193
+     Canvas X: 495398.45791800576
+     Canvas Y: 4408005.112505654
+     Area: 10.730
+     Downstream: J9
+
+     Discretization: Structured
+     File: STM_val.sqlite
+     Projection: 32631
+     Cell Size: 100.0
+
+     Canopy: None
+     Allow Simultaneous Precip Et: No
+     Plant Uptake Method: None
+
+     Surface: None
+
+     LossRate: Gridded SCS
+     Curve Number Grid: Grid 1
+     Potential Retention Scale Factor: 1
+     Initial Abstraction Ratio: 0.2
+
+     Transform: Modified Clark
+     Time of Concentration: 2.136
+     Storage Coefficient: 1.495
+
+     Baseflow: None
+End:
+
+Subbasin: S16
+     Last Modified Date: 3 November 2023
+     Last Modified Time: 08:25:50
+     Latitude Degrees:  39.803229559187606
+     Longitude Degrees: 2.969080153465851
+     Canvas X: 497353.13104737276
+     Canvas Y: 4405918.453280715
+     Area: 0.1319
+     Downstream: J9
+
+     Discretization: Structured
+     File: STM_val.sqlite
+     Projection: 32631
+     Cell Size: 100.0
+
+     Canopy: None
+     Allow Simultaneous Precip Et: No
+     Plant Uptake Method: None
+
+     Surface: None
+
+     LossRate: Gridded SCS
+     Curve Number Grid: Grid 1
+     Potential Retention Scale Factor: 1
+     Initial Abstraction Ratio: 0.2
+
+     Transform: Modified Clark
+     Time of Concentration: 0.569
+     Storage Coefficient: 0.399
+
+     Baseflow: None
+End:
+
+Junction: J9
+     Last Modified Date: 4 October 2023
+     Last Modified Time: 08:38:36
+     Canvas X: 497328.00012207
+     Canvas Y: 4405732.00012207
+     Downstream: R7
+End:
+
+Reach: R7
+     Description: Torrent de Sant Miquel
+     Last Modified Date: 29 November 2023
+     Last Modified Time: 06:56:32
+     Canvas X: 497060.00012207
+     Canvas Y: 4405090.00012207
+     From Canvas X: 497328.00012207
+     From Canvas Y: 4405732.00012207
+     Observed Hydrograph Gage: STM04
+     Downstream: J11
+
+     Route: Muskingum Cunge
+     Channel: Rectangular
+     Length: 777
+     Energy Slope: 0.009
+     Mannings n: 0.035
+     Width: 11
+     Initial Variable: Combined Inflow
+     Space-Time Method: Automatic DX and DT
+     Index Parameter Type: Index Flow
+     Index Flow: 15
+     Number Subreaches: 1
+     Maximum Depth Iterations: 20
+     Maximum Route Step Iterations: 30
+     Channel Loss: Percolation
+     Channel Loss Percolation Rate: 0.2
+     End Channel Loss:
+End:
+
+Subbasin: S17
+     Last Modified Date: 29 November 2023
+     Last Modified Time: 06:56:27
+     Latitude Degrees:  39.80068438531926
+     Longitude Degrees: 2.9649716089265663
+     Canvas X: 497001.31179177406
+     Canvas Y: 4405636.103117042
+     Area: 0.5751
+     Observed Hydrograph Gage: STM04
+     Downstream: J11
+
+     Discretization: Structured
+     File: STM_val.sqlite
+     Projection: 32631
+     Cell Size: 100.0
+
+     Canopy: None
+     Allow Simultaneous Precip Et: No
+     Plant Uptake Method: None
+
+     Surface: None
+
+     LossRate: Gridded SCS
+     Curve Number Grid: Grid 1
+     Potential Retention Scale Factor: 1
+     Initial Abstraction Ratio: 0.2
+
+     Transform: Modified Clark
+     Time of Concentration: 0.700
+     Storage Coefficient: 0.490
+
+     Baseflow: None
+End:
+
+Junction: J11
+     Last Modified Date: 4 October 2023
+     Last Modified Time: 10:03:18
+     Canvas X: 497060.00012207
+     Canvas Y: 4405090.00012207
+     Computation Point: Yes
+     Downstream: R8
+End:
+
+Reach: R8
+     Description: Torrent de Sant Miquel
+     Last Modified Date: 3 November 2023
+     Last Modified Time: 08:38:46
+     Canvas X: 497036.00012207
+     Canvas Y: 4404830.00012207
+     From Canvas X: 497060.00012207
+     From Canvas Y: 4405090.00012207
+     Downstream: J13
+
+     Route: Muskingum Cunge
+     Channel: Rectangular
+     Length: 297.62
+     Energy Slope: 0.01689
+     Mannings n: 0.035
+     Width: 7
+     Initial Variable: Combined Inflow
+     Space-Time Method: Automatic DX and DT
+     Index Parameter Type: Index Flow
+     Index Flow: 15
+     Number Subreaches: 1
+     Maximum Depth Iterations: 20
+     Maximum Route Step Iterations: 30
+     Channel Loss: Percolation
+     Channel Loss Percolation Rate: 0.2
+     End Channel Loss:
+End:
+
+Subbasin: S20
+     Last Modified Date: 3 November 2023
+     Last Modified Time: 08:25:50
+     Latitude Degrees:  39.79680389512295
+     Longitude Degrees: 2.9579689296240095
+     Canvas X: 496401.6286303679
+     Canvas Y: 4405205.679685795
+     Area: 0.5105
+     Downstream: J13
+
+     Discretization: Structured
+     File: STM_val.sqlite
+     Projection: 32631
+     Cell Size: 100.0
+
+     Canopy: None
+     Allow Simultaneous Precip Et: No
+     Plant Uptake Method: None
+
+     Surface: None
+
+     LossRate: Gridded SCS
+     Curve Number Grid: Grid 1
+     Potential Retention Scale Factor: 1
+     Initial Abstraction Ratio: 0.2
+
+     Transform: Modified Clark
+     Time of Concentration: 0.661
+     Storage Coefficient: 0.462
+
+     Baseflow: None
+End:
+
+Subbasin: S19
+     Last Modified Date: 3 November 2023
+     Last Modified Time: 08:25:50
+     Latitude Degrees:  39.79859786275543
+     Longitude Degrees: 2.9614208222341527
+     Canvas X: 496697.2384865361
+     Canvas Y: 4405404.652524503
+     Area: 0.4726
+     Downstream: J13
+
+     Discretization: Structured
+     File: STM_val.sqlite
+     Projection: 32631
+     Cell Size: 100.0
+
+     Canopy: None
+     Allow Simultaneous Precip Et: No
+     Plant Uptake Method: None
+
+     Surface: None
+
+     LossRate: Gridded SCS
+     Curve Number Grid: Grid 1
+     Potential Retention Scale Factor: 1
+     Initial Abstraction Ratio: 0.2
+
+     Transform: Modified Clark
+     Time of Concentration: 0.607
+     Storage Coefficient: 0.425
+
+     Baseflow: None
+End:
+
+Junction: J13
+     Last Modified Date: 4 October 2023
+     Last Modified Time: 08:38:36
+     Canvas X: 497036.00012207
+     Canvas Y: 4404830.00012207
+     Downstream: R10
+End:
+
+Reach: R10
+     Description: Torrent de Sant Miquel
+     Last Modified Date: 29 November 2023
+     Last Modified Time: 06:57:15
+     Canvas X: 497056.00012207
+     Canvas Y: 4404812.00012207
+     From Canvas X: 497036.00012207
+     From Canvas Y: 4404830.00012207
+     Observed Hydrograph Gage: STM06
+     Downstream: J14
+
+     Route: Muskingum Cunge
+     Channel: Rectangular
+     Length: 27.455
+     Energy Slope: 0.0001
+     Mannings n: 0.01
+     Width: 9
+     Initial Variable: Combined Inflow
+     Space-Time Method: Automatic DX and DT
+     Index Parameter Type: Index Flow
+     Index Flow: 15
+     Number Subreaches: 1
+     Maximum Depth Iterations: 20
+     Maximum Route Step Iterations: 30
+     Channel Loss: Percolation
+     Channel Loss Percolation Rate: 0.2
+     End Channel Loss:
+End:
+
+Subbasin: S21
+     Last Modified Date: 3 November 2023
+     Last Modified Time: 08:25:50
+     Latitude Degrees:  39.79334501312897
+     Longitude Degrees: 2.9655003017937505
+     Canvas X: 497046.25785402884
+     Canvas Y: 4404821.515585988
+     Area: 0.0008
+     Downstream: J14
+
+     Discretization: Structured
+     File: STM_val.sqlite
+     Projection: 32631
+     Cell Size: 100.0
+
+     Canopy: None
+     Allow Simultaneous Precip Et: No
+     Plant Uptake Method: None
+
+     Surface: None
+
+     LossRate: Gridded SCS
+     Curve Number Grid: Grid 1
+     Potential Retention Scale Factor: 1
+     Initial Abstraction Ratio: 0.2
+
+     Transform: Modified Clark
+     Time of Concentration: 0.035
+     Storage Coefficient: 0.025
+
+     Baseflow: None
+End:
+
+Junction: J14
+     Last Modified Date: 4 October 2023
+     Last Modified Time: 10:03:18
+     Canvas X: 497056.00012207
+     Canvas Y: 4404812.00012207
+     Computation Point: Yes
+     Downstream: R11
+End:
+
+Reach: R11
+     Description: Torrent de Sant Miquel
+     Last Modified Date: 3 November 2023
+     Last Modified Time: 08:38:46
+     Canvas X: 501158.00012207
+     Canvas Y: 4403716.00012207
+     From Canvas X: 497056.00012207
+     From Canvas Y: 4404812.00012207
+     Downstream: J16
+
+     Route: Muskingum Cunge
+     Channel: Rectangular
+     Length: 5512.9
+     Energy Slope: 0.005623
+     Mannings n: 0.035
+     Width: 13
+     Initial Variable: Combined Inflow
+     Space-Time Method: Automatic DX and DT
+     Index Parameter Type: Index Flow
+     Index Flow: 15
+     Number Subreaches: 1
+     Maximum Depth Iterations: 20
+     Maximum Route Step Iterations: 30
+     Channel Loss: Percolation
+     Channel Loss Percolation Rate: 0.2
+     End Channel Loss:
+End:
+
+Subbasin: S22
+     Last Modified Date: 3 November 2023
+     Last Modified Time: 08:25:50
+     Latitude Degrees:  39.78822005874725
+     Longitude Degrees: 2.981902633402127
+     Canvas X: 498450.4525089401
+     Canvas Y: 4404252.303816448
+     Area: 8.4864
+     Downstream: J16
+
+     Discretization: Structured
+     File: STM_val.sqlite
+     Projection: 32631
+     Cell Size: 100.0
+
+     Canopy: None
+     Allow Simultaneous Precip Et: No
+     Plant Uptake Method: None
+
+     Surface: None
+
+     LossRate: Gridded SCS
+     Curve Number Grid: Grid 1
+     Potential Retention Scale Factor: 1
+     Initial Abstraction Ratio: 0.2
+
+     Transform: Modified Clark
+     Time of Concentration: 2.684
+     Storage Coefficient: 1.879
+
+     Baseflow: None
+End:
+
+Subbasin: S26
+     Last Modified Date: 3 November 2023
+     Last Modified Time: 08:25:50
+     Latitude Degrees:  39.777472432580005
+     Longitude Degrees: 3.005886406496705
+     Canvas X: 500504.0891156394
+     Canvas Y: 4403059.327197681
+     Area: 0.3465
+     Downstream: J16
+
+     Discretization: Structured
+     File: STM_val.sqlite
+     Projection: 32631
+     Cell Size: 100.0
+
+     Canopy: None
+     Allow Simultaneous Precip Et: No
+     Plant Uptake Method: None
+
+     Surface: None
+
+     LossRate: Gridded SCS
+     Curve Number Grid: Grid 1
+     Potential Retention Scale Factor: 1
+     Initial Abstraction Ratio: 0.2
+
+     Transform: Modified Clark
+     Time of Concentration: 1.350
+     Storage Coefficient: 0.945
+
+     Baseflow: None
+End:
+
+Junction: J16
+     Last Modified Date: 4 October 2023
+     Last Modified Time: 08:38:36
+     Canvas X: 501158.00012207
+     Canvas Y: 4403716.00012207
+     Downstream: R14
+End:
+
+Reach: R14
+     Description: Canal de Siurana
+     Last Modified Date: 29 November 2023
+     Last Modified Time: 06:55:40
+     Canvas X: 503210.00012207
+     Canvas Y: 4404510.00012207
+     From Canvas X: 501158.00012207
+     From Canvas Y: 4403716.00012207
+     Observed Hydrograph Gage: STM08
+     Downstream: J17
+
+     Route: Muskingum Cunge
+     Channel: Rectangular
+     Length: 2422.3
+     Energy Slope: 0.002731
+     Mannings n: 0.035
+     Width: 15
+     Initial Variable: Combined Inflow
+     Space-Time Method: Automatic DX and DT
+     Index Parameter Type: Index Flow
+     Index Flow: 15
+     Number Subreaches: 1
+     Maximum Depth Iterations: 20
+     Maximum Route Step Iterations: 30
+     Channel Loss: Percolation
+     Channel Loss Percolation Rate: 0.2
+     End Channel Loss:
+End:
+
+Subbasin: S27
+     Last Modified Date: 29 November 2023
+     Last Modified Time: 06:55:16
+     Latitude Degrees:  39.775667514734714
+     Longitude Degrees: 3.014060563253184
+     Canvas X: 501204.12378060905
+     Canvas Y: 4402859.084671538
+     Area: 2.6289
+     Observed Hydrograph Gage: STM08
+     Downstream: J17
+
+     Discretization: Structured
+     File: STM_val.sqlite
+     Projection: 32631
+     Cell Size: 100.0
+
+     Canopy: None
+     Allow Simultaneous Precip Et: No
+     Plant Uptake Method: None
+
+     Surface: None
+
+     LossRate: Gridded SCS
+     Curve Number Grid: Grid 1
+     Potential Retention Scale Factor: 1
+     Initial Abstraction Ratio: 0.2
+
+     Transform: Modified Clark
+     Time of Concentration: 3.813
+     Storage Coefficient: 2.669
+
+     Baseflow: None
+End:
+
+Junction: J17
+     Last Modified Date: 4 October 2023
+     Last Modified Time: 10:03:18
+     Canvas X: 503210.00012207
+     Canvas Y: 4404510.00012207
+     Computation Point: Yes
+     Downstream: R15
+End:
+
+Reach: R15
+     Description: Canal de Siurana
+     Last Modified Date: 3 November 2023
+     Last Modified Time: 08:38:46
+     Canvas X: 506252.00012207
+     Canvas Y: 4405104.00012207
+     From Canvas X: 503210.00012207
+     From Canvas Y: 4404510.00012207
+     Downstream: J1
+
+     Route: Muskingum Cunge
+     Channel: Rectangular
+     Length: 3565.5
+     Energy Slope: 0.0001
+     Mannings n: 0.035
+     Width: 16
+     Initial Variable: Combined Inflow
+     Space-Time Method: Automatic DX and DT
+     Index Parameter Type: Index Flow
+     Index Flow: 15
+     Number Subreaches: 1
+     Maximum Depth Iterations: 20
+     Maximum Route Step Iterations: 30
+     Channel Loss: Percolation
+     Channel Loss Percolation Rate: 0.2
+     End Channel Loss:
+End:
+
+Subbasin: S6
+     Last Modified Date: 3 November 2023
+     Last Modified Time: 08:25:50
+     Latitude Degrees:  39.81206660617768
+     Longitude Degrees: 3.0338848677235006
+     Canvas X: 502900.31589533977
+     Canvas Y: 4406899.338346315
+     Area: 15.312
+     Downstream: J4
+
+     Discretization: Structured
+     File: STM_val.sqlite
+     Projection: 32631
+     Cell Size: 100.0
+
+     Canopy: None
+     Allow Simultaneous Precip Et: No
+     Plant Uptake Method: None
+
+     Surface: None
+
+     LossRate: Gridded SCS
+     Curve Number Grid: Grid 1
+     Potential Retention Scale Factor: 1
+     Initial Abstraction Ratio: 0.2
+
+     Transform: Modified Clark
+     Time of Concentration: 2.816
+     Storage Coefficient: 1.971
+
+     Baseflow: None
+End:
+
+Subbasin: S5
+     Last Modified Date: 3 November 2023
+     Last Modified Time: 08:25:50
+     Latitude Degrees:  39.79452789618841
+     Longitude Degrees: 3.0247451719455327
+     Canvas X: 502118.55780553847
+     Canvas Y: 4404952.52301108
+     Area: 6.1138
+     Downstream: J4
+
+     Discretization: Structured
+     File: STM_val.sqlite
+     Projection: 32631
+     Cell Size: 100.0
+
+     Canopy: None
+     Allow Simultaneous Precip Et: No
+     Plant Uptake Method: None
+
+     Surface: None
+
+     LossRate: Gridded SCS
+     Curve Number Grid: Grid 1
+     Potential Retention Scale Factor: 1
+     Initial Abstraction Ratio: 0.2
+
+     Transform: Modified Clark
+     Time of Concentration: 3.644
+     Storage Coefficient: 2.551
+
+     Baseflow: None
+End:
+
+Junction: J4
+     Last Modified Date: 4 October 2023
+     Last Modified Time: 08:38:36
+     Canvas X: 505494.00012207
+     Canvas Y: 4405800.00012207
+     Downstream: R4
+End:
+
+Reach: R4
+     Last Modified Date: 3 November 2023
+     Last Modified Time: 08:38:46
+     Canvas X: 506252.00012207
+     Canvas Y: 4405104.00012207
+     From Canvas X: 505494.00012207
+     From Canvas Y: 4405800.00012207
+     Downstream: J1
+
+     Route: Muskingum Cunge
+     Channel: Rectangular
+     Length: 1196.2
+     Energy Slope: 0.0001
+     Mannings n: 0.035
+     Width: 5
+     Initial Variable: Combined Inflow
+     Space-Time Method: Automatic DX and DT
+     Index Parameter Type: Index Flow
+     Index Flow: 15
+     Number Subreaches: 1
+     Maximum Depth Iterations: 20
+     Maximum Route Step Iterations: 30
+     Channel Loss: Percolation
+     Channel Loss Percolation Rate: 0.2
+     End Channel Loss:
+End:
+
+Subbasin: S28
+     Last Modified Date: 3 November 2023
+     Last Modified Time: 08:25:50
+     Latitude Degrees:  39.78416650309657
+     Longitude Degrees: 3.0343000515751406
+     Canvas X: 502937.0393772693
+     Canvas Y: 4403802.821368205
+     Area: 2.5942
+     Downstream: J1
+
+     Discretization: Structured
+     File: STM_val.sqlite
+     Projection: 32631
+     Cell Size: 100.0
+
+     Canopy: None
+     Allow Simultaneous Precip Et: No
+     Plant Uptake Method: None
+
+     Surface: None
+
+     LossRate: Gridded SCS
+     Curve Number Grid: Grid 1
+     Potential Retention Scale Factor: 1
+     Initial Abstraction Ratio: 0.2
+
+     Transform: Modified Clark
+     Time of Concentration: 4.703
+     Storage Coefficient: 3.292
+
+     Baseflow: None
+End:
+
+Subbasin: S18
+     Last Modified Date: 3 November 2023
+     Last Modified Time: 08:25:50
+     Latitude Degrees:  39.8032972838537
+     Longitude Degrees: 3.0681343442268303
+     Canvas X: 505832.58100549306
+     Canvas Y: 4405927.732635494
+     Area: 1.1546
+     Downstream: J1
+
+     Discretization: Structured
+     File: STM_val.sqlite
+     Projection: 32631
+     Cell Size: 100.0
+
+     Canopy: None
+     Allow Simultaneous Precip Et: No
+     Plant Uptake Method: None
+
+     Surface: None
+
+     LossRate: Gridded SCS
+     Curve Number Grid: Grid 1
+     Potential Retention Scale Factor: 1
+     Initial Abstraction Ratio: 0.2
+
+     Transform: Modified Clark
+     Time of Concentration: 0.994
+     Storage Coefficient: 0.696
+
+     Baseflow: None
+End:
+
+Junction: J1
+     Last Modified Date: 4 October 2023
+     Last Modified Time: 08:38:36
+     Canvas X: 506252.00012207
+     Canvas Y: 4405104.00012207
+     Downstream: R1
+End:
+
+Reach: R1
+     Description: Canal de Siurana
+     Last Modified Date: 3 November 2023
+     Last Modified Time: 08:38:46
+     Canvas X: 507542.00012207
+     Canvas Y: 4405020.00012207
+     From Canvas X: 506252.00012207
+     From Canvas Y: 4405104.00012207
+     Downstream: Sink-1
+
+     Route: Muskingum Cunge
+     Channel: Rectangular
+     Length: 1000
+     Energy Slope: 0.0001
+     Mannings n: 0.035
+     Width: 12
+     Initial Variable: Combined Inflow
+     Space-Time Method: Automatic DX and DT
+     Index Parameter Type: Index Flow
+     Index Flow: 15
+     Number Subreaches: 1
+     Maximum Depth Iterations: 20
+     Maximum Route Step Iterations: 30
+     Channel Loss: Percolation
+     Channel Loss Percolation Rate: 0.2
+     End Channel Loss:
+End:
+
+Subbasin: S29
+     Last Modified Date: 3 November 2023
+     Last Modified Time: 08:25:50
+     Latitude Degrees:  39.79423575730979
+     Longitude Degrees: 3.0787317500127895
+     Canvas X: 506740.64735516877
+     Canvas Y: 4404922.770953851
+     Area: 0.2687
+     Downstream: Sink-1
+
+     Discretization: Structured
+     File: STM_val.sqlite
+     Projection: 32631
+     Cell Size: 100.0
+
+     Canopy: None
+     Allow Simultaneous Precip Et: No
+     Plant Uptake Method: None
+
+     Surface: None
+
+     LossRate: Gridded SCS
+     Curve Number Grid: Grid 1
+     Potential Retention Scale Factor: 1
+     Initial Abstraction Ratio: 0.2
+
+     Transform: Modified Clark
+     Time of Concentration: 1.601
+     Storage Coefficient: 1.121
+
+     Baseflow: None
+End:
+
+Sink: Sink-1
+     Last Modified Date: 4 October 2023
+     Last Modified Time: 10:03:18
+     Canvas X: 507542.00012207
+     Canvas Y: 4405020.00012207
+     Computation Point: Yes
+End:
+
+Basin Layer Properties:
+     Element Layer:
+          Name: Icons
+          Layer shown: Yes
+     End Layer:
+     Element Layer:
+          Name: Reaches
+          Layer shown: Yes
+     End Layer:
+     2D Connection Layer:
+          Layer shown: No
+     End Layer:
+     Element Layer:
+          Name: Subbasins
+          Layer shown: Yes
+     End Layer:
+     Discretization Layer:
+          Layer shown: No
+     End Layer:
+     Breakpoint Layer:
+          Layer shown: Yes
+     End Layer:
+     Base Layer:
+          Name: Identified Streams
+          Layer shown: Yes
+          Properties Filename: maps\streams1241153322023.xml
+     End Layer:
+     Base Layer:
+          Name: Flow Accumulation
+          Layer shown: No
+          Properties Filename: maps\flowaccum1241153322023.xml
+     End Layer:
+     Base Layer:
+          Name: Flow Direction
+          Layer shown: No
+          Properties Filename: maps\flowdir1241153322023.xml
+     End Layer:
+     Base Layer:
+          Name: Sink Locations
+          Layer shown: No
+          Properties Filename: maps\sinklocs1241153322023.xml
+     End Layer:
+     Base Layer:
+          Name: Sink Fill
+          Layer shown: No
+          Properties Filename: maps\sinkfill1241153322023.xml
+     End Layer:
+     Base Layer:
+          Name: Terrain
+          Layer shown: Yes
+          Properties Filename: maps\elevation1241153322023.xml
+     End Layer:
+End:
+
+Basin Spatial Properties:
+     Coordinate System: PROJCS["Unknown_based_on_GRS80_ellipsoid_UTM_Zone_31N",GEOGCS["GCS_unknown",DATUM["D_Unknown_based_on_GRS80_ellipsoid",SPHEROID["GRS 1980",6378137,298.257222101,AUTHORITY["EPSG","7019"]]],PRIMEM["Greenwich",0],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]]],PROJECTION["Transverse_Mercator"],PARAMETER["latitude_of_origin",0],PARAMETER["central_meridian",3],PARAMETER["scale_factor",0.9996],PARAMETER["false_easting",500000],PARAMETER["false_northing",0],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["Easting",EAST],AXIS["Northing",NORTH]]
+     Terrain: mdt02_stm
+     Threshold: 5
+     Break Point: Es Fangar
+          X Coordinate: 498250.00012207
+          Y Coordinate: 4407430.00012207
+     End Break Point:
+     Break Point: Gabellí
+          X Coordinate: 497060.00012207
+          Y Coordinate: 4405092.00012207
+     End Break Point:
+     Break Point: Sant Miquel
+          X Coordinate: 497056.1224876598
+          Y Coordinate: 4404811.880611939
+     End Break Point:
+     Break Point: Monnàber
+          X Coordinate: 496859.93970854755
+          Y Coordinate: 4404652.001070588
+     End Break Point:
+     Break Point: Sa Marjal
+          X Coordinate: 503208.00012207
+          Y Coordinate: 4404510.00012207
+     End Break Point:
+     Break Point: Búger
+          X Coordinate: 498172.00012207
+          Y Coordinate: 4400238.00012207
+     End Break Point:
+     Break Point: Outlet
+          X Coordinate: 507541.4236133263
+          Y Coordinate: 4405019.835359638
+     End Break Point:
+     reach_prefix: R
+     junction_insert: true
+     junction_prefix: J
+     subbasin_prefix: S
+End:
+
+Basin Schematic Properties:
+     Last View N: 4409291.179389232
+     Last View S: 4399830.00012207
+     Last View W: 486304.7198160643
+     Last View E: 507542.00012207
+     Maximum View N: 4409291.179389232
+     Maximum View S: 4399830.00012207
+     Maximum View W: 486304.7198160643
+     Maximum View E: 507542.00012207
+     Extent Method: Elements
+     Buffer: 0
+     Draw Icons: Yes
+     Draw Icon Labels: Name
+     Draw Map Objects: No
+     Draw Gridlines: No
+     Draw Flow Direction: No
+     Draw HillShade Layer: Yes
+     Draw Elevation Layer: Yes
+     Elevation Layer Color Palette: Gray Scale
+     Ignore Elevation Color Ramp Scale: No
+     Use Interpolated Color Ramp for Elevation Layer: Yes
+     Color Ramp Opacity Level for Elevation Layer: 33.0
+     Fix Element Locations: No
+     Fix Hydrologic Order: No
+End:
+
+Computation Point: J15
+     Parameter Set: 1
+     End Parameter Set:
+     Parameter Set: 2
+     End Parameter Set:
+     Parameter Set: 3
+     End Parameter Set:
+     Parameter Set: 4
+     End Parameter Set:
+     Parameter Set: 5
+     End Parameter Set:
+
+     Graph Definition: 
+     End Graph Definition: 
+
+     Graph Definition: 
+     End Graph Definition: 
+
+     Graph Definition: 
+     End Graph Definition: 
+
+     Graph Definition: 
+     End Graph Definition: 
+
+     Graph Definition: 
+     End Graph Definition: 
+
+End Computation Point: 
+
+Computation Point: J12
+     Parameter Set: 1
+     End Parameter Set:
+     Parameter Set: 2
+     End Parameter Set:
+     Parameter Set: 3
+     End Parameter Set:
+     Parameter Set: 4
+     End Parameter Set:
+     Parameter Set: 5
+     End Parameter Set:
+
+     Graph Definition: 
+     End Graph Definition: 
+
+     Graph Definition: 
+     End Graph Definition: 
+
+     Graph Definition: 
+     End Graph Definition: 
+
+     Graph Definition: 
+     End Graph Definition: 
+
+     Graph Definition: 
+     End Graph Definition: 
+
+End Computation Point: 
+
+Computation Point: J10
+     Parameter Set: 1
+     End Parameter Set:
+     Parameter Set: 2
+     End Parameter Set:
+     Parameter Set: 3
+     End Parameter Set:
+     Parameter Set: 4
+     End Parameter Set:
+     Parameter Set: 5
+     End Parameter Set:
+
+     Graph Definition: 
+     End Graph Definition: 
+
+     Graph Definition: 
+     End Graph Definition: 
+
+     Graph Definition: 
+     End Graph Definition: 
+
+     Graph Definition: 
+     End Graph Definition: 
+
+     Graph Definition: 
+     End Graph Definition: 
+
+End Computation Point: 
+
+Computation Point: J11
+     Parameter Set: 1
+     End Parameter Set:
+     Parameter Set: 2
+     End Parameter Set:
+     Parameter Set: 3
+     End Parameter Set:
+     Parameter Set: 4
+     End Parameter Set:
+     Parameter Set: 5
+     End Parameter Set:
+
+     Graph Definition: 
+     End Graph Definition: 
+
+     Graph Definition: 
+     End Graph Definition: 
+
+     Graph Definition: 
+     End Graph Definition: 
+
+     Graph Definition: 
+     End Graph Definition: 
+
+     Graph Definition: 
+     End Graph Definition: 
+
+End Computation Point: 
+
+Computation Point: J14
+     Parameter Set: 1
+     End Parameter Set:
+     Parameter Set: 2
+     End Parameter Set:
+     Parameter Set: 3
+     End Parameter Set:
+     Parameter Set: 4
+     End Parameter Set:
+     Parameter Set: 5
+     End Parameter Set:
+
+     Graph Definition: 
+     End Graph Definition: 
+
+     Graph Definition: 
+     End Graph Definition: 
+
+     Graph Definition: 
+     End Graph Definition: 
+
+     Graph Definition: 
+     End Graph Definition: 
+
+     Graph Definition: 
+     End Graph Definition: 
+
+End Computation Point: 
+
+Computation Point: J17
+     Parameter Set: 1
+     End Parameter Set:
+     Parameter Set: 2
+     End Parameter Set:
+     Parameter Set: 3
+     End Parameter Set:
+     Parameter Set: 4
+     End Parameter Set:
+     Parameter Set: 5
+     End Parameter Set:
+
+     Graph Definition: 
+     End Graph Definition: 
+
+     Graph Definition: 
+     End Graph Definition: 
+
+     Graph Definition: 
+     End Graph Definition: 
+
+     Graph Definition: 
+     End Graph Definition: 
+
+     Graph Definition: 
+     End Graph Definition: 
+
+End Computation Point: 
+
+Computation Point: Sink-1
+     Parameter Set: 1
+     End Parameter Set:
+     Parameter Set: 2
+     End Parameter Set:
+     Parameter Set: 3
+     End Parameter Set:
+     Parameter Set: 4
+     End Parameter Set:
+     Parameter Set: 5
+     End Parameter Set:
+
+     Graph Definition: 
+     End Graph Definition: 
+
+     Graph Definition: 
+     End Graph Definition: 
+
+     Graph Definition: 
+     End Graph Definition: 
+
+     Graph Definition: 
+     End Graph Definition: 
+
+     Graph Definition: 
+     End Graph Definition: 
+
+End Computation Point: 

@@ -1,0 +1,29 @@
+Grid Manager: STM
+     Grid Manager: STM
+     Version: 4.13
+     Filepath Separator: \
+End: 
+
+Grid: Pluja_TR
+     Grid: Pluja_TR
+     Grid Type: Precipitation
+     Last Modified Date: 12 July 2024
+     Last Modified Time: 08:23:09
+     Storm Center X: 0.0
+     Storm Center Y: 0.0
+     Data Source Type: External DSS
+     Filename: 
+     Pathname: ///////
+End: 
+
+Grid: CN_Grid
+     Grid: CN_Grid
+     Grid Type: Curve Number
+     Last Modified Date: 27 October 2025
+     Last Modified Time: 14:04:34
+     Storm Center X: 0.0
+     Storm Center Y: 0.0
+     Data Source Type: External DSS
+     Filename: 
+     Pathname: /utm/conca////tif/
+End: 

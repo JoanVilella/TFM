@@ -1,0 +1,1597 @@
+Basin: STM
+     Last Modified Date: 12 July 2024
+     Last Modified Time: 10:01:55
+     Version: 4.13
+     Filepath Separator: \
+     Unit System: Metric
+     Missing Flow To Zero: No
+     Enable Flow Ratio: No
+     Compute Local Flow At Junctions: No
+     Unregulated Output Required: No
+
+     Enable Sediment Routing: No
+End:
+
+Subbasin: STM_sub1
+     Last Modified Date: 27 October 2025
+     Last Modified Time: 14:29:45
+     Latitude Degrees:  39.833617743930766
+     Longitude Degrees: 2.967734163680044
+     Canvas X: 497239.124893329
+     Canvas Y: 4409291.179389232
+     Area: 6.8682
+     Downstream: STM_junction11
+
+     Discretization: Structured
+     File: STM.sqlite
+     Projection: 32631
+     Cell Size: 100.0
+
+     Canopy: None
+     Allow Simultaneous Precip Et: No
+     Plant Uptake Method: None
+
+     Surface: None
+
+     LossRate: Gridded SCS
+     Curve Number Initial Type: Grid
+     Curve Number Grid: CN_Grid
+     Potential Retention Scale Factor: 1.0
+     Initial Abstraction Ratio: 0.2
+
+     Transform: Modified Clark
+     Mod Clark Method: Specified
+     Time of Concentration: 1.75
+     Storage Coefficient: 1.13
+
+     Baseflow: None
+End:
+
+Subbasin: STM_sub2
+     Last Modified Date: 27 October 2025
+     Last Modified Time: 14:29:45
+     Latitude Degrees:  39.82202221795435
+     Longitude Degrees: 2.9462316704031193
+     Canvas X: 495398.45791800576
+     Canvas Y: 4408005.112505654
+     Area: 10.730
+     Downstream: STM_junction6
+
+     Discretization: Structured
+     File: STM.sqlite
+     Projection: 32631
+     Cell Size: 100.0
+
+     Canopy: None
+     Allow Simultaneous Precip Et: No
+     Plant Uptake Method: None
+
+     Surface: None
+
+     LossRate: Gridded SCS
+     Curve Number Initial Type: Grid
+     Curve Number Grid: CN_Grid
+     Potential Retention Scale Factor: 1.0
+     Initial Abstraction Ratio: 0.2
+
+     Transform: Modified Clark
+     Mod Clark Method: Specified
+     Time of Concentration: 2.14
+     Storage Coefficient: 1.39
+
+     Baseflow: None
+End:
+
+Subbasin: STM_sub3
+     Last Modified Date: 27 October 2025
+     Last Modified Time: 14:29:45
+     Latitude Degrees:  39.81625079832394
+     Longitude Degrees: 2.919215610376509
+     Canvas X: 493085.820586659
+     Canvas Y: 4407366.299878311
+     Area: 8.6297
+     Downstream: STM_junction8
+
+     Discretization: Structured
+     File: STM.sqlite
+     Projection: 32631
+     Cell Size: 100.0
+
+     Canopy: None
+     Allow Simultaneous Precip Et: No
+     Plant Uptake Method: None
+
+     Surface: None
+
+     LossRate: Gridded SCS
+     Curve Number Initial Type: Grid
+     Curve Number Grid: CN_Grid
+     Potential Retention Scale Factor: 1.0
+     Initial Abstraction Ratio: 0.2
+
+     Transform: Modified Clark
+     Mod Clark Method: Specified
+     Time of Concentration: 2.08
+     Storage Coefficient: 1.35
+
+     Baseflow: None
+End:
+
+Subbasin: STM_sub4
+     Last Modified Date: 27 October 2025
+     Last Modified Time: 14:29:45
+     Latitude Degrees:  39.816476846242004
+     Longitude Degrees: 2.988340925856679
+     Canvas X: 499002.12575791846
+     Canvas Y: 4407388.332028022
+     Area: 5.0302
+     Downstream: STM_junction7
+
+     Discretization: Structured
+     File: STM.sqlite
+     Projection: 32631
+     Cell Size: 100.0
+
+     Canopy: None
+     Allow Simultaneous Precip Et: No
+     Plant Uptake Method: None
+
+     Surface: None
+
+     LossRate: Gridded SCS
+     Curve Number Initial Type: Grid
+     Curve Number Grid: CN_Grid
+     Potential Retention Scale Factor: 1.0
+     Initial Abstraction Ratio: 0.2
+
+     Transform: Modified Clark
+     Mod Clark Method: Specified
+     Time of Concentration: 1.91
+     Storage Coefficient: 1.24
+
+     Baseflow: None
+End:
+
+Subbasin: STM_sub5
+     Last Modified Date: 27 October 2025
+     Last Modified Time: 14:38:14
+     Latitude Degrees:  39.79452789618841
+     Longitude Degrees: 3.0247451719455327
+     Canvas X: 502118.55780553847
+     Canvas Y: 4404952.52301108
+     Area: 6.1138
+     Downstream: STM_junction5
+
+     Discretization: Structured
+     File: STM.sqlite
+     Projection: 32631
+     Cell Size: 100.0
+
+     Canopy: None
+     Allow Simultaneous Precip Et: No
+     Plant Uptake Method: None
+
+     Surface: None
+
+     LossRate: Gridded SCS
+     Curve Number Initial Type: Grid
+     Curve Number Grid: CN_Grid
+     Potential Retention Scale Factor: 1.0
+     Initial Abstraction Ratio: 0.2
+
+     Transform: Modified Clark
+     Mod Clark Method: Specified
+     Time of Concentration: 2.84
+     Storage Coefficient: 1.84
+
+     Baseflow: None
+End:
+
+Subbasin: STM_sub6
+     Last Modified Date: 27 October 2025
+     Last Modified Time: 14:29:45
+     Latitude Degrees:  39.81022397784179
+     Longitude Degrees: 3.014153240900088
+     Canvas X: 501211.4541956873
+     Canvas Y: 4406694.377988992
+     Area: 6.7759
+     Downstream: STM_junction12
+
+     Discretization: Structured
+     File: STM.sqlite
+     Projection: 32631
+     Cell Size: 100.0
+
+     Canopy: None
+     Allow Simultaneous Precip Et: No
+     Plant Uptake Method: None
+
+     Surface: None
+
+     LossRate: Gridded SCS
+     Curve Number Initial Type: Grid
+     Curve Number Grid: CN_Grid
+     Potential Retention Scale Factor: 1.0
+     Initial Abstraction Ratio: 0.2
+
+     Transform: Modified Clark
+     Mod Clark Method: Specified
+     Time of Concentration: 1.54
+     Storage Coefficient: 1
+
+     Baseflow: None
+End:
+
+Subbasin: STM_sub7
+     Last Modified Date: 27 October 2025
+     Last Modified Time: 14:29:45
+     Latitude Degrees:  39.81352686103
+     Longitude Degrees: 3.049548217953416
+     Canvas X: 504240.9032336538
+     Canvas Y: 4407062.032106294
+     Area: 8.5362
+     Downstream: STM_junction5
+
+     Discretization: Structured
+     File: STM.sqlite
+     Projection: 32631
+     Cell Size: 100.0
+
+     Canopy: None
+     Allow Simultaneous Precip Et: No
+     Plant Uptake Method: None
+
+     Surface: None
+
+     LossRate: Gridded SCS
+     Curve Number Initial Type: Grid
+     Curve Number Grid: CN_Grid
+     Potential Retention Scale Factor: 1.0
+     Initial Abstraction Ratio: 0.2
+
+     Transform: Modified Clark
+     Mod Clark Method: Specified
+     Time of Concentration: 2.31
+     Storage Coefficient: 1.5
+
+     Baseflow: None
+End:
+
+Subbasin: STM_sub8
+     Last Modified Date: 27 October 2025
+     Last Modified Time: 14:29:45
+     Latitude Degrees:  39.80322466974031
+     Longitude Degrees: 2.891498148001772
+     Canvas X: 490711.78337826015
+     Canvas Y: 4405923.08332658
+     Area: 8.3181
+     Downstream: STM_junction8
+
+     Discretization: Structured
+     File: STM.sqlite
+     Projection: 32631
+     Cell Size: 100.0
+
+     Canopy: None
+     Allow Simultaneous Precip Et: No
+     Plant Uptake Method: None
+
+     Surface: None
+
+     LossRate: Gridded SCS
+     Curve Number Initial Type: Grid
+     Curve Number Grid: CN_Grid
+     Potential Retention Scale Factor: 1.0
+     Initial Abstraction Ratio: 0.2
+
+     Transform: Modified Clark
+     Mod Clark Method: Specified
+     Time of Concentration: 2.33
+     Storage Coefficient: 1.52
+
+     Baseflow: None
+End:
+
+Subbasin: STM_sub9
+     Last Modified Date: 27 October 2025
+     Last Modified Time: 14:29:45
+     Latitude Degrees:  39.78860363742446
+     Longitude Degrees: 2.857011951679293
+     Canvas X: 487757.02634143864
+     Canvas Y: 4404304.495672449
+     Area: 8.7126
+     Downstream: STM_junction9
+
+     Discretization: Structured
+     File: STM.sqlite
+     Projection: 32631
+     Cell Size: 100.0
+
+     Canopy: None
+     Allow Simultaneous Precip Et: No
+     Plant Uptake Method: None
+
+     Surface: None
+
+     LossRate: Gridded SCS
+     Curve Number Initial Type: Grid
+     Curve Number Grid: CN_Grid
+     Potential Retention Scale Factor: 1.0
+     Initial Abstraction Ratio: 0.2
+
+     Transform: Modified Clark
+     Mod Clark Method: Specified
+     Time of Concentration: 1.72
+     Storage Coefficient: 1.12
+
+     Baseflow: None
+End:
+
+Subbasin: STM_sub10
+     Last Modified Date: 27 October 2025
+     Last Modified Time: 14:30:47
+     Latitude Degrees:  39.77071752447317
+     Longitude Degrees: 2.9793638415547403
+     Canvas X: 498232.62634558417
+     Canvas Y: 4402309.814800521
+     Area: 6.9292
+     Downstream: STM_junction2
+
+     Discretization: Structured
+     File: STM.sqlite
+     Projection: 32631
+     Cell Size: 100.0
+
+     Canopy: None
+     Allow Simultaneous Precip Et: No
+     Plant Uptake Method: None
+
+     Surface: None
+
+     LossRate: Gridded SCS
+     Curve Number Initial Type: Grid
+     Curve Number Grid: CN_Grid
+     Potential Retention Scale Factor: 1.0
+     Initial Abstraction Ratio: 0.2
+
+     Transform: Modified Clark
+     Mod Clark Method: Specified
+     Time of Concentration: 2.31
+     Storage Coefficient: 1.5
+
+     Baseflow: None
+End:
+
+Subbasin: STM_sub11
+     Last Modified Date: 27 October 2025
+     Last Modified Time: 14:29:45
+     Latitude Degrees:  39.777558887951926
+     Longitude Degrees: 2.891279581676009
+     Canvas X: 490689.6139427071
+     Canvas Y: 4403074.5576295145
+     Area: 13.522
+     Downstream: STM_junction3
+
+     Discretization: Structured
+     File: STM.sqlite
+     Projection: 32631
+     Cell Size: 100.0
+
+     Canopy: None
+     Allow Simultaneous Precip Et: No
+     Plant Uptake Method: None
+
+     Surface: None
+
+     LossRate: Gridded SCS
+     Curve Number Initial Type: Grid
+     Curve Number Grid: CN_Grid
+     Potential Retention Scale Factor: 1.0
+     Initial Abstraction Ratio: 0.2
+
+     Transform: Modified Clark
+     Mod Clark Method: Specified
+     Time of Concentration: 2.99
+     Storage Coefficient: 1.94
+
+     Baseflow: None
+End:
+
+Subbasin: STM_sub12
+     Last Modified Date: 27 October 2025
+     Last Modified Time: 14:29:45
+     Latitude Degrees:  39.78290250136232
+     Longitude Degrees: 2.8400633921995593
+     Canvas X: 486304.7198160643
+     Canvas Y: 4403674.203342619
+     Area: 7.0045
+     Downstream: STM_junction9
+
+     Discretization: Structured
+     File: STM.sqlite
+     Projection: 32631
+     Cell Size: 100.0
+
+     Canopy: None
+     Allow Simultaneous Precip Et: No
+     Plant Uptake Method: None
+
+     Surface: None
+
+     LossRate: Gridded SCS
+     Curve Number Initial Type: Grid
+     Curve Number Grid: CN_Grid
+     Potential Retention Scale Factor: 1.0
+     Initial Abstraction Ratio: 0.2
+
+     Transform: Modified Clark
+     Mod Clark Method: Specified
+     Time of Concentration: 2.25
+     Storage Coefficient: 1.47
+
+     Baseflow: None
+End:
+
+Subbasin: STM_sub13
+     Last Modified Date: 27 October 2025
+     Last Modified Time: 14:29:45
+     Latitude Degrees:  39.77007800679299
+     Longitude Degrees: 2.936897352378056
+     Canvas X: 494595.55455149466
+     Canvas Y: 4402240.537635232
+     Area: 8.5066
+     Downstream: STM_junction10
+
+     Discretization: Structured
+     File: STM.sqlite
+     Projection: 32631
+     Cell Size: 100.0
+
+     Canopy: None
+     Allow Simultaneous Precip Et: No
+     Plant Uptake Method: None
+
+     Surface: None
+
+     LossRate: Gridded SCS
+     Curve Number Initial Type: Grid
+     Curve Number Grid: CN_Grid
+     Potential Retention Scale Factor: 1.0
+     Initial Abstraction Ratio: 0.2
+
+     Transform: Modified Clark
+     Mod Clark Method: Specified
+     Time of Concentration: 3.51
+     Storage Coefficient: 2.28
+
+     Baseflow: None
+End:
+
+Subbasin: STM_sub14
+     Last Modified Date: 27 October 2025
+     Last Modified Time: 14:29:45
+     Latitude Degrees:  39.812953234724525
+     Longitude Degrees: 2.9726955004667133
+     Canvas X: 497662.9492271622
+     Canvas Y: 4406997.5496884035
+     Area: 1.8004
+     Downstream: STM_junction7
+
+     Discretization: Structured
+     File: STM.sqlite
+     Projection: 32631
+     Cell Size: 100.0
+
+     Canopy: None
+     Allow Simultaneous Precip Et: No
+     Plant Uptake Method: None
+
+     Surface: None
+
+     LossRate: Gridded SCS
+     Curve Number Initial Type: Grid
+     Curve Number Grid: CN_Grid
+     Potential Retention Scale Factor: 1.0
+     Initial Abstraction Ratio: 0.2
+
+     Transform: Modified Clark
+     Mod Clark Method: Specified
+     Time of Concentration: 1.28
+     Storage Coefficient: 0.829
+
+     Baseflow: None
+End:
+
+Subbasin: STM_sub15
+     Last Modified Date: 27 October 2025
+     Last Modified Time: 14:31:57
+     Latitude Degrees:  39.749201062741406
+     Longitude Degrees: 2.8799862857223077
+     Canvas X: 489718.283881579
+     Canvas Y: 4399928.4790451
+     Area: 19.023
+     Downstream: STM_junction3
+
+     Discretization: Structured
+     File: STM.sqlite
+     Projection: 32631
+     Cell Size: 100.0
+
+     Canopy: None
+     Allow Simultaneous Precip Et: No
+     Plant Uptake Method: None
+
+     Surface: None
+
+     LossRate: Gridded SCS
+     Curve Number Initial Type: Grid
+     Curve Number Grid: CN_Grid
+     Potential Retention Scale Factor: 1.0
+     Initial Abstraction Ratio: 0.2
+
+     Transform: Modified Clark
+     Mod Clark Method: Specified
+     Time of Concentration: 2.68
+     Storage Coefficient: 1.74
+
+     Baseflow: None
+End:
+
+Subbasin: STM_sub16
+     Last Modified Date: 27 October 2025
+     Last Modified Time: 14:29:45
+     Latitude Degrees:  39.791059802168235
+     Longitude Degrees: 2.938483742018363
+     Canvas X: 494733.02114851295
+     Canvas Y: 4404569.129040116
+     Area: 9.7618
+     Downstream: STM_junction4
+
+     Discretization: Structured
+     File: STM.sqlite
+     Projection: 32631
+     Cell Size: 100.0
+
+     Canopy: None
+     Allow Simultaneous Precip Et: No
+     Plant Uptake Method: None
+
+     Surface: None
+
+     LossRate: Gridded SCS
+     Curve Number Initial Type: Grid
+     Curve Number Grid: CN_Grid
+     Potential Retention Scale Factor: 1.0
+     Initial Abstraction Ratio: 0.2
+
+     Transform: Modified Clark
+     Mod Clark Method: Specified
+     Time of Concentration: 2.24
+     Storage Coefficient: 1.46
+
+     Baseflow: None
+End:
+
+Subbasin: STM_sub17
+     Last Modified Date: 27 October 2025
+     Last Modified Time: 14:29:45
+     Latitude Degrees:  39.803229559187606
+     Longitude Degrees: 2.969080153465851
+     Canvas X: 497353.13104737276
+     Canvas Y: 4405918.453280715
+     Area: 0.1319
+     Downstream: STM_junction6
+
+     Discretization: Structured
+     File: STM.sqlite
+     Projection: 32631
+     Cell Size: 100.0
+
+     Canopy: None
+     Allow Simultaneous Precip Et: No
+     Plant Uptake Method: None
+
+     Surface: None
+
+     LossRate: Gridded SCS
+     Curve Number Initial Type: Grid
+     Curve Number Grid: CN_Grid
+     Potential Retention Scale Factor: 1.0
+     Initial Abstraction Ratio: 0.2
+
+     Transform: Modified Clark
+     Mod Clark Method: Specified
+     Time of Concentration: 0.569
+     Storage Coefficient: 0.37
+
+     Baseflow: None
+End:
+
+Subbasin: STM_sub18
+     Last Modified Date: 27 October 2025
+     Last Modified Time: 14:29:45
+     Latitude Degrees:  39.799743195348825
+     Longitude Degrees: 2.9633698681267227
+     Canvas X: 496864.14823317074
+     Canvas Y: 4405531.698730453
+     Area: 1.0477
+     Downstream: STM_junction4
+
+     Discretization: Structured
+     File: STM.sqlite
+     Projection: 32631
+     Cell Size: 100.0
+
+     Canopy: None
+     Allow Simultaneous Precip Et: No
+     Plant Uptake Method: None
+
+     Surface: None
+
+     LossRate: Gridded SCS
+     Curve Number Initial Type: Grid
+     Curve Number Grid: CN_Grid
+     Potential Retention Scale Factor: 1.0
+     Initial Abstraction Ratio: 0.2
+
+     Transform: Modified Clark
+     Mod Clark Method: Specified
+     Time of Concentration: 0.8
+     Storage Coefficient: 0.52
+
+     Baseflow: None
+End:
+
+Subbasin: STM_sub19
+     Last Modified Date: 27 October 2025
+     Last Modified Time: 14:29:45
+     Latitude Degrees:  39.8032972838537
+     Longitude Degrees: 3.0681343442268303
+     Canvas X: 505832.58100549306
+     Canvas Y: 4405927.732635494
+     Area: 1.1546
+     Downstream: STM_junction1
+
+     Discretization: Structured
+     File: STM.sqlite
+     Projection: 32631
+     Cell Size: 100.0
+
+     Canopy: None
+     Allow Simultaneous Precip Et: No
+     Plant Uptake Method: None
+
+     Surface: None
+
+     LossRate: Gridded SCS
+     Curve Number Initial Type: Grid
+     Curve Number Grid: CN_Grid
+     Potential Retention Scale Factor: 1.0
+     Initial Abstraction Ratio: 0.2
+
+     Transform: Modified Clark
+     Mod Clark Method: Specified
+     Time of Concentration: 0.994
+     Storage Coefficient: 0.646
+
+     Baseflow: None
+End:
+
+Subbasin: STM_sub20
+     Last Modified Date: 27 October 2025
+     Last Modified Time: 14:29:45
+     Latitude Degrees:  39.7882205274386
+     Longitude Degrees: 2.9819011338143646
+     Canvas X: 498450.3241205278
+     Canvas Y: 4404252.355860653
+     Area: 8.4872
+     Downstream: STM_junction14
+
+     Discretization: Structured
+     File: STM.sqlite
+     Projection: 32631
+     Cell Size: 100.0
+
+     Canopy: None
+     Allow Simultaneous Precip Et: No
+     Plant Uptake Method: None
+
+     Surface: None
+
+     LossRate: Gridded SCS
+     Curve Number Initial Type: Grid
+     Curve Number Grid: CN_Grid
+     Potential Retention Scale Factor: 1.0
+     Initial Abstraction Ratio: 0.2
+
+     Transform: Modified Clark
+     Mod Clark Method: Specified
+     Time of Concentration: 2.68
+     Storage Coefficient: 1.74
+
+     Baseflow: None
+End:
+
+Subbasin: STM_sub21
+     Last Modified Date: 27 October 2025
+     Last Modified Time: 14:32:56
+     Latitude Degrees:  39.75090613082038
+     Longitude Degrees: 2.9408623315000715
+     Canvas X: 494933.73176827154
+     Canvas Y: 4400112.50312334
+     Area: 10.992
+     Downstream: STM_junction10
+
+     Discretization: Structured
+     File: STM.sqlite
+     Projection: 32631
+     Cell Size: 100.0
+
+     Canopy: None
+     Allow Simultaneous Precip Et: No
+     Plant Uptake Method: None
+
+     Surface: None
+
+     LossRate: Gridded SCS
+     Curve Number Initial Type: Grid
+     Curve Number Grid: CN_Grid
+     Potential Retention Scale Factor: 1.0
+     Initial Abstraction Ratio: 0.2
+
+     Transform: Modified Clark
+     Mod Clark Method: Specified
+     Time of Concentration: 2.64
+     Storage Coefficient: 1.72
+
+     Baseflow: None
+End:
+
+Subbasin: STM_sub22
+     Last Modified Date: 27 October 2025
+     Last Modified Time: 14:34:10
+     Latitude Degrees:  39.751972399652914
+     Longitude Degrees: 2.9786438060032543
+     Canvas X: 498170.46327996475
+     Canvas Y: 4400229.389595754
+     Area: 0.0004
+     Downstream: STM_junction13
+
+     Discretization: Structured
+     File: STM.sqlite
+     Projection: 32631
+     Cell Size: 100.0
+
+     Canopy: None
+     Allow Simultaneous Precip Et: No
+     Plant Uptake Method: None
+
+     Surface: None
+
+     LossRate: Gridded SCS
+     Curve Number Initial Type: Grid
+     Curve Number Grid: CN_Grid
+     Potential Retention Scale Factor: 1.0
+     Initial Abstraction Ratio: 0.2
+
+     Transform: Modified Clark
+     Mod Clark Method: Specified
+     Time of Concentration: 0.0254
+     Storage Coefficient: 0.0165
+
+     Baseflow: None
+End:
+
+Subbasin: STM_sub23
+     Last Modified Date: 27 October 2025
+     Last Modified Time: 14:35:18
+     Latitude Degrees:  39.758344686342674
+     Longitude Degrees: 2.9929495436922218
+     Canvas X: 499396.05905027
+     Canvas Y: 4400936.426870589
+     Area: 2.6322
+     Downstream: STM_junction2
+
+     Discretization: Structured
+     File: STM.sqlite
+     Projection: 32631
+     Cell Size: 100.0
+
+     Canopy: None
+     Allow Simultaneous Precip Et: No
+     Plant Uptake Method: None
+
+     Surface: None
+
+     LossRate: Gridded SCS
+     Curve Number Initial Type: Grid
+     Curve Number Grid: CN_Grid
+     Potential Retention Scale Factor: 1.0
+     Initial Abstraction Ratio: 0.2
+
+     Transform: Modified Clark
+     Mod Clark Method: Specified
+     Time of Concentration: 2.11
+     Storage Coefficient: 1.37
+
+     Baseflow: None
+End:
+
+Subbasin: STM_sub24
+     Last Modified Date: 27 October 2025
+     Last Modified Time: 14:36:14
+     Latitude Degrees:  39.777472432580005
+     Longitude Degrees: 3.005886406496705
+     Canvas X: 500504.0891156394
+     Canvas Y: 4403059.327197681
+     Area: 0.3465
+     Downstream: STM_junction14
+
+     Discretization: Structured
+     File: STM.sqlite
+     Projection: 32631
+     Cell Size: 100.0
+
+     Canopy: None
+     Allow Simultaneous Precip Et: No
+     Plant Uptake Method: None
+
+     Surface: None
+
+     LossRate: Gridded SCS
+     Curve Number Initial Type: Grid
+     Curve Number Grid: CN_Grid
+     Potential Retention Scale Factor: 1.0
+     Initial Abstraction Ratio: 0.2
+
+     Transform: Modified Clark
+     Mod Clark Method: Specified
+     Time of Concentration: 1.01
+     Storage Coefficient: 0.656
+
+     Baseflow: None
+End:
+
+Subbasin: STM_sub25
+     Last Modified Date: 27 October 2025
+     Last Modified Time: 14:29:45
+     Latitude Degrees:  39.775667514734714
+     Longitude Degrees: 3.014060563253184
+     Canvas X: 501204.12378060905
+     Canvas Y: 4402859.084671538
+     Area: 2.6289
+     Downstream: STM_junction15
+
+     Discretization: Structured
+     File: STM.sqlite
+     Projection: 32631
+     Cell Size: 100.0
+
+     Canopy: None
+     Allow Simultaneous Precip Et: No
+     Plant Uptake Method: None
+
+     Surface: None
+
+     LossRate: Gridded SCS
+     Curve Number Initial Type: Grid
+     Curve Number Grid: CN_Grid
+     Potential Retention Scale Factor: 1.0
+     Initial Abstraction Ratio: 0.2
+
+     Transform: Modified Clark
+     Mod Clark Method: Specified
+     Time of Concentration: 3.81
+     Storage Coefficient: 2.48
+
+     Baseflow: None
+End:
+
+Subbasin: STM_sub26
+     Last Modified Date: 27 October 2025
+     Last Modified Time: 14:37:10
+     Latitude Degrees:  39.78416650309657
+     Longitude Degrees: 3.0343000515751406
+     Canvas X: 502937.0393772693
+     Canvas Y: 4403802.821368205
+     Area: 2.5942
+     Downstream: STM_junction1
+
+     Discretization: Structured
+     File: STM.sqlite
+     Projection: 32631
+     Cell Size: 100.0
+
+     Canopy: None
+     Allow Simultaneous Precip Et: No
+     Plant Uptake Method: None
+
+     Surface: None
+
+     LossRate: Gridded SCS
+     Curve Number Initial Type: Grid
+     Curve Number Grid: CN_Grid
+     Potential Retention Scale Factor: 1.0
+     Initial Abstraction Ratio: 0.2
+
+     Transform: Modified Clark
+     Mod Clark Method: Specified
+     Time of Concentration: 2.96
+     Storage Coefficient: 1.93
+
+     Baseflow: None
+End:
+
+Subbasin: STM_sub27
+     Last Modified Date: 27 October 2025
+     Last Modified Time: 14:29:45
+     Latitude Degrees:  39.79423575730979
+     Longitude Degrees: 3.0787317500127895
+     Canvas X: 506740.64735516877
+     Canvas Y: 4404922.770953851
+     Area: 0.2687
+     Downstream: Sink-1
+
+     Discretization: Structured
+     File: STM.sqlite
+     Projection: 32631
+     Cell Size: 100.0
+
+     Canopy: None
+     Allow Simultaneous Precip Et: No
+     Plant Uptake Method: None
+
+     Surface: None
+
+     LossRate: Gridded SCS
+     Curve Number Initial Type: Grid
+     Curve Number Grid: CN_Grid
+     Potential Retention Scale Factor: 1.0
+     Initial Abstraction Ratio: 0.2
+
+     Transform: Modified Clark
+     Mod Clark Method: Specified
+     Time of Concentration: 1.6
+     Storage Coefficient: 1.04
+
+     Baseflow: None
+End:
+
+Reach: STM_reach1
+     Last Modified Date: 12 July 2024
+     Last Modified Time: 10:37:12
+     Canvas X: 507542.00012207
+     Canvas Y: 4405020.00012207
+     From Canvas X: 506252.00012207
+     From Canvas Y: 4405104.00012207
+     Downstream: Sink-1
+
+     Route: Muskingum Cunge
+     Channel: Rectangular
+     Length: 1301.219845
+     Energy Slope: 0.0004
+     Mannings n: 0.035
+     Width: 12
+     Initial Variable: Combined Inflow
+     Space-Time Method: Automatic DX and DT
+     Index Parameter Type: Index Flow
+     Index Flow: 15
+     Number Subreaches: 1
+     Maximum Depth Iterations: 20
+     Maximum Route Step Iterations: 30
+     Channel Loss: None
+End:
+
+Reach: STM_reach2
+     Last Modified Date: 12 July 2024
+     Last Modified Time: 10:37:54
+     Canvas X: 501158.00012207
+     Canvas Y: 4403716.00012207
+     From Canvas X: 500308.00012207
+     From Canvas Y: 4402904.00012207
+     Downstream: STM_junction14
+
+     Route: Muskingum Cunge
+     Channel: Rectangular
+     Length: 1216.152065
+     Energy Slope: 0.00863
+     Mannings n: 0.035
+     Width: 8
+     Initial Variable: Combined Inflow
+     Space-Time Method: Automatic DX and DT
+     Index Parameter Type: Index Flow
+     Index Flow: 15
+     Number Subreaches: 1
+     Maximum Depth Iterations: 20
+     Maximum Route Step Iterations: 30
+     Channel Loss: None
+End:
+
+Reach: STM_reach3
+     Last Modified Date: 12 July 2024
+     Last Modified Time: 10:38:28
+     Canvas X: 498164.00012207
+     Canvas Y: 4400234.00012207
+     From Canvas X: 493802.00012207
+     From Canvas Y: 4399830.00012207
+     Downstream: STM_junction10
+
+     Route: Muskingum Cunge
+     Channel: Rectangular
+     Length: 5172.281703
+     Energy Slope: 0.007647
+     Mannings n: 0.035
+     Width: 11
+     Initial Variable: Combined Inflow
+     Space-Time Method: Automatic DX and DT
+     Index Parameter Type: Index Flow
+     Index Flow: 15
+     Number Subreaches: 1
+     Maximum Depth Iterations: 20
+     Maximum Route Step Iterations: 30
+     Channel Loss: None
+End:
+
+Reach: STM_reach4
+     Last Modified Date: 12 July 2024
+     Last Modified Time: 10:51:57
+     Canvas X: 501158.00012207
+     Canvas Y: 4403716.00012207
+     From Canvas X: 497036.00012207
+     From Canvas Y: 4404830.00012207
+     Downstream: STM_junction14
+
+     Route: Muskingum Cunge
+     Channel: Rectangular
+     Length: 5231.819067
+     Energy Slope: 0.005598
+     Mannings n: 0.035
+     Width: 4
+     Initial Variable: Combined Inflow
+     Space-Time Method: Automatic DX and DT
+     Index Parameter Type: Index Flow
+     Index Flow: 15
+     Number Subreaches: 1
+     Maximum Depth Iterations: 20
+     Maximum Route Step Iterations: 30
+     Channel Loss: None
+End:
+
+Reach: STM_reach5
+     Last Modified Date: 12 July 2024
+     Last Modified Time: 10:49:10
+     Canvas X: 506252.00012207
+     Canvas Y: 4405104.00012207
+     From Canvas X: 505494.00012207
+     From Canvas Y: 4405800.00012207
+     Downstream: STM_junction1
+
+     Route: Muskingum Cunge
+     Channel: Rectangular
+     Length: 1081.205799
+     Energy Slope: 0.0004
+     Mannings n: 0.035
+     Width: 5
+     Initial Variable: Combined Inflow
+     Space-Time Method: Automatic DX and DT
+     Index Parameter Type: Index Flow
+     Index Flow: 15
+     Number Subreaches: 1
+     Maximum Depth Iterations: 20
+     Maximum Route Step Iterations: 30
+     Channel Loss: None
+End:
+
+Reach: STM_reach6
+     Last Modified Date: 12 July 2024
+     Last Modified Time: 10:53:12
+     Canvas X: 497036.00012207
+     Canvas Y: 4404830.00012207
+     From Canvas X: 497328.00012207
+     From Canvas Y: 4405732.00012207
+     Downstream: STM_junction4
+
+     Route: Muskingum Cunge
+     Channel: Rectangular
+     Length: 1018.903894
+     Energy Slope: 0.011167
+     Mannings n: 0.035
+     Width: 11
+     Initial Variable: Combined Inflow
+     Space-Time Method: Automatic DX and DT
+     Index Parameter Type: Index Flow
+     Index Flow: 15
+     Number Subreaches: 1
+     Maximum Depth Iterations: 20
+     Maximum Route Step Iterations: 30
+     Channel Loss: None
+End:
+
+Reach: STM_reach7
+     Last Modified Date: 12 July 2024
+     Last Modified Time: 10:54:03
+     Canvas X: 497328.00012207
+     Canvas Y: 4405732.00012207
+     From Canvas X: 497424.00012207
+     From Canvas Y: 4406008.00012207
+     Downstream: STM_junction6
+
+     Route: Muskingum Cunge
+     Channel: Rectangular
+     Length: 297.790863
+     Energy Slope: 0.01249
+     Mannings n: 0.035
+     Width: 6
+     Initial Variable: Combined Inflow
+     Space-Time Method: Automatic DX and DT
+     Index Parameter Type: Index Flow
+     Index Flow: 15
+     Number Subreaches: 1
+     Maximum Depth Iterations: 20
+     Maximum Route Step Iterations: 30
+     Channel Loss: None
+End:
+
+Reach: STM_reach8
+     Last Modified Date: 12 July 2024
+     Last Modified Time: 10:52:32
+     Canvas X: 497036.00012207
+     Canvas Y: 4404830.00012207
+     From Canvas X: 493034.00012207
+     From Canvas Y: 4404638.00012207
+     Downstream: STM_junction4
+
+     Route: Muskingum Cunge
+     Channel: Rectangular
+     Length: 5596.161771
+     Energy Slope: 0.015417
+     Mannings n: 0.035
+     Width: 8
+     Initial Variable: Combined Inflow
+     Space-Time Method: Automatic DX and DT
+     Index Parameter Type: Index Flow
+     Index Flow: 15
+     Number Subreaches: 1
+     Maximum Depth Iterations: 20
+     Maximum Route Step Iterations: 30
+     Channel Loss: None
+End:
+
+Reach: STM_reach9
+     Last Modified Date: 12 July 2024
+     Last Modified Time: 10:50:58
+     Canvas X: 493802.00012207
+     Canvas Y: 4399830.00012207
+     From Canvas X: 488222.00012207
+     From Canvas Y: 4402166.00012207
+     Downstream: STM_junction3
+
+     Route: Muskingum Cunge
+     Channel: Rectangular
+     Length: 8839.467378
+     Energy Slope: 0.01388
+     Mannings n: 0.035
+     Width: 9
+     Initial Variable: Combined Inflow
+     Space-Time Method: Automatic DX and DT
+     Index Parameter Type: Index Flow
+     Index Flow: 15
+     Number Subreaches: 1
+     Maximum Depth Iterations: 20
+     Maximum Route Step Iterations: 30
+     Channel Loss: None
+End:
+
+Reach: STM_reach10
+     Last Modified Date: 12 July 2024
+     Last Modified Time: 10:54:45
+     Canvas X: 498174.00012207
+     Canvas Y: 4400238.00012207
+     From Canvas X: 498164.00012207
+     From Canvas Y: 4400234.00012207
+     Downstream: STM_junction13
+
+     Route: Muskingum Cunge
+     Channel: Rectangular
+     Length: 11.19446
+     Energy Slope: 0.0004
+     Mannings n: 0.035
+     Width: 11
+     Initial Variable: Combined Inflow
+     Space-Time Method: Automatic DX and DT
+     Index Parameter Type: Index Flow
+     Index Flow: 15
+     Number Subreaches: 1
+     Maximum Depth Iterations: 20
+     Maximum Route Step Iterations: 30
+     Channel Loss: None
+End:
+
+Reach: STM_reach11
+     Last Modified Date: 12 July 2024
+     Last Modified Time: 10:55:21
+     Canvas X: 500308.00012207
+     Canvas Y: 4402904.00012207
+     From Canvas X: 498174.00012207
+     From Canvas Y: 4400238.00012207
+     Downstream: STM_junction2
+
+     Route: Muskingum Cunge
+     Channel: Rectangular
+     Length: 5181.036959
+     Energy Slope: 0.005841
+     Mannings n: 0.035
+     Width: 10
+     Initial Variable: Combined Inflow
+     Space-Time Method: Automatic DX and DT
+     Index Parameter Type: Index Flow
+     Index Flow: 15
+     Number Subreaches: 1
+     Maximum Depth Iterations: 20
+     Maximum Route Step Iterations: 30
+     Channel Loss: None
+End:
+
+Reach: STM_reach12
+     Last Modified Date: 12 July 2024
+     Last Modified Time: 10:57:06
+     Canvas X: 505494.00012207
+     Canvas Y: 4405800.00012207
+     From Canvas X: 502208.00012207
+     From Canvas Y: 4405706.00012207
+     Downstream: STM_junction5
+
+     Route: Muskingum Cunge
+     Channel: Rectangular
+     Length: 3720.64323
+     Energy Slope: 0.000155
+     Mannings n: 0.035
+     Width: 2
+     Initial Variable: Combined Inflow
+     Space-Time Method: Automatic DX and DT
+     Index Parameter Type: Index Flow
+     Index Flow: 15
+     Number Subreaches: 1
+     Maximum Depth Iterations: 20
+     Maximum Route Step Iterations: 30
+     Channel Loss: None
+End:
+
+Reach: STM_reach13
+     Last Modified Date: 12 July 2024
+     Last Modified Time: 10:57:36
+     Canvas X: 503210.00012207
+     Canvas Y: 4404510.00012207
+     From Canvas X: 501158.00012207
+     From Canvas Y: 4403716.00012207
+     Downstream: STM_junction15
+
+     Route: Muskingum Cunge
+     Channel: Rectangular
+     Length: 2281.800329
+     Energy Slope: 0.002731
+     Mannings n: 0.035
+     Width: 15
+     Initial Variable: Combined Inflow
+     Space-Time Method: Automatic DX and DT
+     Index Parameter Type: Index Flow
+     Index Flow: 15
+     Number Subreaches: 1
+     Maximum Depth Iterations: 20
+     Maximum Route Step Iterations: 30
+     Channel Loss: None
+End:
+
+Reach: STM_reach14
+     Last Modified Date: 12 July 2024
+     Last Modified Time: 10:57:58
+     Canvas X: 506252.00012207
+     Canvas Y: 4405104.00012207
+     From Canvas X: 503210.00012207
+     From Canvas Y: 4404510.00012207
+     Downstream: STM_junction1
+
+     Route: Muskingum Cunge
+     Channel: Rectangular
+     Length: 3377.759736
+     Energy Slope: 0.0004
+     Mannings n: 0.035
+     Width: 16
+     Initial Variable: Combined Inflow
+     Space-Time Method: Automatic DX and DT
+     Index Parameter Type: Index Flow
+     Index Flow: 15
+     Number Subreaches: 1
+     Maximum Depth Iterations: 20
+     Maximum Route Step Iterations: 30
+     Channel Loss: None
+End:
+
+Reach: STM_reach15
+     Last Modified Date: 12 July 2024
+     Last Modified Time: 10:58:27
+     Canvas X: 497424.00012207
+     Canvas Y: 4406008.00012207
+     From Canvas X: 498248.00012207
+     From Canvas Y: 4407428.00012207
+     Downstream: STM_junction7
+
+     Route: Muskingum Cunge
+     Channel: Rectangular
+     Length: 1714.248524
+     Energy Slope: 0.008349
+     Mannings n: 0.035
+     Width: 7
+     Initial Variable: Combined Inflow
+     Space-Time Method: Automatic DX and DT
+     Index Parameter Type: Index Flow
+     Index Flow: 15
+     Number Subreaches: 1
+     Maximum Depth Iterations: 20
+     Maximum Route Step Iterations: 30
+     Channel Loss: None
+End:
+
+Junction: STM_junction1
+     Last Modified Date: 12 July 2024
+     Last Modified Time: 10:01:55
+     Canvas X: 506252.00012207
+     Canvas Y: 4405104.00012207
+     Downstream: STM_reach1
+End:
+
+Sink: Sink-1
+     Last Modified Date: 12 July 2024
+     Last Modified Time: 10:01:55
+     Canvas X: 507542.00012207
+     Canvas Y: 4405020.00012207
+End:
+
+Junction: STM_junction2
+     Last Modified Date: 12 July 2024
+     Last Modified Time: 10:01:55
+     Canvas X: 500308.00012207
+     Canvas Y: 4402904.00012207
+     Downstream: STM_reach2
+End:
+
+Junction: STM_junction3
+     Last Modified Date: 12 July 2024
+     Last Modified Time: 10:01:55
+     Canvas X: 493802.00012207
+     Canvas Y: 4399830.00012207
+     Downstream: STM_reach3
+End:
+
+Junction: STM_junction4
+     Last Modified Date: 12 July 2024
+     Last Modified Time: 10:01:55
+     Canvas X: 497036.00012207
+     Canvas Y: 4404830.00012207
+     Downstream: STM_reach4
+End:
+
+Junction: STM_junction5
+     Last Modified Date: 12 July 2024
+     Last Modified Time: 10:01:55
+     Canvas X: 505494.00012207
+     Canvas Y: 4405800.00012207
+     Downstream: STM_reach5
+End:
+
+Junction: STM_junction6
+     Last Modified Date: 12 July 2024
+     Last Modified Time: 10:01:55
+     Canvas X: 497328.00012207
+     Canvas Y: 4405732.00012207
+     Downstream: STM_reach6
+End:
+
+Junction: STM_junction7
+     Last Modified Date: 12 July 2024
+     Last Modified Time: 10:01:55
+     Canvas X: 497424.00012207
+     Canvas Y: 4406008.00012207
+     Downstream: STM_reach7
+End:
+
+Junction: STM_junction8
+     Last Modified Date: 12 July 2024
+     Last Modified Time: 10:01:55
+     Canvas X: 493034.00012207
+     Canvas Y: 4404638.00012207
+     Downstream: STM_reach8
+End:
+
+Junction: STM_junction9
+     Last Modified Date: 12 July 2024
+     Last Modified Time: 10:01:55
+     Canvas X: 488222.00012207
+     Canvas Y: 4402166.00012207
+     Downstream: STM_reach9
+End:
+
+Junction: STM_junction10
+     Last Modified Date: 12 July 2024
+     Last Modified Time: 10:01:55
+     Canvas X: 498164.00012207
+     Canvas Y: 4400234.00012207
+     Downstream: STM_reach10
+End:
+
+Junction: STM_junction11
+     Last Modified Date: 12 July 2024
+     Last Modified Time: 10:01:55
+     Canvas X: 498248.00012207
+     Canvas Y: 4407428.00012207
+     Downstream: STM_reach15
+End:
+
+Junction: STM_junction12
+     Last Modified Date: 12 July 2024
+     Last Modified Time: 10:01:55
+     Canvas X: 502208.00012207
+     Canvas Y: 4405706.00012207
+     Downstream: STM_reach12
+End:
+
+Junction: STM_junction13
+     Last Modified Date: 12 July 2024
+     Last Modified Time: 10:01:55
+     Canvas X: 498174.00012207
+     Canvas Y: 4400238.00012207
+     Downstream: STM_reach11
+End:
+
+Junction: STM_junction14
+     Last Modified Date: 12 July 2024
+     Last Modified Time: 10:01:55
+     Canvas X: 501158.00012207
+     Canvas Y: 4403716.00012207
+     Downstream: STM_reach13
+End:
+
+Junction: STM_junction15
+     Last Modified Date: 12 July 2024
+     Last Modified Time: 10:01:55
+     Canvas X: 503210.00012207
+     Canvas Y: 4404510.00012207
+     Downstream: STM_reach14
+End:
+
+Basin Layer Properties:
+     Element Layer:
+          Name: Icons
+          Layer shown: Yes
+     End Layer:
+     Element Layer:
+          Name: Reaches
+          Layer shown: Yes
+     End Layer:
+     2D Connection Layer:
+          Layer shown: No
+     End Layer:
+     Map Layer:
+          Filename: STM.sqlite
+          Layer:13
+          Display name: Centroidal Flowpath
+          Minimum Scale: Undefined
+          Maximum Scale: Undefined
+          Layer shown: Yes
+     End Layer:
+     Map Layer:
+          Filename: STM.sqlite
+          Layer:12
+          Display name: Centroid
+          Minimum Scale: Undefined
+          Maximum Scale: Undefined
+          Layer shown: Yes
+     End Layer:
+     Map Layer:
+          Filename: STM.sqlite
+          Layer:14
+          Display name: 10-85 Flowpath
+          Minimum Scale: Undefined
+          Maximum Scale: Undefined
+          Layer shown: Yes
+     End Layer:
+     Map Layer:
+          Filename: STM.sqlite
+          Layer:11
+          Display name: Longest Flowpath
+          Minimum Scale: Undefined
+          Maximum Scale: Undefined
+          Layer shown: Yes
+     End Layer:
+     Element Layer:
+          Name: Subbasins
+          Layer shown: Yes
+     End Layer:
+     Discretization Layer:
+          Layer shown: Yes
+     End Layer:
+     Breakpoint Layer:
+          Layer shown: Yes
+     End Layer:
+     Base Layer:
+          Name: Identified Streams
+          Layer shown: Yes
+     End Layer:
+     Base Layer:
+          Name: Flow Accumulation
+          Layer shown: Yes
+     End Layer:
+     Base Layer:
+          Name: Flow Direction
+          Layer shown: Yes
+     End Layer:
+     Base Layer:
+          Name: Sink Locations
+          Layer shown: Yes
+     End Layer:
+     Base Layer:
+          Name: Sink Fill
+          Layer shown: Yes
+     End Layer:
+     Base Layer:
+          Name: Terrain
+          Layer shown: Yes
+          Properties Filename: maps\elevation4742092772023.xml
+     End Layer:
+End:
+
+Basin Spatial Properties:
+     Coordinate System: PROJCS["Unknown_based_on_GRS80_ellipsoid_UTM_Zone_31N",GEOGCS["GCS_unknown",DATUM["D_Unknown_based_on_GRS80_ellipsoid",SPHEROID["GRS 1980",6378137,298.257222101,AUTHORITY["EPSG","7019"]]],PRIMEM["Greenwich",0],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]]],PROJECTION["Transverse_Mercator"],PARAMETER["latitude_of_origin",0],PARAMETER["central_meridian",3],PARAMETER["scale_factor",0.9996],PARAMETER["false_easting",500000],PARAMETER["false_northing",0],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["Easting",EAST],AXIS["Northing",NORTH]]
+     Terrain: mdt02_stm
+     Threshold: 5
+     Break Point: Es Fangar
+          X Coordinate: 498250.00012207
+          Y Coordinate: 4407430.00012207
+     End Break Point:
+     Break Point: Sa Marjal
+          X Coordinate: 503208.00012207
+          Y Coordinate: 4404510.00012207
+     End Break Point:
+     Break Point: Búger
+          X Coordinate: 498172.00012207
+          Y Coordinate: 4400238.00012207
+     End Break Point:
+     Break Point: Outlet
+          X Coordinate: 507541.4236133263
+          Y Coordinate: 4405019.835359638
+     End Break Point:
+     Break Point: Break Point 1
+          X Coordinate: 502205.90714790067
+          Y Coordinate: 4405708.039881458
+     End Break Point:
+     reach_prefix: STM_reach
+     junction_insert: true
+     junction_prefix: STM_junction
+     subbasin_prefix: STM_sub
+End:
+
+Basin Schematic Properties:
+     Last View N: 4409291.179389232
+     Last View S: 4399830.00012207
+     Last View W: 486304.7198160643
+     Last View E: 507542.00012207
+     Maximum View N: 4409291.179389232
+     Maximum View S: 4399830.00012207
+     Maximum View W: 486304.7198160643
+     Maximum View E: 507542.00012207
+     Extent Method: Elements
+     Buffer: 0
+     Draw Icons: Yes
+     Draw Icon Labels: Name
+     Draw Map Objects: No
+     Draw Gridlines: No
+     Draw Flow Direction: No
+     Draw HillShade Layer: Yes
+     Draw Elevation Layer: Yes
+     Elevation Layer Color Palette: Gray Scale
+     Ignore Elevation Color Ramp Scale: No
+     Use Interpolated Color Ramp for Elevation Layer: Yes
+     Color Ramp Opacity Level for Elevation Layer: 33.0
+     Fix Element Locations: Yes
+     Fix Hydrologic Order: Yes
+End:

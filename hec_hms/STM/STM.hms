@@ -1,0 +1,27 @@
+Project: STM
+     Description: Sant Miquel
+     Version: 4.13
+     Filepath Separator: \
+     DSS File Name: STM.dss
+     Time Zone ID: Europe/Madrid
+End:
+
+Precipitation: Meteo_TR
+     Filename: Meteo_TR.met
+     Description: 
+     Last Modified Date: 12 July 2024
+     Last Modified Time: 14:07
+End:
+
+Basin: STM
+     Filename: STM.basin
+     Description: 
+     Last Modified Date: 27 October 2025
+     Last Modified Time: 14:38
+End:
+
+Control: Control_TR
+     FileName: Control_TR.control
+     Description: 
+End:
+
