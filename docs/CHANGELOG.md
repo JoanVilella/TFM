@@ -1,7 +1,30 @@
 # CHANGELOG — Project Diary
+<parameter name="newString"># CHANGELOG — Project Diary
 
 > Quick-reference log of what has been done, decisions made, and open issues.
 > Each iteration appends a new entry at the top. Scan this before doing any work.
+
+---
+
+## Iteration 12 — 2026-08-07
+
+### Changes made
+
+**`flow_to_meters` inverse rating curve implemented**
+
+| Change | Detail |
+|--------|--------|
+| `scripts/preprocessing/rating_curve.py` | `load_rating_curves()` now accepts `direction` parameter: `"meters_to_flow"` (default, H→Q) or `"flow_to_meters"` (Q→H) |
+| STM03–STM07 | Explicit `flow_to_meters` rows from CSV used directly |
+| STM08 | Auto-inverted via 10,000-point dense sampling of the forward curve + linear interpolation; roundtrip error < 1 mm |
+
+### Remaining open issues
+
+- [ ] DB extension data harmonization (blocked on data provider)
+- [ ] Basin topology confirmation (geo team)
+
+*End of Iteration 12.*
+
 
 ---
 

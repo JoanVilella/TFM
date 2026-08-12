@@ -308,7 +308,7 @@ A table assigning each **event** (not each row) to **train / validation / test**
 - [x] Recover and preserve **quality flags** in clean CSVs (currently not included). [Done — Iteration 5: QUALITY and DATA_TYPE columns added to all 11 CSVs]
 - [x] Fix `clean_STM02.py` script to recover Excel tipping-bucket formulas in `PRECIP_mm`. [Already done — Iteration 4]
 - [x] Derive DISCHARGE_m3s from HEIGHT_m via rating curves. [Done — Iteration 7: `scripts/preprocessing/rating_curve.py`]
-- [ ] Implement `flow_to_meters` inverse rating curve (Q→H) — needed for HEC-HMS validation.
+- [x] Implement `flow_to_meters` inverse rating curve (Q→H) — needed for HEC-HMS validation. [Done — Iteration 12: `load_rating_curves(direction="flow_to_meters")`; STM03-07 from explicit CSV rows; STM08 auto-inverted via 10k-point forward sampling.]
 - [ ] Harmonize DB extension units/datums (177 m spikes, negative plateaus, oscillations) — coordinate with data provider.
 
 ### Documentation
