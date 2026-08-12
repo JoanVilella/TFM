@@ -5,6 +5,56 @@
 
 ---
 
+## Iteration 10 — 2026-08-07
+
+### Changes made
+
+**Flood event detection (Peak Over Threshold)**
+
+| Change | Detail |
+|--------|--------|
+| `scripts/preprocessing/event_detection.py` | New module: POT-based detection using STM08_DISCHARGE_m3s |
+| Method | Peak Over Threshold with independence criterion (Claps & Laio 2003; Burn et al. 2016) |
+| Parameters | Q > 0.2 m³/s trigger; 3h core wiggle room; 6h inter-event merge; 12h/24h start/end lookback; 72h max core cap |
+| Output | `data/processed/events.csv` (196 events) |
+| Training table | Now 144 columns: `event_id` added (Int64, NaN = non-event) |
+
+### Event statistics
+
+| Stat | Value |
+|------|-------|
+| Total events | 196 |
+| Train / Val / Test | 100 / 16 / 80 |
+| Mean duration | 20.8 h |
+| Median duration | 11.8 h |
+| Max duration | 108.0 h |
+| Top peak Q | 19.81 m³/s (event #53, Mar 2018) |
+| Rows in events | 23,725 (4.2% of training table) |
+
+### Detected event characteristics (per event)
+
+| Column | Description |
+|--------|-------------|
+| `event_id` | Sequential integer |
+| `start_ts`, `peak_ts`, `end_ts` | Event timestamps |
+| `peak_q_m3s`, `peak_h_m` | Peak discharge and level |
+| `duration_h` | Hours from start to end |
+| `acc_precip_mm` | Total precip across all stations during event |
+| `max_intensity_mm_h` | Max hourly rain rate |
+| `split` | train / validation / test (by peak timestamp) |
+
+### Remaining open issues
+
+- [ ] Build the remaining advisor tables (Measurements [grid in long format], Events table already exists)
+- [ ] `flow_to_meters` inverse rating curve
+- [ ] DB extension data harmonization (blocked)
+- [ ] Basin topology confirmation (geo team)
+
+*End of Iteration 10.*
+
+
+---
+
 ## Iteration 9 — 2026-08-07
 
 ### Changes made

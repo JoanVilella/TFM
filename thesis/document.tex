@@ -230,6 +230,23 @@ Cyclical time features use sine--cosine encoding: $\sin(2\pi h/24)$ and $\cos(2\
 
 The prediction target is the water level at STM08, shifted forward in time to produce three multi-horizon target columns: $h(t{+}\mathrm{1h})$, $h(t{+}\mathrm{6h})$, and $h(t{+}\mathrm{24h})$. This corresponds to leads of 6, 36, and 144 time steps on the 10-minute grid. Rows where any target is undefined (the trailing 24 hours of the series) are dropped, yielding a final training table of 563\,698 rows and 142 columns (96~MB compressed).
 
+\subsection{Event detection\label{sec:events}}
+
+Model evaluation is performed both on the full chronological test period and exclusively on identified flood events, to assess whether forecast skill degrades during the rare high-flow conditions that carry the greatest operational consequence.
+
+Flood events are identified using a \textbf{Peak Over Threshold} (POT) approach with an independence criterion, a standard methodology in flood frequency analysis~\cite{Claps2003, Burn2016}. The detection operates on the 10-minute discharge series at STM08 ($\texttt{DISCHARGE\_m$^{3}$\,s$^{-1}$}$) and proceeds through four stages:
+
+\begin{enumerate}
+    \item \textbf{Core identification.} Timestamps where discharge exceeds $Q_{\mathrm{thresh}} = 0.2$~m$^{3}$\,s$^{-1}$ are flagged as potential event cores. Consecutive exceedances are grouped, allowing gaps of up to 3~h within a single core to accommodate the multi-peak structure of Mediterranean convective storms.
+    \item \textbf{Independence filtering.} Core groups closer than 6~h are merged into a single event. Groups separated by more than 6~h are treated as independent events.
+    \item \textbf{Boundary expansion.} Each event is expanded backward (up to 12~h) to capture the rising limb, and forward (up to 24~h) to capture the recession, using a lower threshold of 0.05~m$^{3}$\,s$^{-1}$ with a 1~h persistence requirement for event termination.
+    \item \textbf{Duration capping.} Cores exceeding 72~h (indicative of sustained wet-season baseflow rather than discrete events) are capped to prevent multi-month event characterisation.
+\end{enumerate}
+
+The detection yields 196 events over the 10.8-year analysis window, with a mean duration of 20.8~h (median 11.8~h, maximum 108~h). The peak discharge reaches 19.81~m$^{3}$\,s$^{-1}$ (corresponding to a water level of 1.31~m at STM08), recorded during the March~2018 storm. Events are distributed across the chronological split as follows: 100 training events (Sep~2014--Dec~2020), 16 validation events (Jan~2021--Jun~2022), and 80 test events (Jul~2022--Jul~2025).
+
+Each event is characterised by its start, peak, and end timestamps; peak discharge and water level; duration; total accumulated precipitation across all stations; maximum hourly rainfall intensity; and its split assignment. An $\texttt{event\_id}$ column is appended to the training table (nullable integer, NaN for non-event rows), enabling per-event model evaluation without temporal leakage across event boundaries.
+
 
 
 \section{The Physics-Based Model\label{sec:model}}
