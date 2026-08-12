@@ -309,7 +309,7 @@ A table assigning each **event** (not each row) to **train / validation / test**
 - [x] Fix `clean_STM02.py` script to recover Excel tipping-bucket formulas in `PRECIP_mm`. [Already done — Iteration 4]
 - [x] Derive DISCHARGE_m3s from HEIGHT_m via rating curves. [Done — Iteration 7: `scripts/preprocessing/rating_curve.py`]
 - [x] Implement `flow_to_meters` inverse rating curve (Q→H) — needed for HEC-HMS validation. [Done — Iteration 12: `load_rating_curves(direction="flow_to_meters")`; STM03-07 from explicit CSV rows; STM08 auto-inverted via 10k-point forward sampling.]
-- [ ] Harmonize DB extension units/datums (177 m spikes, negative plateaus, oscillations) — coordinate with data provider.
+- [x] Harmonize DB extension units/datums (177 m spikes, negative plateaus, oscillations) — coordinate with data provider. [Done — Iteration 13: 3-layer filter applied to hydro CSVs; 58.2% of extension data retained. See `scripts/preprocessing/harmonize_extension.py`.]
 
 ### Documentation
 - [x] Reference the group as **RiscBal** (https://www.uib.eu/research/structures/structure/RiscBal/) in the thesis. [Done — Iteration 6: all references updated in `thesis/document.tex`]

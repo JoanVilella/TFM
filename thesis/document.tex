@@ -247,6 +247,44 @@ The detection yields 196 events over the 10.8-year analysis window, with a mean 
 
 Each event is characterised by its start, peak, and end timestamps; peak discharge and water level; duration; total accumulated precipitation across all stations; maximum hourly rainfall intensity; and its split assignment. An $\texttt{event\_id}$ column is appended to the training table (nullable integer, NaN for non-event rows), enabling per-event model evaluation without temporal leakage across event boundaries.
 
+\subsection{Extension data harmonization\label{sec:harmonization}}
+
+The DB extension period (mid-2025 to mid-2026) provides approximately one additional year of observations but exhibits severe quality degradation compared to the historical record: across all six hydrological stations, 35--49\,\% of extension values fall outside the physically plausible range $[-0.5, 5.0]$~m, with individual spikes reaching 177~m and negative plateaus descending to $-$51~m (see Table~\ref{tab:extension_quality}). These artefacts result from a change in data ingestion protocol -- the extension data were ingested directly from the production database before quality-control routines had been applied -- rather than sensor malfunction.
+
+\begin{table}[!t]
+    \caption{Quality of DB extension data before and after harmonization.}
+    \label{tab:extension_quality}
+    \begin{center}
+    \footnotesize
+    \begin{tabular}{@{}lrrr@{}}
+        \toprule
+        \textbf{Station} & \textbf{Extension rows} & \textbf{Retained} & \textbf{\% retained} \\
+        \midrule
+        STM03 & 102\,604 & 19\,866 & 40.9 \\
+        STM04 & 82\,759 & 64\,216 & 77.6 \\
+        STM05 & 77\,436 & 15\,054 & 22.3 \\
+        STM06 & 83\,737 & 53\,444 & 63.8 \\
+        STM07 & 42\,292 & 26\,033 & 61.6 \\
+        STM08 (target) & 46\,066 & 37\,276 & 81.1 \\
+        \midrule
+        \textbf{Total} & 434\,894 & 215\,889 & 58.2 \\
+        \bottomrule
+    \end{tabular}
+    \end{center}
+\end{table}
+
+A three-layer automated filter was designed to recover the usable signal while discarding corrupted segments:
+
+\begin{enumerate}
+    \item \textbf{Absolute bounds.} Values outside $[-0.5, 5.0]$~m are discarded. The upper bound of 5~m exceeds the highest physically plausible level at any station in this basin -- even the December~2016 extreme event at STM08 reached only 2.83~m -- while the lower bound of $-$0.5~m accommodates slight negative offsets from sensor drift or atmospheric pressure variation without classifying them as events.
+    \item \textbf{Rate-of-change cap.} Any step-to-step change exceeding 0.5~m per 10~min (equivalent to 3~m~h$^{-1}$) is discarded. This threshold is deliberately conservative: flood hydrographs in the Sant Miquel basin exhibit maximum rising-limb rates of approximately 0.3~m per 10~min during the most extreme events on record, leaving a 67\,\% margin above the physical maximum.
+    \item \textbf{Contiguous clean blocks.} After layers~1--2, the signal is segmented into contiguous valid runs. Any block lasting at least 24~hours and maintaining at least 70\,\% valid fraction is retained; all other data are discarded. This final layer eliminates the daily sawtooth oscillations and negative plateaus that survive the earlier filters because individual values fall within the absolute bounds but the temporal pattern is non-physical.
+\end{enumerate}
+
+The filter is applied exclusively to the DB extension portion of the clean CSVs (identified by the presence of a non-empty $\texttt{QUALITY}$ column); the historical Excel-derived data is left untouched. All extension rows are tagged with $\texttt{DATA\_TYPE} = \texttt{harmonized}$ in the clean CSV to distinguish them from the $\texttt{observed}$ historical records.
+
+After harmonization, STM08 (the target station) retains 81.1\,\% of its extension data, and the aggregate recovery across all six hydro stations is 58.2\,\%. The filtered extension extends the analysis window from 10.8~years to 11.8~years and increases the training table from 563\,698 to 611\,648 samples, adding 30 flood events to the test partition (from 80 to 110). The $\texttt{DATA\_TYPE}$ column propagates through the preprocessing pipeline into the measurements table, ensuring that harmonized data points can be identified and analysed separately at any stage of the modelling workflow.
+
 
 
 \section{The Physics-Based Model\label{sec:model}}
@@ -268,12 +306,14 @@ Let $h(t)$ denote the water level (m) recorded at STM08 at discrete time step $t
 
 \noindent where $\Delta$ is the forecast horizon, an integer multiple of the 10-minute base interval, $L$ is the look-back window in time steps, and $f(\cdot)$ is the model function. Two instantiations of $f$ are investigated: (i)~the physics-based HEC-HMS model, in which $f$ encapsulates calibrated process equations for rainfall--runoff transformation and channel routing; and (ii)~a family of data-driven models, in which $f$ is learned from observations by statistical optimisation.
 
-The supervised dataset comprises 563\,698 training samples over the validated period September~2014 to July~2025, each with 139 predictor features and three multi-horizon targets $h(t{+}\mathrm{1h})$, $h(t{+}\mathrm{6h})$, and $h(t{+}\mathrm{24h})$. The dataset is partitioned chronologically to avoid temporal leakage:
+The supervised dataset comprises 611\,648 training samples over the validated period September~2014 to July~2026, each with 139 predictor features and three multi-horizon targets $h(t{+}\mathrm{1h})$, $h(t{+}\mathrm{6h})$, and $h(t{+}\mathrm{24h})$. The dataset is partitioned chronologically to avoid temporal leakage:
 \begin{itemize}
     \item \textbf{Training:} September~2014 -- December~2020
     \item \textbf{Validation:} January~2021 -- June~2022
-    \item \textbf{Test:} July~2022 -- July~2025
+    \item \textbf{Test:} July~2022 -- July~2026
 \end{itemize}
+
+A total of 226 flood events are identified across the analysis window (100 training, 16 validation, 110 test), supporting per-event evaluation in addition to aggregate time-series metrics.
 
 Model performance is quantified using four metrics standard in operational hydrology: Nash--Sutcliffe Efficiency (NSE), Kling--Gupta Efficiency (KGE), root mean squared error (RMSE), and percent bias (PBIAS). Results are reported separately for the full test period and for identified flood events, to distinguish performance on rare high-flow conditions from overall average accuracy.
 

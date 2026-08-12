@@ -6,6 +6,53 @@
 
 ---
 
+## Iteration 13 — 2026-08-07
+
+### Changes made
+
+**DB extension data harmonization**
+
+| Change | Detail |
+|--------|--------|
+| `scripts/preprocessing/harmonize_extension.py` | New module: 3-layer filter for DB extension data in hydro CSVs |
+| Layer 1 | Absolute bounds: H ∈ [-0.5, 5.0] m |
+| Layer 2 | Rate-of-change: \|dH/dt\| ≤ 0.5 m/10min (3 m/h) |
+| Layer 3 | Contiguous clean blocks: keep blocks ≥ 24h with ≥ 70% valid fraction |
+| Full pipeline rebuilt | Grid, training table, events, measurements regenerated with harmonized extension |
+
+### Harmonization results
+
+| Station | Retained | Discarded |
+|---------|----------|-----------|
+| STM03 | 40.9% | 28,665 |
+| STM04 | 77.6% | 18,530 |
+| STM05 | 22.3% | 52,610 |
+| STM06 | 63.8% | 30,280 |
+| STM07 | 61.6% | 16,243 |
+| STM08 | **81.1%** | 8,699 |
+| **Total** | **58.2%** | 155,027 |
+
+### Pipeline after harmonization
+
+| Artifact | Before | After | Change |
+|----------|--------|-------|--------|
+| Grid rows | 569,089 | 618,769 | +49,680 |
+| Grid period | 2014-09 → 2025-07 | 2014-09 → 2026-07 | +10 months |
+| Duration | 10.8 years | 11.8 years | +1 year |
+| Training table | 563,698 rows | 611,648 rows | +47,950 |
+| Events | 196 | 226 | +30 (all in test) |
+| Test events | 80 | 110 | +37.5% |
+
+### Remaining open issues
+
+- [x] DB extension data harmonization — **Done (Iteration 13-14)**
+- [ ] Basin topology confirmation (geo team)
+
+*End of Iteration 13.*
+
+
+---
+
 ## Iteration 12 — 2026-08-07
 
 ### Changes made

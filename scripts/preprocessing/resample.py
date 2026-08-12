@@ -387,6 +387,9 @@ def build_10min_grid(start=DEFAULT_START, end=DEFAULT_END_VALIDATED,
     # Add QUALITY columns (forward-fill from source, aligned to 10-min)
     grid = _add_quality_columns(grid, data, target_idx, start, end)
 
+    # Add DATA_TYPE columns (forward-fill from source)
+    grid = _add_datatype_columns(grid, data, target_idx, start, end)
+
     # Add DISCHARGE_m3s via rating curves
     print("  Computing DISCHARGE_m3s for all hydro stations ...")
     from scripts.preprocessing.rating_curve import load_rating_curves, apply_discharge
@@ -441,6 +444,21 @@ def _add_quality_columns(grid, data, target_idx, start, end):
             q_series.index.union(target_idx)
         ).sort_index().ffill().reindex(target_idx)
         grid[f"{code}_QUALITY"] = q_resampled.astype("Int64")
+    return grid
+
+
+def _add_datatype_columns(grid, data, target_idx, start, end):
+    """Add per-station DATA_TYPE columns to the grid (forward-filled)."""
+    for code in HYDRO + METEO + AEMET:
+        if "DATA_TYPE" not in data[code].columns:
+            continue
+        dt_series = _clip_to_window(data[code]["DATA_TYPE"], start, end)
+        if dt_series.empty:
+            continue
+        dt_resampled = dt_series.reindex(
+            dt_series.index.union(target_idx)
+        ).sort_index().ffill().reindex(target_idx)
+        grid[f"{code}_DATA_TYPE"] = dt_resampled
     return grid
 
 
@@ -508,8 +526,22 @@ def build_measurements_table(grid):
             q_grid, on=["TIMESTAMP", "STATION"], how="left"
         ).drop_duplicates(subset=["TIMESTAMP", "STATION", "VARIABLE"])
 
-    # DATA_TYPE: all observed for now
-    meas["DATA_TYPE"] = "observed"
+    # DATA_TYPE: read from {STATION}_DATA_TYPE grid columns
+    datatype_cols = {f"{code}_DATA_TYPE": code for code in (HYDRO + METEO + AEMET)
+                     if f"{code}_DATA_TYPE" in grid.columns}
+    if datatype_cols:
+        dt_grid = grid[list(datatype_cols)].reset_index().melt(
+            id_vars="TIMESTAMP",
+            var_name="dcol",
+            value_name="DATA_TYPE",
+        )
+        dt_grid["STATION"] = dt_grid["dcol"].map(datatype_cols)
+        dt_grid = dt_grid.drop(columns=["dcol"])
+        meas = meas.merge(
+            dt_grid, on=["TIMESTAMP", "STATION"], how="left"
+        ).drop_duplicates(subset=["TIMESTAMP", "STATION", "VARIABLE"])
+    # Default for rows missing DATA_TYPE
+    meas["DATA_TYPE"] = meas["DATA_TYPE"].fillna("observed")
 
     # Clean up
     meas = meas.drop(columns=["col"])
