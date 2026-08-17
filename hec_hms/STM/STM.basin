@@ -1501,7 +1501,7 @@ Basin Layer Properties:
           Display name: Longest Flowpath
           Minimum Scale: Undefined
           Maximum Scale: Undefined
-          Layer shown: Yes
+          Layer shown: No
      End Layer:
      Element Layer:
           Name: Subbasins
@@ -1516,22 +1516,27 @@ Basin Layer Properties:
      Base Layer:
           Name: Identified Streams
           Layer shown: Yes
+          Properties Filename: maps\streams2432092262026.xml
      End Layer:
      Base Layer:
           Name: Flow Accumulation
           Layer shown: Yes
+          Properties Filename: maps\flowaccum2332092262026.xml
      End Layer:
      Base Layer:
           Name: Flow Direction
           Layer shown: Yes
+          Properties Filename: maps\flowdir2332092262026.xml
      End Layer:
      Base Layer:
           Name: Sink Locations
-          Layer shown: Yes
+          Layer shown: No
+          Properties Filename: maps\sinklocs2332092262026.xml
      End Layer:
      Base Layer:
           Name: Sink Fill
           Layer shown: Yes
+          Properties Filename: maps\sinkfill2232092262026.xml
      End Layer:
      Base Layer:
           Name: Terrain

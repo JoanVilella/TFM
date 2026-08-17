@@ -1,10 +1,10 @@
-Meteorology: Meteo_TR
+Meteorology: Meteo_Inverse
      Last Modified Date: 14 August 2026
-     Last Modified Time: 09:44:14
+     Last Modified Time: 10:00:11
      Version: 4.13
      Unit System: Metric
      Set Missing Data to Default: No
-     Precipitation Method: Weighted Gages
+     Precipitation Method: Inverse Distance Squared
      Air Temperature Method: None
      Atmospheric Pressure Method: None
      Dew Point Method: None
@@ -15,10 +15,8 @@ Meteorology: Meteo_TR
      Evapotranspiration Method: No Evapotranspiration
 End:
 
-Precip Method Parameters: Weighted Gages
+Precip Method Parameters: Inverse Distance
      Last Modified Date: 14 August 2026
-     Last Modified Time: 09:44:14
-     Use HEC1 Weighting Scheme: Yes
+     Last Modified Time: 10:00:04
      Use Indexing: No
-     Allow Depth Override: No
 End:

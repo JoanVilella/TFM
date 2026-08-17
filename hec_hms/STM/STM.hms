@@ -9,8 +9,15 @@ End:
 Precipitation: Meteo_TR
      Filename: Meteo_TR.met
      Description: 
-     Last Modified Date: 12 July 2024
-     Last Modified Time: 14:07
+     Last Modified Date: 14 August 2026
+     Last Modified Time: 09:44:14
+End:
+
+Precipitation: Meteo_Inverse
+     Filename: Meteo_Inverse.met
+     Description: 
+     Last Modified Date: 14 August 2026
+     Last Modified Time: 10:00:11
 End:
 
 Basin: STM

@@ -1,0 +1,21 @@
+Gage Manager: 
+     Gage Manager: 
+     Version: 4.13
+     Filepath Separator: \
+End: 
+
+Gage: STM01
+     Gage: STM01
+     Gage Type: Stage
+     Last Modified Date: 17 August 2026
+     Last Modified Time: 09:49:58
+     Reference Height Units: Meters
+     Reference Height: 9.9999
+     Data Source Type: Modifiable DSS
+     Filename: event_precip.dss
+     Pathname: //STM01/STAGE//10MIN/GAGE/
+     Variant: Variant-1
+       Start Time: 15 December 2016, 00:00
+       End Time: 26 December 2016, 00:00
+     End Variant: Variant-1
+End: 
