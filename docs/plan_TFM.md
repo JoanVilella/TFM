@@ -136,9 +136,8 @@ A table assigning each **event** (not each row) to **train / validation / test**
 
 - [x] **Resampling**: Build the dataset on a **uniform 10-min grid**: temporal disaggregation of hourly AEMET series (60 → 10 min), downsampling of STM historical 15-min period, and aggregation of recent 5-min records. Precipitation treated as cumulative; level and temperature as instantaneous states. [Done — Iteration 6: template-based disaggregation for AEMET, cumulative-curve interpolation for STM precip, linear interpolation for instantaneous variables. See `scripts/preprocessing/resample.py`.]
 - [x] **Temporal alignment**: Index by common `TIMESTAMP UTC`, fill index gaps. [Done — Iteration 6-7: 10-min grid built and augmented with DISCHARGE from rating curves. See `scripts/preprocessing/resample.py` and `rating_curve.py`.]
-- [ ] **Null imputation**:
-  - Short gaps (< 3 h): linear interpolation.
-  - Long gaps: flag or exclude from training.
+- [x] **Null imputation**: [Done — Iteration 15: `scripts/preprocessing/impute.py`. Gaps ≤ 24 h are filled (time-linear for HEIGHT/TEMP, linear interpolation of the 10-min increments for PRECIP); longer gaps stay NaN and get a `{col}_MISSING` (0/1) indicator. DISCHARGE is left untouched (NaN = out-of-rating-curve-range). 12,404 cells filled (1.7 % of all NaN). Filled cells tagged `DATA_TYPE = "imputed"`.]
+- [x] **DATA_TYPE vocabulary**: [Done — Iteration 15: standardised to `observed` / `corrected` / `imputed` / `derived` / `simulated`. Per-variable labels in the grid: `derived` for DISCHARGE and AEMET disaggregated precip, `observed` for re-gridded measurements, `imputed` for filled cells; `corrected` retained at source level (STM02 tipping-bucket). The former `harmonized` tag is folded into `observed`.]
 - [x] **Feature engineering**:
   - Lags of each predictor: *t-1h, t-2h, t-3h, t-6h, t-12h, t-24h*. [Done — Iteration 8]
   - Cumulative precipitation: last 3 h, 6 h, 12 h, 24 h, 48 h (antecedent precipitation index). [Done — Iteration 8]

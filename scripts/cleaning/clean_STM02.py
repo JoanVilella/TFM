@@ -59,6 +59,10 @@ for row in data:
     if isinstance(precip_raw, str) and _TIP_BUCKET_RE.match(precip_raw.strip()):
         _tip_count += 1
 
+def _was_tipping_bucket(val):
+    """True if the raw cell is a tipping-bucket formula (=0.2*N or =N*0.2)."""
+    return isinstance(val, str) and bool(_TIP_BUCKET_RE.match(val.strip()))
+
 def clean_ts(ts):
     """Remove microsecond artifacts introduced by the Excel export."""
     if ts is None:
@@ -107,7 +111,8 @@ with open(OUTPUT_CSV, "w", newline="", encoding="utf-8") as f:
             temp_str = ""
         else:
             temp_str = str(round(temp, 4))
-        writer.writerow([ts_str, precip_str, temp_str, "", "observed"])
+        data_type = "corrected" if _was_tipping_bucket(row[2]) else "observed"
+        writer.writerow([ts_str, precip_str, temp_str, "", data_type])
 
 print(f"CSV guardado en: {OUTPUT_CSV}")
 

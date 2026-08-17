@@ -163,16 +163,17 @@ def harmonize(code, dry_run=False):
     # Write results back
     if not dry_run:
         heights[ext_mask] = ext_clean
-        # Rebuild rows: tag extension data as "harmonized"
+        # Rebuild rows: extension survivors stay "observed"; discarded -> NaN.
+        # (DATA_TYPE "harmonized" was folded into "observed" in Iteration 15;
+        #  writing "observed" here also reverts any legacy "harmonized" tags.)
         for i, row in enumerate(rows):
             h_val = heights[i]
             if np.isnan(h_val):
                 row[1] = ""
             else:
                 row[1] = str(round(float(h_val), 6))
-            # Tag all extension rows (whether they survived or not)
             if ext_mask[i]:
-                row[3] = "harmonized"
+                row[3] = "observed"
 
         with open(path, "w", newline="", encoding="utf-8") as f:
             writer = csv.writer(f)

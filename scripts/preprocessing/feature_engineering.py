@@ -111,6 +111,10 @@ def build_training_table(grid, horizons_h=(1, 6, 24)):
                 continue
             for h in LAG_HOURS:
                 new_cols[f"{code}_{var}_lag_{h}h"] = df[col].shift(h * STEP)
+                # Pair each lagged value with its lagged missingness mask
+                miss_col = f"{col}_MISSING"
+                if miss_col in df.columns:
+                    new_cols[f"{miss_col}_lag_{h}h"] = df[miss_col].shift(h * STEP)
 
     # --- Cumulative precipitation ---
     for code in CUM_PRECIP_STATIONS:
@@ -207,7 +211,7 @@ def add_chronological_split(df, train_end="2020-12-31",
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description="Build training table")
-    parser.add_argument("--grid", default=str(PROCESSED_DIR / "grid_10min.parquet"))
+    parser.add_argument("--grid", default=str(PROCESSED_DIR / "grid_10min_imputed.parquet"))
     parser.add_argument("--output", default=str(PROCESSED_DIR / "training_table.parquet"))
     args = parser.parse_args()
 

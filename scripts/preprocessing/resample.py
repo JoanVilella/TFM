@@ -36,9 +36,11 @@ Usage
 
 import numpy as np
 import pandas as pd
+import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(REPO_ROOT))
 CLEAN_DIR = REPO_ROOT / "data" / "clean"
 PROCESSED_DIR = REPO_ROOT / "data" / "processed"
 
@@ -48,6 +50,25 @@ AEMET = ["B013X", "B605X", "B691Y"]
 
 DEFAULT_START = "2014-09-26"
 DEFAULT_END_VALIDATED = "2025-07-22"
+
+# Grid-level DATA_TYPE vocabulary (provenance of each 10-min value):
+#   observed  — measured (incl. re-gridding: 5->10 mean, 10->10, 15->10 interp,
+#               cumulative-precip re-gridding)
+#   corrected — source-level fix (e.g. STM02 tipping-bucket recovery); lives in
+#               the clean CSVs, not propagated to the grid
+#   imputed   — missing value filled (null imputation, applied in impute.py)
+#   derived   — computed/constructed from other data (DISCHARGE via rating
+#               curve, AEMET hourly->10-min disaggregation)
+#   simulated — model output (HEC-HMS / ML; separate files)
+DATA_TYPE_MAP = {}
+for _code in HYDRO:
+    DATA_TYPE_MAP[f"{_code}_HEIGHT_m"] = "observed"
+    DATA_TYPE_MAP[f"{_code}_DISCHARGE_m3s"] = "derived"
+for _code in METEO:
+    DATA_TYPE_MAP[f"{_code}_TEMP_C"] = "observed"
+    DATA_TYPE_MAP[f"{_code}_PRECIP_mm"] = "observed"
+for _code in AEMET:
+    DATA_TYPE_MAP[f"{_code}_PRECIP_mm"] = "derived"
 
 
 # ---------------------------------------------------------------------------
@@ -387,24 +408,15 @@ def build_10min_grid(start=DEFAULT_START, end=DEFAULT_END_VALIDATED,
     # Add QUALITY columns (forward-fill from source, aligned to 10-min)
     grid = _add_quality_columns(grid, data, target_idx, start, end)
 
-    # Add DATA_TYPE columns (forward-fill from source)
-    grid = _add_datatype_columns(grid, data, target_idx, start, end)
-
-    # Add DISCHARGE_m3s via rating curves
+    # Add DISCHARGE_m3s via rating curves (before DATA_TYPE so discharge
+    # columns are present when provenance labels are assigned)
     print("  Computing DISCHARGE_m3s for all hydro stations ...")
     from scripts.preprocessing.rating_curve import load_rating_curves, apply_discharge
     curves = load_rating_curves()
     grid = apply_discharge(grid, curves)
 
-    # Build long-format measurements table
-    print("  Building measurements table (long format) ...")
-    meas = build_measurements_table(grid)
-    meas_path = PROCESSED_DIR / "measurements.parquet"
-    meas_path.parent.mkdir(parents=True, exist_ok=True)
-    meas.to_parquet(meas_path)
-    meas.to_csv(PROCESSED_DIR / "measurements.csv.gz",
-                compression="gzip", index=False)
-    print(f"    Measurements: {meas.shape[0]:,} rows x {meas.shape[1]} cols")
+    # Add DATA_TYPE columns (per-variable provenance: observed / derived)
+    grid = _add_datatype_columns(grid)
 
     print(f"\nGrid built: {len(grid)} rows, {len(grid.columns)} columns")
     print(f"  {start} -> {end}")
@@ -447,18 +459,19 @@ def _add_quality_columns(grid, data, target_idx, start, end):
     return grid
 
 
-def _add_datatype_columns(grid, data, target_idx, start, end):
-    """Add per-station DATA_TYPE columns to the grid (forward-filled)."""
-    for code in HYDRO + METEO + AEMET:
-        if "DATA_TYPE" not in data[code].columns:
-            continue
-        dt_series = _clip_to_window(data[code]["DATA_TYPE"], start, end)
-        if dt_series.empty:
-            continue
-        dt_resampled = dt_series.reindex(
-            dt_series.index.union(target_idx)
-        ).sort_index().ffill().reindex(target_idx)
-        grid[f"{code}_DATA_TYPE"] = dt_resampled
+def _add_datatype_columns(grid):
+    """Add per-variable DATA_TYPE columns to the grid.
+
+    Assigns a deterministic provenance label per value column (see
+    DATA_TYPE_MAP): observed for re-gridded measurements, derived for
+    DISCHARGE (rating curve) and AEMET precipitation (disaggregation).
+
+    The "imputed" label is applied later by impute.py when gaps are filled,
+    and "corrected" is retained at the clean-CSV (source) level only.
+    """
+    for col in grid.columns:
+        if col in DATA_TYPE_MAP:
+            grid[f"{col}_DATA_TYPE"] = DATA_TYPE_MAP[col]
     return grid
 
 
@@ -472,7 +485,7 @@ def build_measurements_table(grid):
     Parameters
     ----------
     grid : pd.DataFrame
-        The 10-min grid (wide format, 30 columns).
+        The 10-min grid (wide format, with per-variable *_DATA_TYPE columns).
 
     Returns
     -------
@@ -526,20 +539,21 @@ def build_measurements_table(grid):
             q_grid, on=["TIMESTAMP", "STATION"], how="left"
         ).drop_duplicates(subset=["TIMESTAMP", "STATION", "VARIABLE"])
 
-    # DATA_TYPE: read from {STATION}_DATA_TYPE grid columns
-    datatype_cols = {f"{code}_DATA_TYPE": code for code in (HYDRO + METEO + AEMET)
-                     if f"{code}_DATA_TYPE" in grid.columns}
+    # DATA_TYPE: read from per-variable {col}_DATA_TYPE grid columns
+    datatype_cols = [f"{c}_DATA_TYPE" for c in available
+                     if f"{c}_DATA_TYPE" in grid.columns]
     if datatype_cols:
-        dt_grid = grid[list(datatype_cols)].reset_index().melt(
+        dt_grid = grid[datatype_cols].reset_index().melt(
             id_vars="TIMESTAMP",
             var_name="dcol",
             value_name="DATA_TYPE",
         )
-        dt_grid["STATION"] = dt_grid["dcol"].map(datatype_cols)
+        # Strip the trailing "_DATA_TYPE" to recover the value column name
+        dt_grid["col"] = dt_grid["dcol"].str.replace("_DATA_TYPE$", "", regex=True)
         dt_grid = dt_grid.drop(columns=["dcol"])
         meas = meas.merge(
-            dt_grid, on=["TIMESTAMP", "STATION"], how="left"
-        ).drop_duplicates(subset=["TIMESTAMP", "STATION", "VARIABLE"])
+            dt_grid, on=["TIMESTAMP", "col"], how="left"
+        )
     # Default for rows missing DATA_TYPE
     meas["DATA_TYPE"] = meas["DATA_TYPE"].fillna("observed")
 

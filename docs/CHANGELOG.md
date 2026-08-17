@@ -6,6 +6,104 @@
 
 ---
 
+## Iteration 15 — 2026-08-17
+
+### Changes made
+
+**Data-type refactor + null imputation (Phase 2)**
+
+Standardised the `DATA_TYPE` vocabulary to the advisor's five labels and
+implemented the null-imputation step on the 10-min grid.
+
+### 1. DATA_TYPE refactor
+
+| Change | Detail |
+|--------|--------|
+| Vocabulary | `observed` / `corrected` / `imputed` / `derived` / `simulated` (collapses the previous `harmonized` tag into `observed`) |
+| `resample.py` | `_add_datatype_columns()` now assigns a deterministic per-variable label from `DATA_TYPE_MAP` (replaces the station-level forward-fill); added `sys.path.insert` so `scripts.*` imports work from the CLI |
+| `build_measurements_table()` | Reads per-variable `{col}_DATA_TYPE` grid columns instead of station-level columns |
+| `apply_discharge()` order | DISCHARGE computed *before* DATA_TYPE assignment so discharge gets a label |
+| `harmonize_extension.py` | Extension rows keep `DATA_TYPE = "observed"` (no more `harmonized`) |
+| `clean_STM02.py` | Recovered tipping-bucket cells now tagged `corrected` at source level (73 cells) |
+| Clean CSVs | Relabelled `harmonized` → `observed` in STM03–STM08 (no value changes) |
+
+### DATA_TYPE mapping
+
+| Label | Trigger |
+|-------|---------|
+| `observed` | measured + re-gridded (5→10 mean, 10→10, 15→10 interp, cumulative-precip re-gridding) |
+| `corrected` | source-level fix (STM02 tipping-bucket recovery); lives in clean CSVs only |
+| `imputed` | missing value filled (null imputation ≤ 24 h) |
+| `derived` | DISCHARGE (rating curve), AEMET hourly→10-min disaggregation |
+| `simulated` | model output (HEC-HMS / ML; separate files) |
+
+### 2. Null imputation (`scripts/preprocessing/impute.py`, new)
+
+| Change | Detail |
+|--------|--------|
+| `impute_gaps(grid, max_interp="24h")` | Fills NaN runs ≤ 24 h: time-linear for HEIGHT/TEMP, linear interpolation of the 10-min increments for PRECIP. Longer gaps stay NaN. Filled cells tagged `DATA_TYPE = "imputed"` |
+| `add_missingness_indicators(grid)` | Adds `{col}_MISSING` (0/1) for cells still missing after imputation |
+| DISCHARGE | Left untouched (NaN there = out-of-rating-curve-range, not missing) |
+| `feature_engineering.py` | Each lagged value now paired with a lagged `_MISSING` mask; default grid switched to `grid_10min_imputed.parquet` |
+
+> **Note on precip**: an earlier cumulative-curve-and-diff fill was rejected — the
+> grid PRECIP_mm are 10-min *increments*, so cumulative interpolation redistributes
+> observed rain into the gap (altering 23 real observations). Linear interpolation
+> of the increments fills only the gap and preserves every observed value.
+
+### Results
+
+| Artifact | Before | After |
+|----------|--------|-------|
+| Imputed cells (gaps ≤ 24 h) | — | 12,404 (1.7 % of all NaN) |
+| Long-gap cells left NaN (> 24 h) | — | ~723 k |
+| Grid columns | 41 | 49 (per-variable DATA_TYPE) |
+| Imputed grid columns | — | 62 (+13 `_MISSING`) |
+| Measurements table | 10,812,691 rows | 11,756,611 rows |
+| Measurements DATA_TYPE | observed + harmonized | observed 6.18 M / derived 5.57 M / imputed 12.4 k |
+| Training table | 144 cols, 611,648 rows | 253 cols, 614,201 rows (train 325,049 / val 78,624 / test 210,528) |
+
+### Verification
+
+- 0 residual gaps ≤ 24 h (except boundary edges)
+- Long gaps still NaN; 0 originally-present values altered
+- Precip observed totals unchanged (0 deviation)
+- `_MISSING` masks align 1:1 with remaining NaN
+- Target-hole behaviour confirmed: rows with NaN targets (e.g. the Nov-2016 STM08 30-day gap) are dropped from training
+
+### Remaining open issues
+
+- [ ] Basin topology confirmation (geo team)
+- [ ] HEC-HMS work (deferred, Iteration 14)
+
+*End of Iteration 15.*
+
+
+---
+
+## Iteration 14 — 2026-08-17
+
+### Changes made
+
+**HEC-HMS project initial setup (Phase 3) — on hold, to be resumed later**
+
+| Change | Detail |
+|--------|--------|
+| `hec_hms/STM/` | New HEC-HMS project added: basin model (`STM.basin`, 1597 lines), validation basin (`STM_val.basin`), terrain, grid, run config, control + meteorology specs |
+| `scripts/hec_hms/dss_io.py` | DSS I/O via JPype against the HEC-HMS bundled hec-monolith JAR (JDK 17 required). Replaces pydsstools. `write_precip()` / `read_ts()` use native Java classes (`HecDss`, `TimeSeriesContainer`, `HecTime`), with simple wildcard pathname matching |
+| `scripts/hec_hms/export_event.py` | Exports event precipitation at native 10-min resolution (no 15-min resampling); auto-generates matching `Control_10min.control` XML and 5-gage meteorologic model |
+| Meteorology configs | Native HEC-HMS format: `Meteo_Inverse.met` (inverse distance squared), `Meteo_TR.met` switched from gridded to weighted-gages, `STM.gage` (STM01 stage data reference) |
+
+### Remaining open issues
+
+- [ ] HEC-HMS basin delineation, calibration, validation and uncertainty analysis (deferred — a lot of work ahead)
+- [ ] Basin topology confirmation (geo team)
+
+*End of Iteration 14.*
+
+
+---
+
 ## Iteration 13 — 2026-08-07
 
 ### Changes made
