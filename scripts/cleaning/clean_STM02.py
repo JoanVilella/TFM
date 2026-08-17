@@ -139,7 +139,7 @@ with open(OUTPUT_META, "w", encoding="utf-8") as f:
     f.write("NOTAS DE LIMPIEZA:\n")
     f.write("  - Columna de serial Excel (DATE.UTC duplicado numérico) eliminada.\n")
     f.write("  - 1 celda de Temp contenía una fórmula Excel (=AVERAGE); tratada como nulo.\n")
-    f.write(f"  - {_tip_count} celdas de Precip contenían fórmulas Excel de tipping-bucket (=0.2*N); evaluadas y recuperadas.\n")
+    f.write(f"  - {_tip_count} celdas de Precip contenían fórmulas Excel de tipping-bucket (=0.2*N); evaluadas, recuperadas y etiquetadas DATA_TYPE=corrected.\n")
     f.write("  - 22261 celdas de Temp contenían el string 'NAN'; tratadas como nulo.\n")
     f.write("  - Dos columnas vacías/basura al final eliminadas.\n")
     f.write("  - Microsegundos artificiales en TIMESTAMP eliminados (artefacto del Excel).\n")
