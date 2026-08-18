@@ -218,9 +218,15 @@ Discharge lags are intentionally excluded: since $\texttt{DISCHARGE} = f(\texttt
 
 The antecedent precipitation index (API) encodes catchment wetness as the rolling sum of precipitation over windows of 3, 6, 12, 24, and 48 hours, computed for each of the five precipitation stations (25 columns). The API has been shown to be a critical predictor for runoff generation in semi-arid Mediterranean basins, where initial soil moisture strongly modulates the rainfall--runoff response~\cite{Estrany2010}.
 
-\subsubsection{Upstream discharge sum}
+\subsubsection{Discharge-based flow features}
 
-A single aggregate feature $\mathrm{UPSTREAM\_Q} = \sum_{i=3}^{7} Q_{\mathrm{STM}i}$ sums the instantaneous discharge of all five upstream hydro stations into a basin-integrated flow proxy. This follows the common practice in distributed hydrological modelling of aggregating contributions from parallel tributaries~\cite{USACE2000}. The assumption of parallel drainage -- that none of STM03--STM07 lie in series on the same reach -- is pending confirmation from the geo-morphological analysis of the Sant Miquel network; the feature engineering pipeline can be trivially updated once the validated topology is available.
+The confirmed drainage topology of the Sant Miquel network (from the geo-morphological analysis) is used to construct physically meaningful flow predictors. The main channel runs STM03 $\rightarrow$ STM04 $\rightarrow$ STM06 $\rightarrow$ STM08 in series, with STM05 a tributary merging into STM06 and STM07 a tributary reaching STM08 directly. Three families of flow features are derived:
+
+\begin{enumerate}
+    \item \textbf{Individual discharge.} The discharge series of the five upstream stations (STM03--STM07) are lagged at 1, 2, 3, 6, 12, and 24~h, mirroring the water-level lags (30 columns). The individual flows are retained rather than collapsed into a single aggregate because the karstic system does not always behave as a clean series routing: conduit losses and subsurface transfer mean the raw flows carry information that simple differences alone do not.
+    \item \textbf{Lateral inflows.} Inter-station flow differences quantify the runoff gained along each reach: $\Delta Q_{03,04} = Q_{\mathrm{STM04}} - Q_{\mathrm{STM03}}$ along the STM03--STM04 reach, and $\Delta Q_{05,06} = Q_{\mathrm{STM06}} - Q_{\mathrm{STM04}} - Q_{\mathrm{STM05}}$ into STM06 after accounting for its two upstream contributors. Each is lagged identically to the raw series (14 columns).
+    \item \textbf{Total wetland inflow.} The basin-integrated inflow to Sa~Marjal is $\mathrm{Q\_IN\_STM08} = Q_{\mathrm{STM06}} + Q_{\mathrm{STM07}}$, lagged at the same six horizons (7 columns). This corrects an earlier formulation, $\mathrm{UPSTREAM\_Q} = \sum_{i=3}^{7} Q_{\mathrm{STM}i}$, which implicitly assumed five parallel tributaries and therefore double-counted the series stations STM03, STM04, and STM06.
+\end{enumerate}
 
 \subsubsection{Temporal encoding}
 
@@ -297,7 +303,7 @@ For the Sant Miquel basin, the model will be delineated and parameterised using 
 
 \section{Problem Statement\label{sec:problem}}
 
-Let $h(t)$ denote the water level (m) recorded at STM08 at discrete time step $t$ on the uniform 10-minute grid. Let $\mathbf{x}(t) \in \mathbb{R}^{p}$, $p = 139$, be the vector of $p$ predictor variables at time $t$, comprising 10-minute precipitation depths, upstream water levels, air temperatures, cumulative antecedent precipitation indices, the aggregated upstream discharge proxy, and temporal features (hour-of-day, day-of-year, and month encoding). The prediction task is defined as:
+Let $h(t)$ denote the water level (m) recorded at STM08 at discrete time step $t$ on the uniform 10-minute grid. Let $\mathbf{x}(t) \in \mathbb{R}^{p}$, $p = 269$, be the vector of $p$ predictor variables at time $t$, comprising 10-minute precipitation depths, upstream water levels and discharges, air temperatures, cumulative antecedent precipitation indices, discharge-based flow features (lateral inflows and total wetland inflow), and temporal features (hour-of-day, day-of-year, and month encoding). The prediction task is defined as:
 
 \begin{equation}
     \hat{h}(t + \Delta) = f\!\left(\mathbf{x}(t),\, \mathbf{x}(t{-}1),\, \ldots,\, \mathbf{x}(t{-}L)\right)
@@ -306,7 +312,7 @@ Let $h(t)$ denote the water level (m) recorded at STM08 at discrete time step $t
 
 \noindent where $\Delta$ is the forecast horizon, an integer multiple of the 10-minute base interval, $L$ is the look-back window in time steps, and $f(\cdot)$ is the model function. Two instantiations of $f$ are investigated: (i)~the physics-based HEC-HMS model, in which $f$ encapsulates calibrated process equations for rainfall--runoff transformation and channel routing; and (ii)~a family of data-driven models, in which $f$ is learned from observations by statistical optimisation.
 
-The supervised dataset comprises 611\,648 training samples over the validated period September~2014 to July~2026, each with 139 predictor features and three multi-horizon targets $h(t{+}\mathrm{1h})$, $h(t{+}\mathrm{6h})$, and $h(t{+}\mathrm{24h})$. The dataset is partitioned chronologically to avoid temporal leakage:
+The supervised dataset comprises 614\,201 training samples over the validated period September~2014 to July~2026, each with 269 predictor features and three multi-horizon targets $h(t{+}\mathrm{1h})$, $h(t{+}\mathrm{6h})$, and $h(t{+}\mathrm{24h})$. The dataset is partitioned chronologically to avoid temporal leakage:
 \begin{itemize}
     \item \textbf{Training:} September~2014 -- December~2020
     \item \textbf{Validation:} January~2021 -- June~2022

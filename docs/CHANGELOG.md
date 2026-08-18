@@ -6,6 +6,63 @@
 
 ---
 
+## Iteration 16 — 2026-08-18
+
+### Changes made
+
+**Basin topology confirmed + discharge flow features (Phase 2, final)**
+
+The geo team confirmed the drainage topology, resolving the long-standing
+open issue. The `UPSTREAM_Q` feature (which summed STM03–STM07 assuming
+parallel tributaries) was wrong — it double/triple-counted the series
+stations — and has been replaced with correct flow features.
+
+### Confirmed topology
+
+```
+STM03 → STM04 → STM06 → STM08   (main channel, in series)
+                ↑
+              STM05               (tributary → merges into STM06)
+                        ↑
+                      STM07       (tributary → merges into STM08 directly)
+```
+
+### New / changed features (`feature_engineering.py`)
+
+| Change | Detail |
+|--------|--------|
+| `DISCHARGE_m3s` lags | STM03–STM07 individual discharge, lagged 1/2/3/6/12/24 h (30 cols). Kept because the karstic system does not always behave as a clean series routing. |
+| `dQ_03_04` | Lateral inflow = Q(STM04) − Q(STM03), + 6 lags |
+| `dQ_05_06` | Lateral inflow = Q(STM06) − Q(STM04) − Q(STM05), + 6 lags |
+| `Q_IN_STM08` | Total wetland inflow = Q(STM06) + Q(STM07), + 6 lags. Replaces `UPSTREAM_Q`. |
+| `UPSTREAM_Q` | Removed (double-counted the series stations) |
+
+### Results
+
+| Artifact | Before | After |
+|----------|--------|-------|
+| Training table columns | 253 | 303 |
+| Predictor columns | ~215 | 269 |
+| Training rows | 614,201 | 614,201 (unchanged) |
+| Size | 101.6 MB | 189.7 MB |
+
+### Verification
+
+- `dQ_03_04`, `dQ_05_06`, `Q_IN_STM08` match hand-computed values at spot checks.
+- 30 discharge-lag columns, 14 lateral-inflow columns, 7 `Q_IN_STM08` columns present.
+- Lag columns align exactly with `base.shift(6)` (0 non-NaN mismatches).
+- Single genuine index gap remains: Nov-2016 (STM08 30-day gap target shadow), as expected.
+
+### Remaining open issues
+
+- [ ] HEC-HMS work (deferred, Iteration 14)
+- [ ] Merge `event_id` back into the training table (per-event evaluation hook)
+
+*End of Iteration 16.*
+
+
+---
+
 ## Iteration 15 — 2026-08-17
 
 ### Changes made

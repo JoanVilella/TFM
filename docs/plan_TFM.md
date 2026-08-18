@@ -99,7 +99,7 @@ This yields **~12 years** of overlapping data with all sources active. All STM s
 - [x] ~~Prediction horizon~~ — **Multi-horizon: t+1h, t+6h and t+24h** (multi-step architectures: LSTM/GRU encoder-decoder and TFT).
 - [x] ~~Hybrid model (ML correcting HEC-HMS)~~ — Discarded as own contribution; kept as future work. The TFM is a strict physical vs. data-driven comparison.
 - [x] ~~Thesis language~~ — English.
-- [ ] Confirm basin topology: which stations are upstream of STM08 and what is the approximate concentration time (important for defining prediction horizon and lags). **Pending: geo team needs to confirm whether STM03–07 are parallel tributaries or if some are in series. Currently `UPSTREAM_Q` sums all five assuming parallel configuration.**
+- [x] ~~Confirm basin topology: which stations are upstream of STM08 and what is the approximate concentration time (important for defining prediction horizon and lags).~~ **Resolved (Iteration 16):** main channel STM03 → STM04 → STM06 → STM08 (series); STM05 merges into STM06; STM07 merges directly into STM08. `UPSTREAM_Q` (sum of all five) was wrong and is replaced by `Q_IN_STM08 = Q6 + Q7` plus lateral inflows `dQ_03_04 = Q4−Q3` and `dQ_05_06 = Q6−Q4−Q5`.
 
 ### Phase 1 — Exploratory Data Analysis (EDA)
 
@@ -141,7 +141,7 @@ A table assigning each **event** (not each row) to **train / validation / test**
 - [x] **Feature engineering**:
   - Lags of each predictor: *t-1h, t-2h, t-3h, t-6h, t-12h, t-24h*. [Done — Iteration 8]
   - Cumulative precipitation: last 3 h, 6 h, 12 h, 24 h, 48 h (antecedent precipitation index). [Done — Iteration 8]
-  - Cumulative upstream discharge (sum of STM03–STM07 at t-lag). [Done — Iteration 8: `UPSTREAM_Q` assumes parallel tributaries; pending basin topology confirmation from geo team]
+  - Cumulative upstream discharge. [Done — Iteration 16: individual discharge lags (STM03–STM07) + lateral inflows `dQ_03_04 = Q4−Q3`, `dQ_05_06 = Q6−Q4−Q5` + total wetland inflow `Q_IN_STM08 = Q6+Q7`. Replaces the old `UPSTREAM_Q` sum which double-counted the series stations.]
   - Temporal variables: hour of day, month, day of year (sin/cos encoding for hour and doy, raw for month). [Done — Iteration 8]
 - [x] **Chronological split**:
   - Train: up to 2020-12-31 [Done — Iteration 9: 324,594 rows, 57.6%]

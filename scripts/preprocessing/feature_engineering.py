@@ -4,14 +4,20 @@ Transforms the 10-min grid into a modelling-ready training table.
 
 Features generated
 ------------------
-* Lagged predictors (HEIGHT_m, TEMP_C, PRECIP_mm):
+* Lagged predictors (HEIGHT_m, TEMP_C, PRECIP_mm, DISCHARGE_m3s):
     t-1h, t-2h, t-3h, t-6h, t-12h, t-24h  (shifted by N * 6 steps)
 
 * Cumulative precipitation (antecedent precipitation index):
     Rolling sum over 3h, 6h, 12h, 24h, 48h  (per station)
 
-* Cumulative upstream discharge:
-    Sum of DISCHARGE_m3s at STM03--STM07
+* Flow features (basin topology confirmed, Iteration 16):
+    - Individual discharge lags for STM03--STM07.
+    - Lateral inflows (inter-station flow differences):
+          dQ_03_04 = Q(STM04) - Q(STM03)
+          dQ_05_06 = Q(STM06) - Q(STM04) - Q(STM05)
+    - Total inflow to STM08: Q_IN_STM08 = Q(STM06) + Q(STM07)
+      (replaces the old UPSTREAM_Q sum-of-all-five, which double-counted the
+      series stations)
 
 * Temporal features (sin/cos encoding for cyclical variables):
     hour_sin, hour_cos, doy_sin, doy_cos, month (raw)
@@ -21,17 +27,18 @@ Features generated
 
 Design decisions
 ----------------
-* DISCHARGE lags skipped: Q = f(H) via rating curve => exact multicollinearity
-  with HEIGHT lags.  Only the upstream-aggregated sum is included.
-  (Kratzert et al. 2019, HESS 23, 5089--5110)
+* Basin topology (confirmed by the geo team):
+    STM03 -> STM04 -> STM06 -> STM08  (main channel, in series)
+    STM05 merges into STM06; STM07 merges directly into STM08.
+    Hence Q_IN_STM08 = Q6 + Q7, and the lateral inflows are Q4 - Q3 and
+    Q6 - Q4 - Q5.  Individual discharge is kept alongside the derived
+    differences because the karstic system does not always behave as a clean
+    series routing (losses, subsurface flow), so the raw flows carry
+    information the differences alone may not.
 
 * Cyclical time encoding: sin/cos preserves circular topology of daily and
   annual cycles for models that don't learn it implicitly (Lim et al. 2021,
   International Journal of Forecasting).
-
-* Upstream Q: currently sums STM03--STM07 DISCHARGE assuming all are parallel
-  tributaries.  Pending confirmation of basin topology from the geo team;
-  if any stations are in series, the sum double-counts and must be corrected.
 
 Usage
 -----
@@ -55,8 +62,8 @@ STEP = 6  # 10-min steps per hour
 # Cumulative precipitation windows (hours)
 CUM_PRECIP_HOURS = [3, 6, 12, 24, 48]
 
-# Upstream hydro stations (aggregated into UPSTREAM_Q)
-UPSTREAM_STATIONS = ["STM03", "STM04", "STM05", "STM06", "STM07"]
+# Upstream hydro stations with discharge observations
+DISCHARGE_STATIONS = ["STM03", "STM04", "STM05", "STM06", "STM07"]
 
 # Predictor sets (station codes)
 HYDRO = ["STM03", "STM04", "STM05", "STM06", "STM07", "STM08"]
@@ -68,10 +75,26 @@ LAG_CONFIG = {
     "HEIGHT_m": HYDRO,
     "TEMP_C": METEO,
     "PRECIP_mm": METEO + AEMET,
+    "DISCHARGE_m3s": DISCHARGE_STATIONS,
 }
 
 # Which stations get cumulative precipitation
 CUM_PRECIP_STATIONS = METEO + AEMET
+
+# Inter-station lateral inflows: name -> (downstream, [upstream terms]).
+# The lateral inflow is Q(downstream) minus the sum of the upstream terms
+# listed (all of which drain into `downstream` on the confirmed topology).
+FLOW_DIFFS = {
+    # STM03 -> STM04 (main channel)
+    "dQ_03_04": ("STM04", ["STM03"]),
+    # STM05 merges into STM06; net inflow beyond STM04 and STM05
+    "dQ_05_06": ("STM06", ["STM04", "STM05"]),
+}
+
+# Direct inflows to the STM08 wetland: the main channel (STM06) plus the
+# tributary that reaches STM08 directly (STM07).  Replaces the old
+# UPSTREAM_Q = sum(STM03..STM07), which double-counted the series stations.
+INFLOW_STM08 = ["STM06", "STM07"]
 
 TARGET_STATION = "STM08"
 
@@ -126,11 +149,25 @@ def build_training_table(grid, horizons_h=(1, 6, 24)):
                 df[col].rolling(window=h * STEP, min_periods=1).sum()
             )
 
-    # --- Upstream discharge ---
-    q_cols = [f"{s}_DISCHARGE_m3s" for s in UPSTREAM_STATIONS]
-    existing_q = [c for c in q_cols if c in df.columns]
-    if existing_q:
-        new_cols["UPSTREAM_Q"] = df[existing_q].sum(axis=1, min_count=1)
+    # --- Flow features: lateral inflows + total inflow to STM08 ---
+    for name, (down, ups) in FLOW_DIFFS.items():
+        down_col = f"{down}_DISCHARGE_m3s"
+        up_cols = [f"{u}_DISCHARGE_m3s" for u in ups]
+        up_cols = [c for c in up_cols if c in df.columns]
+        if down_col not in df.columns or not up_cols:
+            continue
+        lateral = df[down_col] - df[up_cols].sum(axis=1, min_count=1)
+        new_cols[name] = lateral
+        for h in LAG_HOURS:
+            new_cols[f"{name}_lag_{h}h"] = lateral.shift(h * STEP)
+
+    inflow_cols = [f"{c}_DISCHARGE_m3s" for c in INFLOW_STM08
+                   if f"{c}_DISCHARGE_m3s" in df.columns]
+    if inflow_cols:
+        inflow = df[inflow_cols].sum(axis=1, min_count=1)
+        new_cols["Q_IN_STM08"] = inflow
+        for h in LAG_HOURS:
+            new_cols[f"Q_IN_STM08_lag_{h}h"] = inflow.shift(h * STEP)
 
     # --- Temporal features ---
     idx = df.index
