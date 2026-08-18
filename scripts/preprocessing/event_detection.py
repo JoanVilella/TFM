@@ -110,8 +110,6 @@ def detect_events(grid, peak_q_threshold=0.2, inter_event_h=6,
 
     # ---- Step 4: for each merged group, expand to find start & end ----
     events_list = []
-    event_id_map = np.full(n, pd.NA, dtype=object)  # per-row event assignment
-    next_id = 1
 
     for g_start, g_end in merged:
         # Step 4: define event boundaries from the merged core group.
@@ -146,39 +144,43 @@ def detect_events(grid, peak_q_threshold=0.2, inter_event_h=6,
         peak_q_val = q[peak_idx]
         peak_h_val = h[peak_idx]
 
-        start_ts = pd.Timestamp(timestamps[evt_start])
-        peak_ts = pd.Timestamp(timestamps[peak_idx])
-        end_ts = pd.Timestamp(timestamps[evt_end])
-
-        duration = (end_ts - start_ts).total_seconds() / 3600.0
-
-        # Precipitation during event
-        acc_precip = _event_precip(grid, start_ts, end_ts)
-
-        # Max hourly rain intensity
-        max_intensity = _max_hourly_intensity(grid, start_ts, end_ts)
-
-        # Split assignment based on peak timestamp
-        split = _assign_split(peak_ts)
-
         events_list.append({
-            "event_id": next_id,
-            "start_ts": start_ts,
-            "peak_ts": peak_ts,
-            "end_ts": end_ts,
+            "start_idx": evt_start,
+            "end_idx": evt_end,
+            "peak_idx": peak_idx,
+            "start_ts": pd.Timestamp(timestamps[evt_start]),
+            "peak_ts": pd.Timestamp(timestamps[peak_idx]),
+            "end_ts": pd.Timestamp(timestamps[evt_end]),
             "peak_q_m3s": round(peak_q_val, 4),
             "peak_h_m": round(float(peak_h_val), 4),
-            "duration_h": round(duration, 2),
-            "acc_precip_mm": round(acc_precip, 4),
-            "max_intensity_mm_h": round(max_intensity, 4),
-            "split": split,
+            "split": _assign_split(pd.Timestamp(timestamps[peak_idx])),
         })
 
-        # Mark event rows in the grid
-        event_id_map[evt_start:evt_end + 1] = next_id
-        next_id += 1
+    # Merge duplicate events that share the same peak timestamp (aggressive
+    # boundary expansion can let one pulse capture a later pulse's peak).
+    events_list = _merge_duplicate_peaks(events_list)
 
-    events = pd.DataFrame(events_list)
+    # Derive per-event statistics over the final (merged) windows
+    for evt in events_list:
+        evt["duration_h"] = round(
+            (evt["end_ts"] - evt["start_ts"]).total_seconds() / 3600.0, 2)
+        evt["acc_precip_mm"] = round(
+            _event_precip(grid, evt["start_ts"], evt["end_ts"]), 4)
+        evt["max_intensity_mm_h"] = round(
+            _max_hourly_intensity(grid, evt["start_ts"], evt["end_ts"]), 4)
+
+    # Assign each grid row to the event whose peak is nearest in time
+    # (overlapping/nested windows are resolved without leaving any event empty).
+    event_id_map = _assign_rows_nearest_peak(n, events_list)
+
+    events = pd.DataFrame([
+        {k: v for k, v in evt.items()
+         if k not in ("start_idx", "end_idx", "peak_idx")}
+        for evt in events_list
+    ])
+    events = events[["event_id", "start_ts", "peak_ts", "end_ts",
+                     "peak_q_m3s", "peak_h_m", "duration_h",
+                     "acc_precip_mm", "max_intensity_mm_h", "split"]]
 
     # Add event_id to grid
     grid = grid.copy()
@@ -220,6 +222,54 @@ def _merge_groups(groups, inter_event_steps):
         else:
             merged.append(g)
     return merged
+
+
+def _merge_duplicate_peaks(events_list):
+    """Merge events that share the same peak timestamp.
+
+    Aggressive boundary expansion (start -12h, end +24h) can let an early
+    pulse capture a later pulse's peak, yielding two events with an identical
+    ``peak_ts``.  Such duplicates are collapsed into the union of their
+    windows and given a new sequential ``event_id``.
+    """
+    if len(events_list) <= 1:
+        return events_list
+    result = []
+    peak_to_idx = {}
+    for evt in events_list:
+        key = evt["peak_ts"]
+        if key in peak_to_idx:
+            prev = result[peak_to_idx[key]]
+            prev["start_idx"] = min(prev["start_idx"], evt["start_idx"])
+            prev["end_idx"] = max(prev["end_idx"], evt["end_idx"])
+            prev["start_ts"] = min(prev["start_ts"], evt["start_ts"])
+            prev["end_ts"] = max(prev["end_ts"], evt["end_ts"])
+            prev["peak_q_m3s"] = max(prev["peak_q_m3s"], evt["peak_q_m3s"])
+            prev["peak_h_m"] = max(prev["peak_h_m"], evt["peak_h_m"])
+        else:
+            peak_to_idx[key] = len(result)
+            result.append(evt)
+    for i, evt in enumerate(result):
+        evt["event_id"] = i + 1
+    return result
+
+
+def _assign_rows_nearest_peak(n, events_list):
+    """Assign each grid row to the event whose peak is nearest in time.
+
+    Returns an object ndarray of length ``n`` with ``pd.NA`` for rows that do
+    not belong to any event.  Resolves overlapping or nested event windows by
+    attaching each row to the event with the closest peak.
+    """
+    event_id_map = np.full(n, pd.NA, dtype=object)
+    best_dist = np.full(n, np.inf, dtype=float)
+    for evt in events_list:
+        seg = np.arange(evt["start_idx"], evt["end_idx"] + 1)
+        dist = np.abs(seg - evt["peak_idx"]).astype(float)
+        better = dist < best_dist[seg]
+        event_id_map[seg[better]] = evt["event_id"]
+        best_dist[seg[better]] = dist[better]
+    return event_id_map
 
 
 def _split_long_cores(merged, max_core_steps):
@@ -299,7 +349,7 @@ def _empty_result(grid):
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description="Detect flood events")
-    parser.add_argument("--grid", default=str(PROCESSED_DIR / "grid_10min.parquet"))
+    parser.add_argument("--grid", default=str(PROCESSED_DIR / "grid_10min_imputed.parquet"))
     parser.add_argument("--output", default=str(PROCESSED_DIR / "events.csv"))
     parser.add_argument("--threshold", type=float, default=0.2)
     args = parser.parse_args()
@@ -330,6 +380,6 @@ if __name__ == "__main__":
 
     # Save grid with event_id
     grid_path = Path(args.grid)
-    grid_path_new = grid_path.with_name("grid_10min_with_events.parquet")
+    grid_path_new = grid_path.with_name(f"{grid_path.stem}_with_events.parquet")
     grid_out.to_parquet(grid_path_new)
     print(f"\nGrid with event_id saved to {grid_path_new}")

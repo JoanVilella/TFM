@@ -248,7 +248,7 @@ def add_chronological_split(df, train_end="2020-12-31",
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description="Build training table")
-    parser.add_argument("--grid", default=str(PROCESSED_DIR / "grid_10min_imputed.parquet"))
+    parser.add_argument("--grid", default=str(PROCESSED_DIR / "grid_10min_imputed_with_events.parquet"))
     parser.add_argument("--output", default=str(PROCESSED_DIR / "training_table.parquet"))
     args = parser.parse_args()
 

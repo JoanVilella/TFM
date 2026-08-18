@@ -6,6 +6,50 @@
 
 ---
 
+## Iteration 17 — 2026-08-18
+
+### Changes made
+
+**event_id merged into the training table + event-detection overlap fix**
+
+Closed the loose end left by Iteration 15: the regenerated training table
+was missing the `event_id` column needed for per-event evaluation.
+
+| Change | Detail |
+|--------|--------|
+| `event_detection.py` CLI | Default grid switched to `grid_10min_imputed.parquet`; output grid name now derived from the input (`{stem}_with_events.parquet`) |
+| `feature_engineering.py` CLI | Default grid switched to `grid_10min_imputed_with_events.parquet` so `event_id` flows into the training table |
+| `detect_events()` | Fixed overlapping-event row assignment: rows are now assigned to the event with the **nearest peak** (was: later events overwrote earlier events, leaving some events with 0 rows) |
+| Duplicate-peak merge | Events sharing an identical `peak_ts` (boundary-expansion artefact) are collapsed into their union window |
+
+### Why the fix was needed
+
+Boundary expansion (start −12 h, end +24 h) made adjacent events overlap; the
+old `event_id_map[start:end] = id` assignment overwrote earlier events' rows,
+so a nested event ended up with **0 rows** in the grid. Two further events
+(103/104 and 191/192) were true duplicates — a single physical peak detected
+twice — and have been merged.
+
+### Results
+
+| Artifact | Before | After |
+|----------|--------|-------|
+| Events | 226 | 224 (100 train / 15 val / 109 test) |
+| 0-row events | 2 (and 6 truncated) | 0 |
+| Duplicate peaks | 2 pairs | 0 |
+| Training table | 303 cols, no event_id | 304 cols, event_id present |
+| Event rows in training table | — | 29,543 |
+
+### Remaining open issues
+
+- [ ] HEC-HMS work (deferred, Iteration 14)
+- [ ] Review the 176 m³/s peak in the harmonized extension (event #224, Apr 2026) — plausibly a real extreme or a residual harmonization artefact
+
+*End of Iteration 17.*
+
+
+---
+
 ## Iteration 16 — 2026-08-18
 
 ### Changes made

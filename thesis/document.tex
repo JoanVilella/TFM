@@ -249,7 +249,7 @@ Flood events are identified using a \textbf{Peak Over Threshold} (POT) approach 
     \item \textbf{Duration capping.} Cores exceeding 72~h (indicative of sustained wet-season baseflow rather than discrete events) are capped to prevent multi-month event characterisation.
 \end{enumerate}
 
-The detection yields 196 events over the 10.8-year analysis window, with a mean duration of 20.8~h (median 11.8~h, maximum 108~h). The peak discharge reaches 19.81~m$^{3}$\,s$^{-1}$ (corresponding to a water level of 1.31~m at STM08), recorded during the March~2018 storm. Events are distributed across the chronological split as follows: 100 training events (Sep~2014--Dec~2020), 16 validation events (Jan~2021--Jun~2022), and 80 test events (Jul~2022--Jul~2025).
+The detection yields 224 events over the 11.8-year analysis window, with a mean duration of 22.3~h (median 12.3~h, maximum 108~h). The largest historical peak reaches 19.81~m$^{3}$\,s$^{-1}$ (corresponding to a water level of 1.31~m at STM08), recorded during the March~2018 storm; the harmonized extension period (2025--2026) additionally contains higher peaks, up to 176~m$^{3}$\,s$^{-1}$. Events are distributed across the chronological split as follows: 100 training events (Sep~2014--Dec~2020), 15 validation events (Jan~2021--Jun~2022), and 109 test events (Jul~2022--Jul~2026).
 
 Each event is characterised by its start, peak, and end timestamps; peak discharge and water level; duration; total accumulated precipitation across all stations; maximum hourly rainfall intensity; and its split assignment. An $\texttt{event\_id}$ column is appended to the training table (nullable integer, NaN for non-event rows), enabling per-event model evaluation without temporal leakage across event boundaries.
 
@@ -319,7 +319,7 @@ The supervised dataset comprises 614\,201 training samples over the validated pe
     \item \textbf{Test:} July~2022 -- July~2026
 \end{itemize}
 
-A total of 226 flood events are identified across the analysis window (100 training, 16 validation, 110 test), supporting per-event evaluation in addition to aggregate time-series metrics.
+A total of 224 flood events are identified across the analysis window (100 training, 15 validation, 109 test), supporting per-event evaluation in addition to aggregate time-series metrics.
 
 Model performance is quantified using four metrics standard in operational hydrology: Nash--Sutcliffe Efficiency (NSE), Kling--Gupta Efficiency (KGE), root mean squared error (RMSE), and percent bias (PBIAS). Results are reported separately for the full test period and for identified flood events, to distinguish performance on rare high-flow conditions from overall average accuracy.
 
