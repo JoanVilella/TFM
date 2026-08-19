@@ -6,6 +6,69 @@
 
 ---
 
+## Iteration 18 — 2026-08-18
+
+### Changes made
+
+**Critical data-quality fixes: resampling corruption, negatives, TEMP sentinel**
+
+A deeper audit (triggered by strange values in the extended data) uncovered a
+**critical resampling bug** that was silently corrupting the historical record,
+plus two smaller data-quality issues.
+
+### 1. CRITICAL — resampling was silently dropping samples (sub-minute timestamp drift)
+
+The STM sensors log timestamps with a sub-minute offset that drifts over time
+(e.g. STM08 seconds drift 14→29 over a month; STM03/04/05/07 have :59).
+`_resample_instantaneous` relied on `series.asfreq("1min")`, which only keeps
+samples landing exactly on a whole minute — the rest were dropped and their
+values replaced by linear interpolation. The grid therefore looked complete
+(low null rate) while the true flood peaks were erased.
+
+| Station | Raw hist max H | Grid before | Grid after |
+|---------|----------------|-------------|------------|
+| STM05 | 3.48 | 3.40 | **3.48** |
+| STM06 | 2.29 | 1.78 | **2.29** |
+| STM08 (target) | 2.83 | 1.31 | **2.83** |
+
+**Fix** (`resample.py: load_station`): round `TIMESTAMP` to the nearest minute
+before use, then deduplicate. This corrects the whole historical record — e.g.
+STM08 peak discharge rises from 19.81 to 87.84 m³/s (Jan-2017 flood).
+
+### 2. Negative values clipped to 0
+
+`HEIGHT_m` and `PRECIP_mm` values `< 0` are clipped to `0` (a water level /
+rainfall depth cannot be negative; small negatives are sensor drift).
+28,317 HEIGHT cells clipped across STM03–STM08. Applied in `resample.py:
+_normalize_values` (load step).
+
+### 3. TEMP sentinel → NaN
+
+STM02 `TEMP_C` contains a −100 °C sensor sentinel. Values `< −15 °C` (a
+physical lower bound for Mallorca) are set to NaN: **40,299 cells** in STM02.
+Legitimate winter temperatures (≥ −7 °C) are preserved.
+
+### Results
+
+| Artifact | Before | After |
+|----------|--------|-------|
+| Historical STM08 max H | 1.31 m | 2.83 m |
+| Historical STM08 max Q | 19.81 m³/s | 87.84 m³/s |
+| Events | 224 | 361 (train 192 / val 41 / test 128) |
+| STM02 grid null rate | 26.4 % | 36.2 % (sentinel now NaN) |
+| Training table | 304 cols, 614,201 rows | 304 cols, 614,201 rows |
+
+### Flagged for later (see plan_TFM)
+
+- [ ] **Extension datum shift** — STM08 reads 3–5 m continuously from 2026-02-17 (historical max 2.83 m), suggesting a sensor recalibration/offset; produces implausible discharge (176/156/133 m³/s). Pending data-provider confirmation (user asking the team). Phase C will re-harmonize with station-specific bounds.
+- [ ] **−0.5 m offset floor** — STM03/04/07 have many values at exactly −0.5 m (now clipped to 0); may represent a real sensor bias rather than noise.
+- [ ] **−100 °C sentinel root cause** — STM02 temperature sentinel origin unknown.
+
+*End of Iteration 18.*
+
+
+---
+
 ## Iteration 17 — 2026-08-18
 
 ### Changes made

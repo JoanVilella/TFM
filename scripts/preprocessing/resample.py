@@ -76,11 +76,19 @@ for _code in AEMET:
 # ---------------------------------------------------------------------------
 
 def load_station(code, clean_dir=None):
-    """Load a single clean CSV. Returns DataFrame with DatetimeIndex."""
+    """Load a single clean CSV. Returns DataFrame with DatetimeIndex.
+
+    Timestamps are rounded to the nearest minute before use: the STM sensors
+    log with a sub-minute offset that drifts over time (e.g. seconds 14..29),
+    and the resampling relies on whole-minute alignment (``asfreq("1min")``).
+    Without the snap, ``asfreq`` silently drops most samples and the grid is
+    filled with interpolated values instead of the true measurements.
+    """
     root = Path(clean_dir) if clean_dir else CLEAN_DIR
     path = root / f"{code}.csv"
     df = pd.read_csv(path, low_memory=False)
     df["TIMESTAMP"] = pd.to_datetime(df["TIMESTAMP"], errors="coerce")
+    df["TIMESTAMP"] = df["TIMESTAMP"].dt.round("1min")
     df = df.dropna(subset=["TIMESTAMP"]).set_index("TIMESTAMP").sort_index()
     df = df[~df.index.duplicated(keep="first")]
     return df
@@ -101,6 +109,7 @@ def load_all(clean_dir=None, quality_filter=None):
     for code in HYDRO + METEO + AEMET:
         df = load_station(code, clean_dir)
         _fix_dtypes(df)
+        _normalize_values(df)
         if quality_filter is not None and "QUALITY" in df.columns:
             _apply_quality_filter(df, quality_filter)
         data[code] = df
@@ -116,6 +125,26 @@ def _fix_dtypes(df):
             df[col] = pd.to_numeric(df[col], errors="coerce").astype("float64")
     if "QUALITY" in df.columns:
         df["QUALITY"] = pd.to_numeric(df["QUALITY"], errors="coerce").astype("Int64")
+
+
+# Physical lower bound for air temperature in Mallorca (~ -7 C record low).
+# Values below this (e.g. the -100 C sensor sentinel in STM02) are errors.
+TEMP_MIN_C = -15.0
+
+
+def _normalize_values(df):
+    """Apply physical-plausibility cleanups to measurement columns.
+
+    * HEIGHT_m, PRECIP_mm: negative values are clipped to 0 (a water level or
+      rainfall depth cannot be negative; small negatives are sensor drift).
+    * TEMP_C: values below TEMP_MIN_C are set to NaN (sensor sentinel, e.g. the
+      STM02 -100 C code).  Legitimate winter negatives are preserved.
+    """
+    for col in ("HEIGHT_m", "PRECIP_mm"):
+        if col in df.columns:
+            df.loc[df[col] < 0, col] = 0.0
+    if "TEMP_C" in df.columns:
+        df.loc[df["TEMP_C"] < TEMP_MIN_C, "TEMP_C"] = np.nan
 
 
 def _apply_quality_filter(df, quality_filter):
