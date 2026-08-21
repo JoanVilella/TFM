@@ -63,6 +63,7 @@ DEFAULT_END_VALIDATED = "2025-07-22"
 DATA_TYPE_MAP = {}
 for _code in HYDRO:
     DATA_TYPE_MAP[f"{_code}_HEIGHT_m"] = "observed"
+    DATA_TYPE_MAP[f"{_code}_WATER_TEMP_C"] = "observed"
     DATA_TYPE_MAP[f"{_code}_DISCHARGE_m3s"] = "derived"
 for _code in METEO:
     DATA_TYPE_MAP[f"{_code}_TEMP_C"] = "observed"
@@ -118,8 +119,8 @@ def load_all(clean_dir=None, quality_filter=None):
 
 def _fix_dtypes(df):
     """Coerce measurement columns to float; keep QUALITY/DATA_TYPE as-is."""
-    _NUMERIC_COLS = {"HEIGHT_m", "PRECIP_mm", "TEMP_C", "DISCHARGE_m3s",
-                      "VOLUME_m3", "LOAD_kg"}
+    _NUMERIC_COLS = {"HEIGHT_m", "PRECIP_mm", "TEMP_C", "WATER_TEMP_C",
+                      "DISCHARGE_m3s", "VOLUME_m3", "LOAD_kg"}
     for col in df.columns:
         if col in _NUMERIC_COLS:
             df[col] = pd.to_numeric(df[col], errors="coerce").astype("float64")
@@ -131,6 +132,11 @@ def _fix_dtypes(df):
 # Values below this (e.g. the -100 C sensor sentinel in STM02) are errors.
 TEMP_MIN_C = -15.0
 
+# Physical plausibility range for water temperature (°C).  Values outside this
+# are sensor errors (e.g. probes out of water / direct sun, or sentinel codes).
+WATER_TEMP_MIN_C = -1.0
+WATER_TEMP_MAX_C = 45.0
+
 
 def _normalize_values(df):
     """Apply physical-plausibility cleanups to measurement columns.
@@ -139,12 +145,17 @@ def _normalize_values(df):
       rainfall depth cannot be negative; small negatives are sensor drift).
     * TEMP_C: values below TEMP_MIN_C are set to NaN (sensor sentinel, e.g. the
       STM02 -100 C code).  Legitimate winter negatives are preserved.
+    * WATER_TEMP_C: values outside [WATER_TEMP_MIN_C, WATER_TEMP_MAX_C] are set
+      to NaN (sensor errors / probes out of water).
     """
     for col in ("HEIGHT_m", "PRECIP_mm"):
         if col in df.columns:
             df.loc[df[col] < 0, col] = 0.0
     if "TEMP_C" in df.columns:
         df.loc[df["TEMP_C"] < TEMP_MIN_C, "TEMP_C"] = np.nan
+    if "WATER_TEMP_C" in df.columns:
+        df.loc[(df["WATER_TEMP_C"] < WATER_TEMP_MIN_C)
+               | (df["WATER_TEMP_C"] > WATER_TEMP_MAX_C), "WATER_TEMP_C"] = np.nan
 
 
 def _apply_quality_filter(df, quality_filter):
@@ -385,11 +396,15 @@ def build_10min_grid(start=DEFAULT_START, end=DEFAULT_END_VALIDATED,
     max_gap = interpolate_gaps
 
     for code in HYDRO:
-        print(f"  Resampling {code} (HEIGHT_m) ...")
+        print(f"  Resampling {code} (HEIGHT_m, WATER_TEMP_C) ...")
         df = data[code]
         s = _clip_to_window(df["HEIGHT_m"], start, end)
         resampled = _resample_instantaneous(s, target_idx, max_gap=max_gap)
         grid_columns[f"{code}_HEIGHT_m"] = resampled
+        if "WATER_TEMP_C" in df.columns:
+            s_temp = _clip_to_window(df["WATER_TEMP_C"], start, end)
+            grid_columns[f"{code}_WATER_TEMP_C"] = _resample_instantaneous(
+                s_temp, target_idx, max_gap=max_gap)
         gap_info[code] = _gap_stats(s, resampled)
 
     for code in METEO:
@@ -526,6 +541,7 @@ def build_measurements_table(grid):
     VAR_MAP = {}
     for code in HYDRO:
         VAR_MAP[f"{code}_HEIGHT_m"] = code
+        VAR_MAP[f"{code}_WATER_TEMP_C"] = code
         VAR_MAP[f"{code}_DISCHARGE_m3s"] = code
     for code in METEO:
         VAR_MAP[f"{code}_TEMP_C"] = code

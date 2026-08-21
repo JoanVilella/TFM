@@ -2,7 +2,7 @@
 
 Fills NaN runs up to ``max_interp`` (default 24 h) on the 10-min grid:
 
-* ``HEIGHT_m`` / ``TEMP_C`` — time-linear interpolation
+* ``HEIGHT_m`` / ``TEMP_C`` / ``WATER_TEMP_C`` — time-linear interpolation
 * ``PRECIP_mm``            — time-linear interpolation of the 10-min
   increments (the increments are not cumulative, so a cumulative-and-diff
   fill would redistribute observed rain into the gap)
@@ -39,6 +39,7 @@ AEMET = ["B013X", "B605X", "B691Y"]
 
 INSTANTANEOUS_COLS = (
     [f"{c}_HEIGHT_m" for c in HYDRO]
+    + [f"{c}_WATER_TEMP_C" for c in HYDRO]
     + [f"{c}_TEMP_C" for c in METEO]
 )
 PRECIP_COLS = [f"{c}_PRECIP_mm" for c in METEO + AEMET]

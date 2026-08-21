@@ -44,10 +44,10 @@ def detect_extension_rows(rows_with_quality):
     """Return boolean array: True for rows from the DB extension.
 
     Extension rows are identified as having a non-empty QUALITY column.
-    The CSV columns are: TIMESTAMP, HEIGHT_m, QUALITY, DATA_TYPE.
+    The CSV columns are: TIMESTAMP, HEIGHT_m, WATER_TEMP_C, QUALITY, DATA_TYPE.
     """
     return np.array([
-        len(r) > 2 and r[2].strip() != ""
+        len(r) > 3 and r[3].strip() != ""
         for r in rows_with_quality
     ], dtype=bool)
 
@@ -164,6 +164,7 @@ def harmonize(code, dry_run=False):
     if not dry_run:
         heights[ext_mask] = ext_clean
         # Rebuild rows: extension survivors stay "observed"; discarded -> NaN.
+        # WATER_TEMP_C (row[2]) is left untouched. DATA_TYPE is row[4].
         # (DATA_TYPE "harmonized" was folded into "observed" in Iteration 15;
         #  writing "observed" here also reverts any legacy "harmonized" tags.)
         for i, row in enumerate(rows):
@@ -173,7 +174,7 @@ def harmonize(code, dry_run=False):
             else:
                 row[1] = str(round(float(h_val), 6))
             if ext_mask[i]:
-                row[3] = "observed"
+                row[4] = "observed"
 
         with open(path, "w", newline="", encoding="utf-8") as f:
             writer = csv.writer(f)

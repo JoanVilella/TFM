@@ -129,7 +129,7 @@ Each observation in the monitoring database is described by the following attrib
     \item \textbf{Measured value.} The physical quantity recorded (water level, precipitation depth, temperature, etc.) in standard hydrological units (m, mm, \textdegree{}C, m$^{3}$~s$^{-1}$).
     \item \textbf{Geographic coordinates.} Latitude, longitude, and altitude of each sensor, enabling spatial operations such as Thiessen polygon construction for areal rainfall estimation and integration with digital elevation models for HEC-HMS parameterisation.
     \item \textbf{Sensor model.} Manufacturer and instrument designation, relevant for assessing systematic biases between successive instrument generations and for consistency checks after equipment replacement.
-    \item \textbf{Water temperature.} Recorded alongside hydraulic variables at hydrological stations; used for conductivity correction and as an auxiliary predictor in data-driven models.
+    \item \textbf{Water temperature.} Recorded alongside hydraulic variables at hydrological stations and captured in the dataset (clean CSVs, 10-minute grid, and measurements table); it is not used as a model predictor owing to multi-year sensor outages (notably absent at STM08 from 2016 to 2023).
 \end{itemize}
 
 This normalised schema supports both the spatial operations required for physics-based model parameterisation and the tabular feature engineering required for machine learning.
@@ -142,7 +142,7 @@ The common observation window after temporal alignment spans approximately twelv
 
 STM stations originally sampled at 15-minute intervals; the frequency was upgraded to 10~min in May~2022 and to 5~min at most stations from mid-2025 onward, while AEMET gauges provide hourly data. Degrading all series to the coarsest (hourly) resolution would discard precisely the fast-response dynamics that characterise flash floods in small Mediterranean catchments. The modelling dataset is therefore built on a \textbf{uniform 10-minute grid} (2014-09-26 to 2025-07-22), selected as the finest resolution at which all variables can be meaningfully represented given the available data density. The resampling strategy distinguishes between two physical measurement types:
 
-\textit{Instantaneous quantities (HEIGHT\_m, TEMP\_C).} Water level and air temperature are point measurements whose value at time $t$ represents the state at that instant, independent of the preceding sampling interval. For these variables, the following transformations are applied:
+\textit{Instantaneous quantities (HEIGHT\_m, TEMP\_C, WATER\_TEMP\_C).} Water level and temperature (air and water) are point measurements whose value at time $t$ represents the state at that instant, independent of the preceding sampling interval. For these variables, the following transformations are applied:
 
 \begin{itemize}
     \item \textbf{5~min $\rightarrow$ 10~min:} arithmetic mean of two consecutive values. This avoids artificially introducing variance from the higher-frequency record while preserving the average dynamics over the 10-minute window.
@@ -202,7 +202,7 @@ Figure~\ref{fig:pipeline} summarises the end-to-end preprocessing chain implemen
     \label{fig:pipeline}
 \end{figure}
 
-The resulting 10-minute grid contains 569\,089 timestamps over approximately 10.8~years, with 13 raw measurement columns (six \texttt{HEIGHT\_m} + six \texttt{DISCHARGE\_m$^{3}$~s$^{-1}$} + two \texttt{TEMP\_C} + five \texttt{PRECIP\_mm}) and 11 quality-flag columns. Discharge is derived from water level via station-specific piecewise-polynomial rating curves $\texttt{Q(H)} = \sum_i \text{base}_i \cdot H^{\,\text{exp}_i}$ parameterised over 1--3 segments per station using drone-based cross-section surveys. The grid is stored as a compressed Parquet file (120~MB) and constitutes the single entry point for feature engineering.
+The resulting 10-minute grid contains 569\,089 timestamps over approximately 10.8~years, with 25 raw measurement columns (six \texttt{HEIGHT\_m} + six \texttt{DISCHARGE\_m$^{3}$~s$^{-1}$} + two \texttt{TEMP\_C} + six \texttt{WATER\_TEMP\_C} + five \texttt{PRECIP\_mm}) and 11 quality-flag columns. Discharge is derived from water level via station-specific piecewise-polynomial rating curves $\texttt{Q(H)} = \sum_i \text{base}_i \cdot H^{\,\text{exp}_i}$ parameterised over 1--3 segments per station using drone-based cross-section surveys. The grid is stored as a compressed Parquet file (120~MB) and constitutes the single entry point for feature engineering.
 
 \subsection{Feature engineering\label{sec:features}}
 

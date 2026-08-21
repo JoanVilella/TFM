@@ -51,11 +51,12 @@ def _patch_xlsx(src_path):
 
 
 # Column indices (0-based) in the 'STM03' sheet:
-#   1 = HEIGHT...2 (filtered/validated), 16 = DATE.UTC
+#   1 = HEIGHT...2 (filtered/validated), 15 = TEMPERATURE (water temp), 16 = DATE.UTC
 # Note: an extra SSC.Calibrated High column at index 11 shifts DATE.UTC to
-# index 16 compared to the standard layout. Only HEIGHT_m is extracted; other
-# variables (DISCHARGE, VOLUME, LOAD) will be derived later from rating curves.
+# index 16 compared to the standard layout. Only HEIGHT_m and WATER_TEMP_C are
+# extracted; other variables (DISCHARGE, VOLUME, LOAD) will be derived later.
 COL_HEIGHT = 1
+COL_TEMP   = 15
 COL_DATE   = 16
 
 # --- Load sheet STM03 ---
@@ -123,6 +124,8 @@ for j in range(len(valid_ts) - 1):
 # --- Count nulls for metadata ---
 formula_height = sum(1 for r in data if isinstance(r[COL_HEIGHT], str))
 none_height    = sum(1 for r in data if r[COL_HEIGHT] is None)
+formula_temp   = sum(1 for r in data if isinstance(r[COL_TEMP], str))
+none_temp      = sum(1 for r in data if r[COL_TEMP] is None)
 date_only_ts   = sum(1 for r in data if r[COL_DATE] is not None
                      and isinstance(r[COL_DATE], datetime.date)
                      and not isinstance(r[COL_DATE], datetime.datetime))
@@ -133,15 +136,17 @@ os.makedirs(os.path.dirname(OUTPUT_CSV), exist_ok=True)
 
 with open(OUTPUT_CSV, "w", newline="", encoding="utf-8") as f:
     writer = csv.writer(f)
-    writer.writerow(["TIMESTAMP", "HEIGHT_m", "QUALITY", "DATA_TYPE"])
+    writer.writerow(["TIMESTAMP", "HEIGHT_m", "WATER_TEMP_C", "QUALITY", "DATA_TYPE"])
     for row in data:
         ts     = clean_ts(row[COL_DATE])
         height = to_float(row[COL_HEIGHT])
+        temp   = to_float(row[COL_TEMP])
 
         ts_str     = ts.strftime("%Y-%m-%d %H:%M:%S") if ts is not None else ""
         height_str = "" if height is None else str(round(height, 6))
+        temp_str   = "" if temp is None else str(round(temp, 4))
 
-        writer.writerow([ts_str, height_str, "", "observed"])
+        writer.writerow([ts_str, height_str, temp_str, "", "observed"])
 
 print(f"CSV guardado en: {OUTPUT_CSV}")
 
@@ -151,6 +156,7 @@ with open(OUTPUT_META, "w", encoding="utf-8") as f:
     f.write("ESTACIÓN: STM03 - Es Fangar\n")
     f.write("TIPO: Hidrológica\n")
     f.write("VARIABLES: Water level (m) — HEIGHT...2 (filtered/validated)\n")
+    f.write("VARIABLES: Water temperature (°C) — TEMPERATURE\n")
     f.write("\n")
     f.write(f"T0 (primer registro):    {first_ts}\n")
     f.write(f"T_end (último registro): {last_ts}\n")
@@ -177,7 +183,8 @@ with open(OUTPUT_META, "w", encoding="utf-8") as f:
         f.write(f"  - {date_only_ts} filas con TIMESTAMP de tipo date (sin hora) convertidas a datetime a las 00:00:00.\n")
     f.write("  - Valores nulos (None) exportados como celdas vacías.\n")
     f.write(f"  - HEIGHT_m (HEIGHT...2): {formula_height} celdas con caché vacía + {none_height} celdas None → exportadas como vacías.\n")
-    f.write("  - Solo se extrae HEIGHT_m (nivel validado). DISCHARGE, VOLUME y LOAD se derivarán posteriormente con curvas de aforo.\n")
+    f.write(f"  - WATER_TEMP_C (TEMPERATURE): {formula_temp} celdas con caché vacía + {none_temp} celdas None → exportadas como vacías.\n")
+    f.write("  - Solo se extraen HEIGHT_m y WATER_TEMP_C. DISCHARGE, VOLUME y LOAD se derivarán posteriormente con curvas de aforo.\n")
     f.write("  - Frecuencia mixta conservada (no se ha realizado resampling).\n")
     f.write(f"  - Total de filas exportadas: {len(data)}\n")
 

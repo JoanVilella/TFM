@@ -19,8 +19,9 @@ ws = wb.worksheets[0]
 rows = list(ws.iter_rows(values_only=True))
 wb.close()
 
-# Header: index 0 = 'HEIGHT...1', 1 = 'HEIGHT...2' (filtered/validated), 14 = 'DATE UTC'
-# Only HEIGHT...2 is extracted; other variables will be derived later from rating curves.
+# Header: index 0 = 'HEIGHT...1', 1 = 'HEIGHT...2' (filtered/validated),
+# 13 = 'TEMPERATURE' (water temp), 14 = 'DATE UTC'. Only HEIGHT...2 and
+# WATER_TEMP_C are extracted; other variables will be derived later.
 data = rows[1:]
 
 
@@ -73,6 +74,8 @@ for j in range(len(valid_ts) - 1):
 # --- Count formula strings for metadata ---
 formula_height = sum(1 for r in data if isinstance(r[1], str))
 none_height    = sum(1 for r in data if r[1] is None)
+formula_temp   = sum(1 for r in data if isinstance(r[13], str))
+none_temp      = sum(1 for r in data if r[13] is None)
 
 # --- Write clean CSV ---
 print("Escribiendo CSV limpio...")
@@ -80,15 +83,17 @@ os.makedirs(os.path.dirname(OUTPUT_CSV), exist_ok=True)
 
 with open(OUTPUT_CSV, "w", newline="", encoding="utf-8") as f:
     writer = csv.writer(f)
-    writer.writerow(["TIMESTAMP", "HEIGHT_m", "QUALITY", "DATA_TYPE"])
+    writer.writerow(["TIMESTAMP", "HEIGHT_m", "WATER_TEMP_C", "QUALITY", "DATA_TYPE"])
     for row in data:
         ts     = clean_ts(row[14])
         height = to_float(row[1])
+        temp   = to_float(row[13])
 
         ts_str     = ts.strftime("%Y-%m-%d %H:%M:%S") if ts is not None else ""
         height_str = "" if height is None else str(round(height, 6))
+        temp_str   = "" if temp is None else str(round(temp, 4))
 
-        writer.writerow([ts_str, height_str, "", "observed"])
+        writer.writerow([ts_str, height_str, temp_str, "", "observed"])
 
 print(f"CSV guardado en: {OUTPUT_CSV}")
 
@@ -98,6 +103,7 @@ with open(OUTPUT_META, "w", encoding="utf-8") as f:
     f.write("ESTACIÓN: STM06 - Sant Miquel\n")
     f.write("TIPO: Hidrológica\n")
     f.write("VARIABLES: Water level (m) — HEIGHT...2 (filtered/validated)\n")
+    f.write("VARIABLES: Water temperature (°C) — TEMPERATURE\n")
     f.write("\n")
     f.write(f"T0 (primer registro):    {first_ts}\n")
     f.write(f"T_end (último registro): {last_ts}\n")
@@ -117,7 +123,8 @@ with open(OUTPUT_META, "w", encoding="utf-8") as f:
     f.write("  - Microsegundos artificiales en TIMESTAMP eliminados (artefacto del Excel).\n")
     f.write("  - Valores nulos (None) exportados como celdas vacías.\n")
     f.write(f"  - HEIGHT_m (HEIGHT...2): {formula_height} celdas con caché vacía + {none_height} celdas None → exportadas como vacías.\n")
-    f.write("  - Solo se extrae HEIGHT...2 (nivel validado). DISCHARGE, VOLUME y LOAD se derivarán posteriormente con curvas de aforo.\n")
+    f.write(f"  - WATER_TEMP_C (TEMPERATURE): {formula_temp} celdas con caché vacía + {none_temp} celdas None → exportadas como vacías.\n")
+    f.write("  - Solo se extraen HEIGHT...2 y WATER_TEMP_C. DISCHARGE, VOLUME y LOAD se derivarán posteriormente con curvas de aforo.\n")
     f.write("  - Frecuencia mixta conservada (no se ha realizado resampling).\n")
     f.write(f"  - Total de filas exportadas: {len(data)}\n")
 

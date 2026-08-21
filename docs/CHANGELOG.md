@@ -6,6 +6,172 @@
 
 ---
 
+## Iteration 20 — 2026-08-21
+
+### Changes made
+
+**Water temperature (`WATER_TEMP_C`) captured for hydro stations + wired as a predictor**
+
+The hydro stations (STM03–STM08) record a water-temperature column in their
+raw Excel files that was never extracted (only `HEIGHT_m` was). This iteration
+adds water temperature to the whole pipeline, plus a DB export of water temp
+for the extended timeline.
+
+### Historical capture (cleaning scripts)
+
+Each `clean_STM03–STM08.py` now also extracts `WATER_TEMP_C`. Water-temperature
+column indices (0-based) differ per station:
+
+| Station | HEIGHT | WATER_TEMP | DATE |
+|---------|--------|------------|------|
+| STM03 | 1 | 15 | 16 |
+| STM04 | 1 | 13 | 14 |
+| STM05 | 1 | 13 | 14 |
+| STM06 | 1 | 13 | 14 |
+| STM07 | 1 | 14 | 15 |
+| STM08 | 1 | 13 | 14 |
+
+Clean CSV header is now `TIMESTAMP, HEIGHT_m, WATER_TEMP_C, QUALITY, DATA_TYPE`.
+
+Clean-CSV `WATER_TEMP_C` coverage (historical Excel data, before the extension):
+
+| Station | Non-null |
+|---------|----------|
+| STM03 | 31.7 % |
+| STM04 | 66.7 % |
+| STM05 | 17.9 % |
+| STM06 | 36.6 % |
+| STM07 | 20.1 % |
+| STM08 | 29.7 % |
+
+> Note: an earlier raw-CSV proxy (~0 % for STM05/06/07) proved misleading —
+> the Excel files do contain water temp for all stations.
+
+### Extended timeline (DB export)
+
+New water-temperature export from the internal DB (`WaterTemp` variable,
+quality = 0 only) lives in `data/raw/watertemp_extended/{CODE}_Watertemp.csv`.
+Only **STM03, STM05, STM08** have water temp in the extension period
+(2025-07-23 → 2026-08-05); STM04/06/07 have none. STM03's export is ~53 %
+`quality = 2` (wrong), which is discarded on load.
+
+`extend_STM_waterlevel.py` now merges water level (`prod_data`) + water temp
+(`watertemp_extended`) on the union of timestamps (worst quality), dropping
+non-zero-quality water-temp rows, and writes the 5-column schema.
+
+### Downstream pipeline
+
+| File | Change |
+|------|--------|
+| `harmonize_extension.py` | Updated column indices for the 5-col schema (`QUALITY` = r3, `DATA_TYPE` = r4); water temp left untouched by the height filter |
+| `resample.py` | `WATER_TEMP_C` in `_NUMERIC_COLS` + `DATA_TYPE_MAP`; resampled as instantaneous; water-temp plausibility clamp (NaN outside [−1, 45] °C); added to `build_measurements_table` |
+| `impute.py` | `WATER_TEMP_C` added to `INSTANTANEOUS_COLS` (short-gap interpolation + `_MISSING` masks) |
+| `feature_engineering.py` | `WATER_TEMP_C` dropped from the training table (capture-only, not a predictor — see finding below) |
+
+### Design decisions
+
+- **Water temp dropped as a predictor** (capture-only): after the re-run
+  revealed multi-year outages (see below), `WATER_TEMP_C` is retained in the
+  clean CSVs, grid, and measurements table but removed from the training table
+  via a `WATER_TEMP_C` substring drop in `feature_engineering.py`.
+- **Drop `quality = 2` water temp** in the extension (STM03 ~53 % flagged).
+- **Water-temp plausibility range [−1, 45] °C** (separate from the −15 °C air
+  sentinel) catches probes out of water / direct-sun outliers (e.g. 46.8/48.9 °C).
+
+### Results (full pipeline re-run)
+
+| Artifact | Before | After |
+|----------|--------|-------|
+| Grid columns | 49 | 61 (+6 `WATER_TEMP_C` + 6 `_DATA_TYPE`) |
+| Training table | 289 cols | 289 cols (water temp dropped) |
+| Training rows | 614,201 | 614,201 (unchanged) |
+| Measurements | 11.76 M rows | 15.47 M rows |
+| Events | 361 | 361 (unchanged) |
+
+### ⚠️ Critical finding — water temp has multi-year outages
+
+The water-temperature sensors are not logged continuously. Availability by
+year (10-min grid) shows long whole-sensor outages:
+
+| Year | STM04 | STM08 |
+|------|-------|-------|
+| 2014–2017 | 83–100 % | 66–95 % |
+| 2018–2023 | **1–31 %** | **0 %** |
+| 2024–2025 | 71–100 % | 96–100 % |
+| 2026 | 0 % | 100 % |
+
+STM08 water temperature is **absent for 2016–2023** (eight consecutive years);
+STM04 for ~2018–2023. Per-split null rates for the two water-temp predictor
+stations:
+
+| Column | train | validation | test |
+|--------|-------|------------|------|
+| STM04_WATER_TEMP_C | 46.9 % | **91.2 %** | 48.6 % |
+| STM08_WATER_TEMP_C | 85.2 % | **100.0 %** | 38.4 % |
+
+This reproduces the exact distribution-shift hazard that dropped `STM02_TEMP_C`
+(Iteration 19): water temperature is effectively **absent in the validation
+split** (2021–2022).
+
+### Remaining open issues
+
+- [x] **Decide water-temp predictor fate** — **Resolved: dropped as predictor**
+      (capture-only). Water temp stays in CSV/grid/measurements; the training
+      table is unchanged from Iteration 19 (289 cols).
+- [ ] Confirm whether water temp for STM04/06/07 should be backfilled from the
+      DB (the current export only covers STM03/05/08).
+- [ ] Verify the residual water-temp range after the [−1, 45] °C clamp is
+      physically sensible.
+
+*End of Iteration 20.*
+
+---
+
+## Iteration 19 — 2026-08-18
+
+### Changes made
+
+**Gap-handling strategy for model training + STM02_TEMP dropped**
+
+Assessed how the remaining long gaps (post-imputation NaNs) affect model
+training and wrote a concrete per-model-family strategy into `plan_TFM.md`
+(new "Gap-handling strategy for model training" section).
+
+### STM02_TEMP_C dropped
+
+| Finding | Value |
+|---------|-------|
+| Pearson / Spearman vs target | −0.26 / −0.40 (weak, purely seasonal) |
+| Correlation is lag-invariant | lags add no dynamic signal |
+| Fill rate: train / val / test | 87 % / **0 %** / 51 % |
+| Redundant with | `doy_sin`/`doy_cos`/`month` (always present, `doy_cos` r=+0.25) |
+
+`STM02_TEMP_C` (raw + 6 lags + `_MISSING` + `_DATA_TYPE`) is removed from the
+training table via `DROP_COLUMNS` in `feature_engineering.py`.  `STM01_TEMP_C`
+is retained (still ~91 % available in test).
+
+### Results
+
+| Artifact | Before | After |
+|----------|--------|-------|
+| Training table | 304 cols, 269 predictors | 289 cols, 255 predictors |
+| Validation complete-case | 0.0 % | 26.2 % |
+| Test complete-case | 27.2 % | 49.9 % |
+
+### Gap-handling strategy (summary, see plan_TFM)
+
+- Trees (RF/XGBoost/LightGBM): NaN + masks, no imputation — **proceed first**.
+- Linear/ARIMA: fill long gaps (fwd-fill/median) + masks; never complete-case
+  on validation (was empty before the STM02_TEMP drop).
+- LSTM/GRU/TFT: fill + masks (TFT native masking); handle train→test
+  feature-availability shift explicitly.
+- Report per-event metrics; note 20–37 % of event peaks have missing predictors.
+
+*End of Iteration 19.*
+
+
+---
+
 ## Iteration 18 — 2026-08-18
 
 ### Changes made

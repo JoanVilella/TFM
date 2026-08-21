@@ -30,7 +30,7 @@ This TFM has **three complementary objectives**:
 
 ### 1.2 Predictor stations
 
-#### Hydrological (HEIGHT_m / DISCHARGE_m3s / VOLUME_m3 / LOAD_kg)
+#### Hydrological (HEIGHT_m / WATER_TEMP_C / DISCHARGE_m3s / VOLUME_m3 / LOAD_kg)
 
 | Station | Name | T0 | T_end | Frequency |
 |---|---|---|---|---|
@@ -41,6 +41,8 @@ This TFM has **three complementary objectives**:
 | STM07 | Búger | 2012-10-01 | 2026-07-15 | 15 min → 10 min (2022) → 5 min (2026-02-20+) |
 
 > **DB extension note**: The extended segment from the internal DB only contains `HEIGHT_m` (water level); `DISCHARGE_m3s`, `VOLUME_m3` and `LOAD_kg` are empty. STM03 has ~45 k records with `quality != 0` in the extended segment; STM05 has ~3 k.
+>
+> **Water temperature (Iteration 20)**: the hydro Excel files record water temperature (`TEMPERATURE`), now extracted as `WATER_TEMP_C`. Historical availability is uneven and fragmented by multi-year sensor outages — STM04 ~67 %, STM08 ~30 %, STM05/06/07 18–37 % overall, but STM08 is absent 2016–2023 and both STM04/STM08 are ~91–100 % missing in the validation period. In the DB extension, water temperature is only available for **STM03, STM05, STM08** (2025-07-23 → 2026-08-05); STM03's export is ~53 % `quality = 2` (wrong) and is discarded. Because of the validation-split outage (same shift hazard that dropped `STM02_TEMP_C`), water temperature is **captured but not used as a predictor**.
 
 #### STM Meteorological (PRECIP_mm, TEMP_C)
 
@@ -168,6 +170,38 @@ A table assigning each **event** (not each row) to **train / validation / test**
 - [ ] **Uncertainty analysis**: Identify the most sensitive parameters and their variation ranges.
 
 **Deliverable**: Calibrated HEC-HMS project (`hec_hms/`) + results analysis notebook `03_hec_hms.ipynb`
+
+### Gap-handling strategy for model training (Phase 4/5)
+
+**Objective**: Decide how the remaining long gaps (post-imputation NaNs) are fed to each model family. Findings from the gap audit (Iteration 18):
+
+- **Target STM08 is clean** (0.7 % missing, one 30-day gap in training) — the problem is predictors only.
+- Worst predictors: STM02_TEMP_C (36 % null, **100 % absent in validation**, ~51 % in test), STM05_H (18 %), STM01_TEMP_C (17 %), STM03_H (15 %). STM04/06/07 are fine (4–9 %).
+- Gaps are whole-station outages, not random; they overlap 20–37 % of flood-event peaks.
+- Complete-case coverage (all 269 predictors): train 50.6 %, **validation 0.0 %**, test 27.2 %.
+
+**Feature decisions**
+
+| Decision | Rationale |
+|---|---|
+| **Drop `STM02_TEMP_C`** (raw + 6 lags) | Weak purely-seasonal signal (Spearman −0.40 vs target; redundant with `doy`/`month`), 0 % availability in validation, ~51 % in test → shift hazard. |
+| Keep `STM01_TEMP_C` (masked) | Similar weak signal but ~91 % available in test, so it is not a shift hazard. Reconsider dropping both later. |
+| Keep `_MISSING` masks for all retained predictors | Missingness is itself informative and lets DL/linear models distinguish "missing" from "zero". |
+
+**Per-model data preparation**
+
+| Model family | Strategy |
+|---|---|
+| RF / XGBoost / LightGBM | Use the training table as-is: NaN handled natively; `_MISSING` masks optional but retained. No imputation. **Proceed first.** |
+| Linear / regularized regression | Cannot take NaN. Use the imputed grid + forward-fill/median of long gaps, and add the `_MISSING` masks as features. Alternatively complete-case with a documented bias caveat (validation would be empty — avoid). |
+| ARIMA / SARIMAX | Univariate on STM08 only (no predictor gaps). ARIMAX needs the same fill+mask scheme as linear regression. |
+| LSTM / GRU / TFT | Fill long gaps (forward-fill/median) and feed the `_MISSING` masks as covariates; TFT supports native masking. Handle the train→test feature-availability shift explicitly (features that vanish at test time — e.g. STM02_TEMP — must be dropped or imputed consistently). |
+
+**Evaluation caveats**
+
+- Never train on complete-case for the validation split (it is empty — STM02_TEMP is 100 % missing there).
+- Report per-event metrics; note that 20–37 % of event peaks have one or more predictors missing.
+- The extension datum-shift issue (Phase 3 / Iteration 18 flag) must be resolved before trusting any test-period predictions that depend on the 2026 data.
 
 ### Phase 4 — Baseline models
 

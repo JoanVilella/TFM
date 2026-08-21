@@ -70,13 +70,35 @@ HYDRO = ["STM03", "STM04", "STM05", "STM06", "STM07", "STM08"]
 METEO = ["STM01", "STM02"]
 AEMET = ["B013X", "B605X", "B691Y"]
 
+# Air-temperature stations kept as predictors.  STM02_TEMP_C is dropped
+# (gap-handling decision, Iteration 19): it is a weak purely-seasonal signal
+# (Spearman -0.40 vs target, redundant with doy/month) that is 0 % available
+# in the validation split and ~51 % in test, so it is a distribution-shift
+# hazard.  STM01_TEMP_C is kept (still ~91 % available in test).
+TEMP_STATIONS = ["STM01"]
+
+# Water temperature is *not* used as a predictor (Iteration 20 follow-up).
+# The water-temperature sensors log only intermittently: STM08 has no water
+# temp for 2016–2023 (eight consecutive years) and both STM04/STM08 are
+# ~91–100 % missing in the validation split — the same distribution-shift
+# hazard that dropped STM02_TEMP_C (Iteration 19).  WATER_TEMP_C is retained
+# in the clean CSVs, the grid, and the measurements table, but removed from
+# the training table below.
+
 # Which station/variable pairs get lagged
 LAG_CONFIG = {
     "HEIGHT_m": HYDRO,
-    "TEMP_C": METEO,
+    "TEMP_C": TEMP_STATIONS,
     "PRECIP_mm": METEO + AEMET,
     "DISCHARGE_m3s": DISCHARGE_STATIONS,
 }
+
+# Columns removed entirely from the training table (gap-handling decision).
+DROP_COLUMNS = ["STM02_TEMP_C", "STM02_TEMP_C_MISSING", "STM02_TEMP_C_DATA_TYPE"]
+
+# Substring identifying water-temperature columns to drop from the training
+# table (capture-only, not predictors — see note above).
+DROP_SUBSTRINGS = ["WATER_TEMP_C"]
 
 # Which stations get cumulative precipitation
 CUM_PRECIP_STATIONS = METEO + AEMET
@@ -120,6 +142,9 @@ def build_training_table(grid, horizons_h=(1, 6, 24)):
         target is NaN are dropped.
     """
     df = grid.copy()
+    df = df.drop(columns=[c for c in DROP_COLUMNS if c in df.columns])
+    df = df.drop(columns=[c for c in df.columns
+                          if any(s in c for s in DROP_SUBSTRINGS)])
 
     print("Feature engineering ...")
     print(f"  Input: {df.shape[1]} columns, {df.shape[0]:,} rows")
