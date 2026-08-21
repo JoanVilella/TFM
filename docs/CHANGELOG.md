@@ -6,6 +6,62 @@
 
 ---
 
+## Iteration 21 — 2026-08-21
+
+### Changes made
+
+**Phase 4 — baseline models (persistence, ridge, random forest) + metrics module**
+
+First modelling pass: three lower-bound baselines for STM08 water-level
+forecasting, evaluated per horizon and split with a custom hydrological-metrics
+module.
+
+| File | Detail |
+|------|--------|
+| `scripts/evaluation/metrics.py` | NSE, KGE, RMSE, MAE, PBIAS + peak magnitude/timing error, threshold-exceedance (POD/FAR/CSI), and a per-event aggregation helper |
+| `scripts/evaluation/baselines.py` | `persistence_predictions`, `fit_ridge` (median-imputed predictors + `_MISSING` masks), `fit_random_forest` (with a flood-preserving training subsample, default 60 k rows) |
+| `scripts/evaluation/run_baselines.py` | CLI driver: runs the 3 models × 3 horizons × 3 splits, writes `results/metrics/` |
+| `notebooks/04_baselines.ipynb` | Deliverable notebook (executed): summary + per-event metrics + validated-vs-extension test breakdown |
+| `requirements.txt` | + `scikit-learn`, `xgboost` |
+
+### Results — test NSE
+
+The test split spans 2022-07 → 2026-07; the 2026 extension (12 % of test) is
+datum-shifted, so test NSE is reported for the **validated** window
+(pre-2025-07-22) separately from the extension:
+
+| model | t+1h | t+6h | t+24h |
+|-------|------|------|-------|
+| persistence | 0.990 | 0.915 | 0.536 |
+| ridge | 0.989 | 0.871 | 0.427 |
+| random_forest | 0.980 | 0.834 | 0.354 |
+
+*(validated test window)*
+
+### Key findings
+
+1. **Persistence is the strongest baseline** — classic for a highly intermittent
+   regime (STM08 near 0 m most of the time). All models are close at t+1h and
+   degrade with horizon; no model beats persistence at t+24h.
+2. **The 2026 extension collapses every model** (ridge t+6h NSE −1.9, t+24h −4.0;
+   RF 0.14–0.35) — direct evidence of the unresolved datum shift (Iteration 18).
+   Until Phase C resolves it, the extension is excluded from meaningful
+   evaluation.
+3. Median per-event NSE is negative for all models — the intermittent flood
+   peaks are where every baseline fails, reinforcing the need for the
+   flood-aware metrics and later model families.
+
+### Remaining open issues
+
+- [ ] XGBoost + ARIMA/SARIMAX (second baseline pass)
+- [ ] Extension datum shift (Phase C — still pending data-provider confirmation)
+- [ ] Feature selection / subsample tuning for RF
+
+*End of Iteration 21.*
+
+
+---
+
 ## Iteration 20 — 2026-08-21
 
 ### Changes made
