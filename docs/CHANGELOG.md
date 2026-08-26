@@ -1,8 +1,87 @@
 # CHANGELOG — Project Diary
-<parameter name="newString"># CHANGELOG — Project Diary
 
 > Quick-reference log of what has been done, decisions made, and open issues.
 > Each iteration appends a new entry at the top. Scan this before doing any work.
+
+---
+
+## Iteration 22 — 2026-08-25
+
+### Changes made
+
+**CRITICAL FIX — DB extension `WaterLevel` was in centimetres, ingested as metres**
+
+Root cause of the "extension datum shift" (Iteration 18 flag) and the
+extension model collapse (Iteration 21): the internal DB (`prod_data`)
+exports `WaterLevel` in **centimetres**, but `extend_STM_waterlevel.py`
+wrote the raw values straight into the metres-based `HEIGHT_m` column.
+Verified against the Excel source at identical timestamps (e.g. STM08
+2025-08-28 12:20 flood: validated Excel = 0.3715 m, DB = 37.51 cm).
+
+| File | Change |
+|------|--------|
+| `scripts/extension/extend_STM_waterlevel.py` | `WaterLevel` ÷100 → m on load; **quality = 2 rows dropped**; quality = 1 kept and counted per station; metadata notes updated (cm→m conversion + q1/q2 counts) |
+| Clean CSVs STM03–STM08 | Regenerated from scratch (cleaning → extension → harmonization) to remove the previously appended cm-as-m rows |
+| `notebooks/02_preprocessing.ipynb` | Column filters exclude `_DATA_TYPE` string columns from numeric summaries (2 cells) |
+| `notebooks/03_harmonization_comparison.ipynb` | Fixed py3.10 f-string syntax errors (3 cells); refreshed before/after comparison table; replaced `to_markdown` (missing `tabulate`) with `to_string` |
+
+### Harmonization after the fix
+
+| Station | Retained (before fix) | Retained (after fix) |
+|---------|----------------------|---------------------|
+| STM03 | 40.9 % | **100.0 %** |
+| STM04 | 77.6 % | **100.0 %** |
+| STM05 | 22.3 % | **100.0 %** |
+| STM06 | 63.8 % | **100.0 %** |
+| STM07 | 61.6 % | **100.0 %** |
+| STM08 | 81.1 % | **100.0 %** |
+
+The old bounds filter [−0.5, 5] had been discarding the *real floods*
+(any value > 5 cm) and keeping mis-scaled dry-period plateaus as "levels".
+
+### q=1 (suspicious) audit
+
+| Station | q=0 / q=1 ext rows | q=1 value range (m) | q-transition max \|dH\| | Verdict |
+|---------|--------------------|--------------------|------------------------|---------|
+| STM03 | 51,268 / 51,336 | −0.085 … 0.480 | 0.003 m | Keep (continuous) |
+| STM05 | 65,536 / 6,888 | −0.500 … 1.008 | 0.035 m | Keep (continuous); note: q=0 ≈ 0 after Jun-2026 (q1-only tail) |
+| STM04/06/07/08 | 100 % q=0 | — | — | — |
+
+q=2: only STM05 WaterLevel had them (10,026 rows) — dropped.
+
+### Pipeline re-run results
+
+| Artifact | Before (broken units) | After (unit-corrected) |
+|----------|----------------------|-----------------------|
+| Extension harmonization retention | 58.2 % | 100.0 % |
+| Events | 361 | **443** (train 192 / val 41 / test 210) |
+| Extension events (post 2025-07-23) | 30 (incl. Q = 133–176 m³/s artefacts) | **112** (max Q 16.4 m³/s) |
+| STM08 grid 2026 max H | 5.00 m (clipped artefact) | **1.19 m** (real Jan-2026 flood) |
+| STM08 max Q overall | 176 m³/s (artefact) | **87.8 m³/s** (Jan-2017, unchanged historical max) |
+| Training table | 289 cols × 614,201 rows | unchanged shape |
+| Test NSE t+24h extension (ridge) | −3.95 | **+0.71** |
+| Test NSE t+6h extension (ridge) | −1.93 | **+0.89** |
+
+### ⚠️ New finding — diurnal sensor drift in the DB-only period
+
+From 2026-02-17 (STM08 DB-only segment), a daily water-level oscillation
+peaking ~13:00 (amplitude ±0.6 cm around a ~2.4 cm base) crosses the event
+trigger daily, generating ~85 micro-events (#357–#443 tail, peak H
+0.03–0.08 m). The Excel-era record shows no such diurnal cycle → classic
+pressure-transducer thermal drift artifact in the DB-only data.
+
+### Remaining open issues
+
+- [ ] Decide policy for the diurnal micro-events (e.g. minimum peak-H
+      criterion for event validity, or raise threshold) before per-event
+      evaluation is used for model selection.
+- [x] ~~Extension datum shift~~ — **Resolved (this iteration): unit bug,
+      not datum shift.** Plan §3 #9 closed.
+- [ ] XGBoost + ARIMA/SARIMAX (second baseline pass)
+- [ ] Feature selection / subsample tuning for RF
+
+*End of Iteration 22.*
+
 
 ---
 

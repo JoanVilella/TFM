@@ -51,13 +51,18 @@ def get_last_clean_ts_and_count(code):
 def load_new_waterlevel_rows(code):
     """Load WaterLevel rows for a station from the prod_data CSV.
 
+    DB WaterLevel values are in CENTIMETRES and are converted to metres
+    (divided by 100) here.  Rows with quality == "2" (wrong data) are
+    dropped; rows with quality == "1" (suspicious) are kept and counted.
+
     Returns a dict {datetime: height_str}, a dict {datetime: quality_str},
-    and a count of non-zero quality records.
+    a count of q=1 records kept, and a count of q=2 records dropped.
     """
     path = os.path.join(RAW_DIR, f"{code.lower()}.csv")
     records = {}
     quality_map = {}
-    non_zero_quality = 0
+    n_q1 = 0
+    n_q2_dropped = 0
     with open(path, "r", encoding="utf-8") as f:
         reader = csv.reader(f)
         next(reader)  # skip header: id,code_id,station_name,x_utm,y_utm,variable,quality,timestamp,value
@@ -68,20 +73,24 @@ def load_new_waterlevel_rows(code):
             if variable != "WaterLevel":
                 continue
             quality = row[6].strip()
-            if quality != "0":
-                non_zero_quality += 1
+            if quality == "2":
+                n_q2_dropped += 1
+                continue
+            if quality == "1":
+                n_q1 += 1
             ts = parse_db_timestamp(row[7])
             raw_val = row[8].strip()
             if raw_val in ("", "-", "None", "NaN", "nan"):
                 val_str = ""
             else:
                 try:
-                    val_str = str(round(float(raw_val), 6))
+                    # DB stores centimetres -> convert to metres.
+                    val_str = str(round(float(raw_val) / 100.0, 6))
                 except ValueError:
                     val_str = ""
             records[ts] = val_str
             quality_map[ts] = quality
-    return records, quality_map, non_zero_quality
+    return records, quality_map, n_q1, n_q2_dropped
 
 
 def load_watertemp_rows(code):
@@ -139,7 +148,7 @@ def append_to_clean_csv(code, rows_sorted):
             writer.writerow([ts.strftime("%Y-%m-%d %H:%M:%S"), height_str, temp_str, quality_str, "observed"])
 
 
-def update_metadata(code, new_last_ts, new_count, non_zero_quality, total_rows):
+def update_metadata(code, new_last_ts, new_count, n_q1, n_q2_dropped, total_rows):
     """Update T_end and total-rows in the metadata TXT; append an extension note."""
     path = os.path.join(CLEAN_DIR, f"{code}_metadata.txt")
     with open(path, "r", encoding="utf-8") as f:
@@ -165,8 +174,8 @@ def update_metadata(code, new_last_ts, new_count, non_zero_quality, total_rows):
         new_lines.append(f"  - Solo HEIGHT_m y WATER_TEMP_C disponibles en la extensión; "
                          f"DISCHARGE_m3s, VOLUME_m3 y LOAD_kg se derivarán posteriormente con curvas de aforo.\n")
         new_lines.append(f"  - WATER_TEMP_C en la extensión: solo se conservan registros quality = 0.\n")
-        if non_zero_quality:
-            new_lines.append(f"  - AVISO extensión: {non_zero_quality} registro(s) con quality != 0 incluidos.\n")
+        new_lines.append(f"  - IMPORTANTE: el DB exporta WaterLevel en CENTÍMETROS; convertido a metros (/100) al añadir.\n")
+        new_lines.append(f"  - Registros quality = 1 (sospechosos) conservados: {n_q1}; quality = 2 (erróneos) descartados: {n_q2_dropped}.\n")
 
     with open(path, "w", encoding="utf-8") as f:
         f.writelines(new_lines)
@@ -178,10 +187,12 @@ def process_station(code, name):
     last_ts, existing_count = get_last_clean_ts_and_count(code)
     print(f"  Último timestamp en limpio: {last_ts}  ({existing_count} filas)")
 
-    all_new, quality_map, non_zero_quality = load_new_waterlevel_rows(code)
+    all_new, quality_map, n_q1, n_q2_dropped = load_new_waterlevel_rows(code)
     print(f"  Registros en fichero nuevo (prod_data): {len(all_new)}")
-    if non_zero_quality:
-        print(f"  AVISO: {non_zero_quality} registros con quality != 0")
+    if n_q1:
+        print(f"  AVISO: {n_q1} registros con quality = 1 (sospechosos) conservados")
+    if n_q2_dropped:
+        print(f"  {n_q2_dropped} registros con quality = 2 (erróneos) descartados")
 
     temp_rows, temp_q = load_watertemp_rows(code)
     print(f"  Registros de WaterTemp (watertemp_extended): {len(temp_rows)}")
@@ -216,7 +227,7 @@ def process_station(code, name):
     new_last_ts = to_append[-1][0]
     append_to_clean_csv(code, to_append)
     total_rows = existing_count + len(to_append)
-    update_metadata(code, new_last_ts, len(to_append), non_zero_quality, total_rows)
+    update_metadata(code, new_last_ts, len(to_append), n_q1, n_q2_dropped, total_rows)
 
     print(f"  Total filas en CSV resultante: {total_rows}")
     print(f"  T_end actualizado: {new_last_ts}")

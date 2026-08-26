@@ -88,7 +88,7 @@ This yields **~12 years** of overlapping data with all sources active. All STM s
 6. **Quality != 0 in DB**: STM03 (~45 k records) and STM05 (~3 k records) have unvalidated-quality data in the extended segment; review whether to filter.
 7. **Hydrological event definition**: Must be defined objectively and reproducibly (start/end thresholds, stabilization criterion). A single event **cannot be split across train and test** (leakage). EDA identification is preliminary; the definitive one will be done in Phase 2 on the consolidated grid.
 8. **Quality flags (advisor requirement)**: ✅ Resolved (Iteration 5). Quality flags documented (0=good, 1=suspicious, 2=wrong) and preserved as `QUALITY` column in all clean CSVs. `DATA_TYPE` column ("observed") also added for future use (corrected/imputed/simulated). Excel-origin data has empty quality (no flag available).
-9. **Extension datum shift** ⚠️ **OPEN (flagged Iteration 18)**: STM08 reads 3–5 m continuously from 2026-02-17 (historical max 2.83 m), suggesting a sensor recalibration/offset, and produces implausible discharge (176/156/133 m³/s) via rating-curve extrapolation. Pending data-provider confirmation; Phase C must re-harmonize with **station-specific bounds** instead of the global H ∈ [−0.5, 5].
+9. ~~**Extension datum shift**~~ ✅ **Resolved (Iteration 22)**: not a datum shift — the DB (`prod_data`) exports `WaterLevel` in **centimetres**, which were ingested as metres. Fixed by converting ÷100 in `extend_STM_waterlevel.py` (extension retention jumped 58 % → 100 %); quality = 2 rows dropped, quality = 1 kept after a continuity audit. The "3–5 m continuous levels" and the Q = 133–176 m³/s artefact events were mis-scaled centimetre values.
 10. **−0.5 m offset floor** ⚠️ **FLAGGED**: STM03/04/07 have many values at exactly −0.5 m (clipped to 0 in Iteration 18); may represent a real sensor bias rather than noise. Review with the data provider.
 11. **−100 °C TEMP sentinel** ⚠️ **FLAGGED**: STM02 air temperature contains a −100 °C error code (40,299 cells), set to NaN in Iteration 18. Root cause unknown.
 
@@ -201,7 +201,7 @@ A table assigning each **event** (not each row) to **train / validation / test**
 
 - Never train on complete-case for the validation split (it is empty — STM02_TEMP is 100 % missing there).
 - Report per-event metrics; note that 20–37 % of event peaks have one or more predictors missing.
-- The extension datum-shift issue (Phase 3 / Iteration 18 flag) must be resolved before trusting any test-period predictions that depend on the 2026 data.
+- ~~The extension datum-shift issue~~ **Resolved (Iteration 22)**: the DB extension was in centimetres; after the ÷100 unit fix the whole test window (2022-07 → 2026-07) is physically consistent (extension ridge t+24h NSE −3.95 → +0.71). Remaining caveat: a diurnal sensor-drift artifact in the DB-only period (post 2026-02-17 for STM08) generates ~85 micro-events barely over the Q > 0.2 m³/s trigger — see CHANGELOG Iteration 22.
 
 ### Phase 4 — Baseline models
 
