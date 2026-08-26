@@ -1,22 +1,26 @@
 """Baseline models for STM08 water-level forecasting (Phase 4).
 
-Three lower-bound baselines:
+Lower-bound baselines:
 
-* ``persistence``  — y(t+h) = y(t) (current STM08 level), no training.
-* ``ridge``        — linear regression (Ridge) on the median-imputed predictors
+* ``persistence``   — y(t+h) = y(t) (current STM08 level), no training.
+* ``ridge``         — linear regression (Ridge) on the median-imputed predictors
   (long gaps filled; ``_MISSING`` masks retained as features).
-* ``random_forest`` — RandomForest on the same median-imputed predictors, with
-  an optional flood-preserving training subsample for speed.
+* ``random_forest`` — RandomForest on the raw predictors, NaN-native (no
+  imputation; ``_MISSING`` masks retained), with an optional flood-preserving
+  training subsample for speed.
+* ``xgboost``       — XGBoost on the same NaN-native predictors.
 
-Imputation is fit on the train split only and applied to every split, so there
-is no leakage.  Prediction is always produced for the full train/val/test
-splits (subsampling only trims the training rows).  XGBoost (NaN-native) and
-ARIMA/SARIMAX are added in a later pass.
+Tree models consume NaN natively (plan gap-handling: "trees: NaN natively,
+no imputation"); only the linear model requires imputation.  Imputation, when
+used, is fit on the train split only and applied to every split, so there is
+no leakage.  Prediction is always produced for the full train/val/test splits
+(subsampling only trims the training rows).
 
 Usage
 -----
     from scripts.evaluation.baselines import (
         predictor_cols, persistence_predictions, fit_ridge, fit_random_forest,
+        fit_xgboost,
     )
 
     preds = fit_ridge(df, horizon=1)          # -> {"train": Series, "test": Series, ...}
@@ -27,6 +31,7 @@ import pandas as pd
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import Ridge
 from sklearn.ensemble import RandomForestRegressor
+from xgboost import XGBRegressor
 
 TARGET_STATION = "STM08"
 SPLITS = ("train", "validation", "test")
@@ -68,12 +73,14 @@ def _subsample_rows(train, max_rows, seed=42):
     return train.sample(n=max_rows, random_state=seed)
 
 
-def _fit_predict_sklearn(df, horizon, model, splits=SPLITS, subsample=None):
-    """Fit an sklearn estimator (with median imputation) and predict per split.
+def _fit_predict_sklearn(df, horizon, model, splits=SPLITS, subsample=None,
+                         impute=True):
+    """Fit an sklearn-compatible estimator and predict per split.
 
-    The imputer is fit on the (optionally subsampled) train split only; the
-    fitted model then predicts every full split.  Returns {split: pd.Series}
-    aligned to each split's index.
+    With ``impute=True`` predictors are median-imputed (fit on the optionally
+    subsampled train split only); with ``impute=False`` the raw values
+    (including NaN) are passed through for NaN-native models such as tree
+    ensembles.  Returns {split: pd.Series} aligned to each split's index.
     """
     cols = predictor_cols(df)
     target = f"TARGET_t+{horizon}h"
@@ -83,27 +90,33 @@ def _fit_predict_sklearn(df, horizon, model, splits=SPLITS, subsample=None):
         raise ValueError(f"missing target {target} or empty train split")
 
     train_used = _subsample_rows(train, subsample)
-    imputer = SimpleImputer(strategy="median")
-    X_train = imputer.fit_transform(train_used[cols])
+    imputer = None
+    if impute:
+        imputer = SimpleImputer(strategy="median")
+        X_train = imputer.fit_transform(train_used[cols])
+    else:
+        X_train = train_used[cols].to_numpy(dtype=float)
     y_train = train_used[target].values
     model.fit(X_train, y_train)
 
     preds = {}
     for s in splits:
         sub = df[df["split"] == s]
-        Xs = imputer.transform(sub[cols])
+        Xs = (imputer.transform(sub[cols]) if imputer is not None
+              else sub[cols].to_numpy(dtype=float))
         preds[s] = pd.Series(model.predict(Xs), index=sub.index, name=f"pred_{target}")
     return preds
 
 
 def fit_ridge(df, horizon, alpha=1.0, splits=SPLITS):
     """Ridge regression baseline (median-imputed predictors)."""
-    return _fit_predict_sklearn(df, horizon, Ridge(alpha=alpha), splits=splits)
+    return _fit_predict_sklearn(df, horizon, Ridge(alpha=alpha), splits=splits,
+                                impute=True)
 
 
 def fit_random_forest(df, horizon, n_estimators=100, n_jobs=-1, subsample=60000,
                       splits=SPLITS):
-    """Random Forest baseline (median-imputed predictors).
+    """Random Forest baseline (NaN-native predictors, no imputation).
 
     ``subsample`` caps the number of training rows for speed (flood-event rows
     are always retained); prediction is still produced for the full splits.
@@ -112,4 +125,19 @@ def fit_random_forest(df, horizon, n_estimators=100, n_jobs=-1, subsample=60000,
         n_estimators=n_estimators, n_jobs=n_jobs, random_state=42,
     )
     return _fit_predict_sklearn(df, horizon, model, splits=splits,
-                                subsample=subsample)
+                                subsample=subsample, impute=False)
+
+
+def fit_xgboost(df, horizon, n_estimators=300, learning_rate=0.1, max_depth=8,
+                n_jobs=-1, subsample=60000, splits=SPLITS):
+    """XGBoost baseline (NaN-native predictors, no imputation).
+
+    Same flood-preserving training subsample policy as the random forest.
+    """
+    model = XGBRegressor(
+        n_estimators=n_estimators, learning_rate=learning_rate,
+        max_depth=max_depth, tree_method="hist", n_jobs=n_jobs,
+        random_state=42,
+    )
+    return _fit_predict_sklearn(df, horizon, model, splits=splits,
+                                subsample=subsample, impute=False)

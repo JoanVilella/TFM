@@ -53,7 +53,8 @@ PRECIP_COLS = [
 
 def detect_events(grid, peak_q_threshold=0.2, inter_event_h=6,
                   start_q=0.05, end_q=0.05, end_duration_h=1,
-                  max_start_lookback_h=12, max_end_lookahead_h=24):
+                  max_start_lookback_h=12, max_end_lookahead_h=24,
+                  min_peak_h=0.10):
     """Detect flood events in STM08 discharge series.
 
     Parameters
@@ -73,6 +74,11 @@ def detect_events(grid, peak_q_threshold=0.2, inter_event_h=6,
         Maximum hours to trace backward from first exceedance for event start.
     max_end_lookahead_h : float
         Maximum hours to trace forward from last exceedance for event end.
+    min_peak_h : float
+        Global validity criterion (applied to the whole record): events whose
+        peak water level at STM08 is below this value (m) are discarded and
+        the remaining events renumbered.  Excludes sub-flood pulses such as
+        sensor thermal-drift oscillations.
 
     Returns
     -------
@@ -159,6 +165,22 @@ def detect_events(grid, peak_q_threshold=0.2, inter_event_h=6,
     # Merge duplicate events that share the same peak timestamp (aggressive
     # boundary expansion can let one pulse capture a later pulse's peak).
     events_list = _merge_duplicate_peaks(events_list)
+
+    # Global validity criterion: discard events whose STM08 peak level is
+    # below min_peak_h, then renumber sequentially.
+    if min_peak_h > 0:
+        kept = [e for e in events_list
+                if np.isfinite(e["peak_h_m"]) and e["peak_h_m"] >= min_peak_h]
+        n_dropped = len(events_list) - len(kept)
+        if n_dropped:
+            print(f"  min_peak_h={min_peak_h} m: {n_dropped} event(s) below "
+                  f"peak-level threshold discarded")
+        events_list = kept
+        for i, evt in enumerate(events_list):
+            evt["event_id"] = i + 1
+
+    if not events_list:
+        return _empty_result(grid)
 
     # Derive per-event statistics over the final (merged) windows
     for evt in events_list:
@@ -352,6 +374,8 @@ if __name__ == "__main__":
     parser.add_argument("--grid", default=str(PROCESSED_DIR / "grid_10min_imputed.parquet"))
     parser.add_argument("--output", default=str(PROCESSED_DIR / "events.csv"))
     parser.add_argument("--threshold", type=float, default=0.2)
+    parser.add_argument("--min-peak-h", type=float, default=0.10,
+                        help="Discard events with STM08 peak level below this (m)")
     args = parser.parse_args()
 
     print(f"Loading grid from {args.grid} ...")
@@ -360,7 +384,8 @@ if __name__ == "__main__":
 
     events, grid_out = detect_events(grid, peak_q_threshold=args.threshold,
                                      max_start_lookback_h=12,
-                                     max_end_lookahead_h=24)
+                                     max_end_lookahead_h=24,
+                                     min_peak_h=args.min_peak_h)
 
     out = Path(args.output)
     out.parent.mkdir(parents=True, exist_ok=True)

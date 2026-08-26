@@ -5,6 +5,93 @@
 
 ---
 
+## Iteration 23 — 2026-08-25
+
+### Changes made
+
+**Diurnal-drift normalization + micro-event policy + Phase 4 completion
+(XGBoost, ARIMA/SARIMAX)**
+
+### 1. Layer 4 — diurnal drift correction (`harmonize_extension.py`)
+
+The DB-only segments of several stations carry a spurious daily water-level
+oscillation (pressure-transducer thermal drift; peaks ~13:00, absent from the
+Excel-era record — evaporation would *lower* levels at midday). A uniform
+procedure is now applied to every hydro station:
+
+> `drift(h) = clim_ext(h) − clim_hist(h)` (hour-of-day climatologies of quiet
+> rows, H < 0.10 m; historical reference restricted to the same calendar
+> months), centred to zero mean and subtracted from DB-only rows when the
+> drift range ≥ **5 mm** AND ext/hist diurnal-range ratio ≥ **5**. Corrected
+> rows tagged `DATA_TYPE = "corrected"`.
+
+| Station | Ext diurnal range | Hist range | Ratio | Action |
+|---------|------------------|-----------|-------|--------|
+| STM03 | 10.5 mm | 4.7 mm | 2.2× | Not applied (natural cycle preserved) |
+| STM04 | 5.0 mm | 0.5 mm | 10.4× | **Corrected** |
+| STM05 | 10.6 mm | 1.1 mm | 10.1× | **Corrected** |
+| STM06 | 1.6 mm | 0.4 mm | 4.2× | Not applied |
+| STM07 | 26.1 mm | 0.8 mm | 32.2× | **Corrected** |
+| STM08 | 32.9 mm | 1.2 mm | 26.7× | **Corrected** |
+
+STM08's DB-only hour-of-day range drops 27.8 mm → 5.2 mm; baseline level back
+to ~2.3 cm with max 0.20 m (real event).
+
+### 2. Micro-event policy — global minimum peak level
+
+`detect_events(min_peak_h=0.10)`: events with STM08 peak water level below
+0.10 m are discarded (global criterion, all data treated equally) and events
+renumbered. With layer 4 removing the artifact source, 384 raw detections
+shrink to **175 valid events** (train 102 / validation 16 / test 57);
+209 sub-0.10 m pulses discarded.
+
+### 3. Phase 4 completed — XGBoost + ARIMA/SARIMAX
+
+| File | Change |
+|------|--------|
+| `scripts/evaluation/baselines.py` | Trees now **NaN-native** (no imputation; plan gap-handling): RF switched from the median-imputed path, new `fit_xgboost` (300 trees, hist). Ridge stays median-imputed. |
+| `scripts/evaluation/arima.py` | New: univariate SARIMAX + Fourier daily cycle ("dynamic harmonic regression"; a 144-period seasonal state-space component was rejected — its 146-state Kalman filter is computationally impractical), spec chosen by AIC ((2,1,1): −48 533 vs (1,1,1): −48 449 on the 2-year tail), **daily rolling origins** via `SARIMAXResults.apply`, per-row forecasts for t+6/36/144. `fit_arimax` adds a curated exog set (STM04/06/07 levels ±6 h lag, 6 h precip cumsums; median-imputed on train). |
+| `scripts/evaluation/run_baselines.py` | Six models × three horizons. |
+| `requirements.txt` | + `statsmodels>=0.14` |
+| `notebooks/04_baselines.ipynb` | Extended to six models; prediction cache shared across cells; validated/extension breakdown and figure updated. |
+
+### Results — test NSE (full / validated / extension)
+
+| model | t+1h | t+6h | t+24h |
+|-------|------|------|-------|
+| persistence | 0.988 / 0.990 / 0.979 | 0.913 / 0.915 / 0.900 | **0.563** / 0.536 / 0.707 |
+| ridge | 0.987 / 0.989 / 0.977 | 0.876 / 0.871 / 0.900 | 0.472 / 0.427 / 0.712 |
+| random_forest | 0.982 / 0.984 / 0.973 | 0.761 / 0.753 / 0.802 | 0.292 / 0.301 / 0.241 |
+| xgboost | 0.972 / 0.973 / 0.964 | 0.721 / 0.694 / 0.866 | 0.091 / 0.017 / 0.486 |
+| arima | 0.856 / 0.852 / 0.874 | 0.777 / 0.764 / 0.845 | 0.455 / 0.417 / 0.653 |
+| **arimax** | **0.877** / 0.873 / 0.896 | **0.808** / 0.796 / 0.870 | **0.532** / 0.497 / **0.717** |
+
+Median per-event NSE (57 test events): ARIMAX best at t+6h (−0.38) and
+t+24h (−1.69); persistence best at t+1h (0.18).
+
+### Key findings
+
+1. **ARIMAX is the strongest learned model** at t+6h/t+24h and the only one
+   whose extension performance matches or exceeds the validated window
+   (t+24h extension 0.717 > validated 0.497) — the state-space roll-forward
+   transfers better than supervised regression across the regime change.
+2. **Persistence remains the bar at t+24h** (0.563 full-test), but ARIMAX
+   closes most of the gap and wins on flood-event medians.
+3. Trees degrade sharply with horizon (RF/XGB PBIAS > 60 % at t+24h) despite
+   near-perfect training fit — overfitting to the intermittent base state;
+   motivates sequence models (Phase 5) rather than more tree tuning.
+
+### Remaining open issues
+
+- [ ] Phase 5 — LSTM/GRU/TFT sequential models
+- [ ] Phase 3 — HEC-HMS basin delineation/calibration
+- [ ] RF/XGB hyperparameter tuning if trees are kept as Phase 5 baselines
+
+*End of Iteration 23.*
+
+
+---
+
 ## Iteration 22 — 2026-08-25
 
 ### Changes made

@@ -192,7 +192,7 @@ A table assigning each **event** (not each row) to **train / validation / test**
 
 | Model family | Strategy |
 |---|---|
-| RF / XGBoost / LightGBM | Use the training table as-is: NaN handled natively; `_MISSING` masks optional but retained. No imputation. **Proceed first.** |
+| RF / XGBoost / LightGBM | Use the training table as-is: NaN handled natively; `_MISSING` masks optional but retained. No imputation. **Implemented in Iteration 23** (RF switched from the Iteration-21 imputed path). |
 | Linear / regularized regression | Cannot take NaN. Use the imputed grid + forward-fill/median of long gaps, and add the `_MISSING` masks as features. Alternatively complete-case with a documented bias caveat (validation would be empty — avoid). |
 | ARIMA / SARIMAX | Univariate on STM08 only (no predictor gaps). ARIMAX needs the same fill+mask scheme as linear regression. |
 | LSTM / GRU / TFT | Fill long gaps (forward-fill/median) and feed the `_MISSING` masks as covariates; TFT supports native masking. Handle the train→test feature-availability shift explicitly (features that vanish at test time — e.g. STM02_TEMP — must be dropped or imputed consistently). |
@@ -207,10 +207,15 @@ A table assigning each **event** (not each row) to **train / validation / test**
 
 **Objective**: Establish lower-bound performance baselines.
 
-- [ ] **Persistence**: `y_pred(t) = y(t-1)` — trivial baseline (mandatory as minimum reference).
-- [ ] **Linear regression** with selected lags.
-- [ ] **ARIMA / SARIMAX**: ARIMA uses only level history; ARIMAX adds exogenous variables (precipitation, upstream levels).
-- [ ] **Random Forest / Gradient Boosting (XGBoost/LightGBM)**: robust, interpretable, handle nulls well.
+- [x] **Persistence**: `y_pred(t) = y(t-1)` — trivial baseline (mandatory as minimum reference). [Done — Iteration 21; remains the strongest baseline at t+24h]
+- [x] **Linear regression** with selected lags. [Done — Iteration 21: Ridge on median-imputed predictors + `_MISSING` masks]
+- [x] **ARIMA / SARIMAX**: ARIMA uses only level history; ARIMAX adds exogenous variables. [Done — Iteration 23: univariate SARIMAX(2,1,1) with Fourier daily-cycle terms ("dynamic harmonic regression"; a 144-period seasonal state-space component was computationally impractical), spec by AIC, daily rolling origins via `SARIMAXResults.apply`; ARIMAX adds curated hydrological exog (STM04/06/07 levels ±6 h lag, 6 h precip cumsums). ARIMAX is the best learned model at t+6h/t+24h.]
+- [x] **Random Forest / Gradient Boosting (XGBoost/LightGBM)**: robust, interpretable, handle nulls well. [Done — Iterations 21/23: RF and XGBoost, both NaN-native per the gap-handling strategy; trees degrade sharply at t+24h (PBIAS > 60 %)]
+
+**Event definition update (Iteration 23)**: events require peak level ≥
+0.10 m at STM08 (global validity criterion); the DB-only diurnal thermal
+drift is corrected at source (harmonization layer 4). Valid events: **175**
+(train 102 / validation 16 / test 57).
 
 **Metrics** (standard in hydrology):
 - NSE (*Nash-Sutcliffe Efficiency*) — primary metric.

@@ -1,7 +1,8 @@
 """Harmonize DB extension data in clean hydro CSVs.
 
-Applies a three-layer filter to the DB-extension portion of hydro station
-clean CSVs (STM03--STM08).  Historical Excel data is untouched.
+Applies a four-layer filter to the DB-extension portion of hydro station
+clean CSVs (STM03--STM08).  Historical Excel data is untouched except as a
+climatological reference for layer 4.
 
 Filter layers
 -------------
@@ -10,8 +11,20 @@ Filter layers
    in these channels)
 3. **Contiguous clean blocks**: Keep all data blocks (contiguous valid runs)
    after layers 1--2 that exceed a minimum length (24 h) and maintain at
-   least 70 % valid fraction.  Discard the rest (removes sawtooth oscillations
-   and negative plateaus that survive layers 1--2).
+   least 70 % valid fraction.  Discard the rest.
+4. **Diurnal drift correction** (uniform procedure, applied to every station):
+   the DB-only segment of some stations exhibits a spurious daily water-level
+   oscillation (pressure-transducer thermal drift) that is absent from the
+   historical record.  For each station:
+     - clim_ext(h): hour-of-day climatology from quiet DB-only rows (H < QUIET_H)
+     - clim_hist(h): hour-of-day climatology from quiet historical rows in the
+       same calendar months (season-matched reference)
+     - drift(h) = clim_ext(h) - clim_hist(h), centred to zero mean
+   The correction is subtracted only when the drift amplitude is >=
+   DRIFT_MIN_AMPLITUDE (5 mm) AND the ext diurnal range is >= DRIFT_MIN_RATIO
+   times the historical range; otherwise it is zeroed and the station is
+   documented as having no significant drift.  Corrected rows are tagged
+   DATA_TYPE = "corrected".
 
 The script modifies clean CSVs in-place.  Back up or regenerate from raw data
 if needed.
@@ -38,6 +51,12 @@ H_MAX = 5.0
 MAX_DH_DT = 0.5   # m per 10-min step
 BLOCK_VALID_THRESHOLD = 0.7  # fraction of valid rows in a block to keep it
 BLOCK_MIN_LENGTH = 144  # minimum block length in rows (24 h at 10-min)
+
+# Layer-4 parameters (diurnal drift correction)
+QUIET_H = 0.10             # m: rows below this level are "quiet" (baseflow)
+DRIFT_MIN_AMPLITUDE = 0.005  # m: minimum centred drift range to correct (5 mm)
+DRIFT_MIN_RATIO = 5.0        # ext diurnal range must exceed hist range by this
+MIN_CLIM_SAMPLES = 200       # minimum quiet samples per climatology
 
 
 def detect_extension_rows(rows_with_quality):
@@ -106,6 +125,76 @@ def layer3_contiguous(h):
     return result
 
 
+# ---------------------------------------------------------------------------
+#  Layer 4: diurnal drift correction
+# ---------------------------------------------------------------------------
+
+def _hourly_climatology(timestamps, values, months=None):
+    """Mean level per hour-of-day over quiet rows (HEIGHT < QUIET_H).
+
+    timestamps: list of 'YYYY-MM-DD HH:MM:SS' strings.
+    values: float array (NaN excluded).
+    months: optional set of calendar months to restrict to (season matching).
+    Returns (clim[24], counts[24]).
+    """
+    sums = np.zeros(24)
+    cnts = np.zeros(24)
+    for ts, v in zip(timestamps, values):
+        if not np.isfinite(v) or v >= QUIET_H:
+            continue
+        if months is not None and int(ts[5:7]) not in months:
+            continue
+        hh = int(ts[11:13])
+        sums[hh] += v
+        cnts[hh] += 1
+    clim = np.full(24, np.nan)
+    ok = cnts > 0
+    clim[ok] = sums[ok] / cnts[ok]
+    return clim, cnts
+
+
+def correct_diurnal_drift(ext_ts, ext_h, hist_ts, hist_h):
+    """Layer 4 — remove spurious diurnal drift from the DB-only segment.
+
+    Uniform procedure applied to every station; the correction is only
+    subtracted when it exceeds DRIFT_MIN_AMPLITUDE and the ext diurnal range
+    is at least DRIFT_MIN_RATIO times the historical range.
+
+    Returns (corrected_ext_heights, info_dict).
+    """
+    corrected = ext_h.copy()
+    info = {"applied": False, "rng_ext": np.nan, "rng_hist": np.nan,
+            "drift_rng": np.nan}
+
+    months_ext = {int(ts[5:7]) for ts in ext_ts}
+    clim_ext, n_ext = _hourly_climatology(ext_ts, ext_h)
+    clim_hist, n_hist = _hourly_climatology(hist_ts, hist_h, months=months_ext)
+
+    if n_ext.sum() < MIN_CLIM_SAMPLES or n_hist.sum() < MIN_CLIM_SAMPLES:
+        info["reason"] = "insufficient quiet samples"
+        return corrected, info
+
+    rng_ext = float(np.nanmax(clim_ext) - np.nanmin(clim_ext))
+    rng_hist = float(np.nanmax(clim_hist) - np.nanmin(clim_hist))
+    drift = clim_ext - clim_hist
+    drift = drift - np.nanmean(drift)
+    drift_rng = float(np.nanmax(drift) - np.nanmin(drift))
+    info.update({"rng_ext": rng_ext, "rng_hist": rng_hist, "drift_rng": drift_rng})
+
+    if not (np.isfinite(rng_hist) and rng_hist > 0):
+        info["reason"] = "degenerate historical climatology"
+        return corrected, info
+    if drift_rng < DRIFT_MIN_AMPLITUDE or rng_ext < DRIFT_MIN_RATIO * rng_hist:
+        info["reason"] = "no significant drift"
+        return corrected, info
+
+    hours = np.array([int(ts[11:13]) for ts in ext_ts])
+    finite = np.isfinite(corrected)
+    corrected[finite] -= drift[hours[finite]]
+    info["applied"] = True
+    return corrected, info
+
+
 def harmonize(code, dry_run=False):
     """Apply three-layer filter to the DB extension of a station's CSV.
 
@@ -160,13 +249,29 @@ def harmonize(code, dry_run=False):
     ext_clean = layer3_contiguous(ext_clean)
     n_l3 = int((~np.isnan(ext_clean)).sum())
 
+    # Layer 4: diurnal drift correction (uniform procedure, all stations).
+    # Uses quiet DB-only rows vs a season-matched historical reference.
+    ext_idx = np.where(ext_mask)[0]
+    hist_idx = np.where(~ext_mask)[0]
+    ext_ts = [rows[i][0] for i in ext_idx]
+    hist_ts = [rows[i][0] for i in hist_idx]
+    ext_clean, drift_info = correct_diurnal_drift(
+        ext_ts, ext_clean, hist_ts, heights[hist_idx])
+    n_l4 = int((~np.isnan(ext_clean)).sum())
+    if not drift_info["applied"]:
+        n_l4 = n_l3
+
+    # Which extension rows were modified by layer 4? When the correction is
+    # applied, every surviving (finite) value is shifted by drift(hour).
+    corrected_flag = np.isfinite(ext_clean) if drift_info["applied"] \
+        else np.zeros(len(ext_clean), dtype=bool)
+
     # Write results back
     if not dry_run:
         heights[ext_mask] = ext_clean
-        # Rebuild rows: extension survivors stay "observed"; discarded -> NaN.
+        # Rebuild rows: extension survivors keep DATA_TYPE "observed", or
+        # "corrected" if layer 4 shifted them. Discarded -> NaN.
         # WATER_TEMP_C (row[2]) is left untouched. DATA_TYPE is row[4].
-        # (DATA_TYPE "harmonized" was folded into "observed" in Iteration 15;
-        #  writing "observed" here also reverts any legacy "harmonized" tags.)
         for i, row in enumerate(rows):
             h_val = heights[i]
             if np.isnan(h_val):
@@ -174,13 +279,15 @@ def harmonize(code, dry_run=False):
             else:
                 row[1] = str(round(float(h_val), 6))
             if ext_mask[i]:
-                row[4] = "observed"
+                j = np.searchsorted(ext_idx, i)
+                row[4] = "corrected" if corrected_flag[j] else "observed"
 
         with open(path, "w", newline="", encoding="utf-8") as f:
             writer = csv.writer(f)
             writer.writerow(header)
             writer.writerows(rows)
 
+    reason = drift_info.get("reason", "")
     stats = {
         "code": code,
         "n_ext": n_ext,
@@ -188,13 +295,27 @@ def harmonize(code, dry_run=False):
         "after_l1": n_l1,
         "after_l2": n_l2,
         "after_l3": n_l3,
-        "retained_pct": round(100 * n_l3 / max(n_non_null_before, 1), 1),
-        "discarded": n_non_null_before - n_l3,
+        "after_l4": n_l4,
+        "drift_applied": drift_info["applied"],
+        "rng_ext_mm": round(1000 * drift_info["rng_ext"], 2) if np.isfinite(drift_info["rng_ext"]) else None,
+        "rng_hist_mm": round(1000 * drift_info["rng_hist"], 2) if np.isfinite(drift_info["rng_hist"]) else None,
+        "drift_rng_mm": round(1000 * drift_info["drift_rng"], 2) if np.isfinite(drift_info["drift_rng"]) else None,
+        "drift_reason": reason,
+        "retained_pct": round(100 * n_l4 / max(n_non_null_before, 1), 1),
+        "discarded": n_non_null_before - n_l4,
     }
 
     print(f"  {code}: {n_ext} ext rows, {n_non_null_before} non-null before -> "
-          f"L1={n_l1} L2={n_l2} L3={n_l3} "
+          f"L1={n_l1} L2={n_l2} L3={n_l3} L4={n_l4} "
           f"({stats['retained_pct']}% retained, {stats['discarded']} discarded)")
+    if drift_info["applied"]:
+        print(f"      L4 diurnal drift CORRECTED: ext range {stats['rng_ext_mm']} mm "
+              f"vs hist {stats['rng_hist_mm']} mm "
+              f"(x{stats['rng_ext_mm']/max(stats['rng_hist_mm'],1e-9):.1f}), "
+              f"centred drift range {stats['drift_rng_mm']} mm")
+    else:
+        print(f"      L4 not applied ({reason}): ext range {stats['rng_ext_mm']} mm, "
+              f"hist range {stats['rng_hist_mm']} mm")
 
     return stats
 
@@ -213,6 +334,8 @@ if __name__ == "__main__":
           f"({'dry-run, no changes' if args.dry_run else 'WRITING changes'})")
     print(f"Parameters: H in [{H_MIN}, {H_MAX}], |dH/dt| <= {MAX_DH_DT} m/step, "
           f"block valid >= {BLOCK_VALID_THRESHOLD*100:.0f}%, min {BLOCK_MIN_LENGTH} rows")
+    print(f"Layer 4 (diurnal drift): quiet H < {QUIET_H} m, correct if drift range "
+          f">= {1000*DRIFT_MIN_AMPLITUDE:.0f} mm AND ext/hist range ratio >= {DRIFT_MIN_RATIO:.0f}")
     print()
 
     all_stats = []
@@ -224,7 +347,7 @@ if __name__ == "__main__":
     if all_stats:
         total_ext = sum(s["n_ext"] for s in all_stats)
         total_before = sum(s["non_null_before"] for s in all_stats)
-        total_after = sum(s["after_l3"] for s in all_stats)
+        total_after = sum(s["after_l4"] for s in all_stats)
         print(f"\n=== Total ===")
         print(f"  Extension rows: {total_ext:,}")
         print(f"  Before harmonization: {total_before:,} non-null")

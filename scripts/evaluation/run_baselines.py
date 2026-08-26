@@ -18,8 +18,9 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT))
 
 from scripts.evaluation.baselines import (
-    persistence_predictions, fit_ridge, fit_random_forest,
+    persistence_predictions, fit_ridge, fit_random_forest, fit_xgboost,
 )
+from scripts.evaluation.arima import fit_arima, fit_arimax
 from scripts.evaluation import metrics as M
 
 PROCESSED_DIR = REPO_ROOT / "data" / "processed"
@@ -27,7 +28,7 @@ RESULTS_DIR = REPO_ROOT / "results" / "metrics"
 
 HORIZONS = [1, 6, 24]
 SPLITS = ["train", "validation", "test"]
-MODELS = ["persistence", "ridge", "random_forest"]
+MODELS = ["persistence", "ridge", "random_forest", "xgboost", "arima", "arimax"]
 
 # Exceedance thresholds (m) for the threshold-detection metrics.  STM08 is
 # near 0 m at rest and reaches ~2.8 m in the largest historical flood, so
@@ -53,6 +54,12 @@ def run_model(df, model_name, horizon):
         return fit_ridge(df, horizon)
     if model_name == "random_forest":
         return fit_random_forest(df, horizon)
+    if model_name == "xgboost":
+        return fit_xgboost(df, horizon)
+    if model_name == "arima":
+        return fit_arima(df, horizon)
+    if model_name == "arimax":
+        return fit_arimax(df, horizon)
     raise ValueError(model_name)
 
 

@@ -140,7 +140,7 @@ The common observation window after temporal alignment spans approximately twelv
 
 \subsubsection{Mixed temporal resolutions}
 
-STM stations originally sampled at 15-minute intervals; the frequency was upgraded to 10~min in May~2022 and to 5~min at most stations from mid-2025 onward, while AEMET gauges provide hourly data. Degrading all series to the coarsest (hourly) resolution would discard precisely the fast-response dynamics that characterise flash floods in small Mediterranean catchments. The modelling dataset is therefore built on a \textbf{uniform 10-minute grid} (2014-09-26 to 2025-07-22), selected as the finest resolution at which all variables can be meaningfully represented given the available data density. The resampling strategy distinguishes between two physical measurement types:
+STM stations originally sampled at 15-minute intervals; the frequency was upgraded to 10~min in May~2022 and to 5~min at most stations from mid-2025 onward, while AEMET gauges provide hourly data. Degrading all series to the coarsest (hourly) resolution would discard precisely the fast-response dynamics that characterise flash floods in small Mediterranean catchments. The modelling dataset is therefore built on a \textbf{uniform 10-minute grid} (2014-09-26 to 2026-07-02, bounded by the AEMET record), selected as the finest resolution at which all variables can be meaningfully represented given the available data density. The resampling strategy distinguishes between two physical measurement types:
 
 \textit{Instantaneous quantities (HEIGHT\_m, TEMP\_C, WATER\_TEMP\_C).} Water level and temperature (air and water) are point measurements whose value at time $t$ represents the state at that instant, independent of the preceding sampling interval. For these variables, the following transformations are applied:
 
@@ -158,9 +158,9 @@ STM stations originally sampled at 15-minute intervals; the frequency was upgrad
 
 Sensor malfunctions, maintenance periods, and telecommunication failures generate data gaps of varying duration. Two principal missing-data regimes exist:
 
-\textbf{Short gaps ($\leq$ 24~h):} linear interpolation fills gaps of up to 24~h on the 10-minute grid. Water level and temperature are interpolated linearly in time; precipitation increments are interpolated linearly as well, so that every observed value remains untouched. Filled cells are tagged $\texttt{DATA\_TYPE} = \texttt{imputed}$; in total 12\,404 cells (1.7\,\% of all missing cells) are recovered this way.
+\textbf{Short gaps ($\leq$ 24~h):} linear interpolation fills gaps of up to 24~h on the 10-minute grid. Water level and temperature are interpolated linearly in time; precipitation increments are interpolated linearly as well, so that every observed value remains untouched. Filled cells are tagged $\texttt{DATA\_TYPE} = \texttt{imputed}$; in total 21\,156 cells are recovered this way.
 
-\textbf{Long gaps ($>$ 24~h):} no interpolation is attempted. The corresponding 10-minute grid cells are left as \texttt{NaN} and paired with a companion $\texttt{\{col\}\_MISSING}$ (0/1) indicator column, so downstream models can distinguish ``missing'' from ``zero''. Discharge is excluded from imputation entirely, since a \texttt{NaN} there indicates that the water level fell outside the rating-curve range rather than that data are absent. The frequency of extended gaps varies by station: STM02\_TEMP\_C shows the highest null rate at 26.4~\%, while STM08\_HEIGHT\_m (the target station) exhibits the lowest at 0.9~\%.
+\textbf{Long gaps ($>$ 24~h):} no interpolation is attempted. The corresponding 10-minute grid cells are left as \texttt{NaN} and paired with a companion $\texttt{\{col\}\_MISSING}$ (0/1) indicator column, so downstream models can distinguish ``missing'' from ``zero''. Discharge is excluded from imputation entirely, since a \texttt{NaN} there indicates that the water level fell outside the rating-curve range rather than that data are absent. The frequency of extended gaps varies by station: STM02\_TEMP\_C shows the highest null rate at 36.2~\%, while STM08\_HEIGHT\_m (the target station) exhibits the lowest at 0.7~\%.
 
 Data quality is encoded through a \texttt{QUALITY} flag preserved in all clean CSV files and carried into the 10-minute grid. The flag meanings, provided by the data manager, are:
 
@@ -171,11 +171,13 @@ Data quality is encoded through a \texttt{QUALITY} flag preserved in all clean C
     \item \textbf{empty:} quality flag not available (historical data sourced from Excel files rather than the production database).
 \end{itemize}
 
-A companion \texttt{DATA\_TYPE} column tags each observation with one of five provenance labels: \texttt{observed} (measured, including re-gridding to the common 10-minute grid), \texttt{corrected} (measured but fixed for a known error, e.g.\ the STM02 tipping-bucket formula recovery), \texttt{imputed} (missing value filled by interpolation), \texttt{derived} (computed deterministically from other measurements, e.g.\ discharge via rating curves and AEMET precipitation disaggregated from hourly totals), and \texttt{simulated} (model output, reserved for the HEC-HMS and machine-learning forecasts). The labels are assigned per variable in the 10-minute grid and propagate through the pipeline into the measurements table. Station STM03 registers 51\,336 records with $\texttt{QUALITY} \neq 0$ in the extension period (2025--2026); STM05 registers 16\,914. These records are retained in the dataset for the current analysis, but a quality-aware filtering function is built into the resampling pipeline so that excluding suspicious data requires only a parameter change when the data provider confirms their treatment policy.
+A companion \texttt{DATA\_TYPE} column tags each observation with one of five provenance labels: \texttt{observed} (measured, including re-gridding to the common 10-minute grid), \texttt{corrected} (measured but fixed for a known error, e.g.\ the STM02 tipping-bucket formula recovery or the diurnal drift correction of Section~\ref{sec:harmonization}), \texttt{imputed} (missing value filled by interpolation), \texttt{derived} (computed deterministically from other measurements, e.g.\ discharge via rating curves and AEMET precipitation disaggregated from hourly totals), and \texttt{simulated} (model output, reserved for the HEC-HMS and machine-learning forecasts). The labels are assigned per variable in the 10-minute grid and propagate through the pipeline into the measurements table.
+
+Two additional quality issues were identified and resolved in the production-DB extension period (2025--2026). First, the database exports water level in \textbf{centimetres}, which was initially ingested as metres; after conversion ($\div 100$), verified against overlapping Excel records at identical timestamps, the extension becomes physically consistent. Second, the database flags 51\,336 STM03 records and 6\,888 STM05 records as suspicious ($\texttt{QUALITY} = 1$) in this period; a continuity audit showed both blocks to be consistent with neighbouring validated data (level jumps at segment boundaries of 3~mm and 35~mm respectively), so they are retained, whereas the 10\,026 erroneous ($\texttt{QUALITY} = 2$) STM05 records are discarded at ingestion.
 
 \subsubsection{Incomplete variable coverage in the extended period}
 
-From approximately mid-2025 onward, only \texttt{HEIGHT\_m} is available from the hydrological stations; derived variables (\texttt{DISCHARGE\_m$^{3}$~s$^{-1}$}, \texttt{VOLUME\_m$^{3}$}, \texttt{LOAD\_kg}) are absent because the rating-curve computation pipeline has not yet been applied to the most recent records. Since \texttt{HEIGHT\_m} is the target variable and remains continuously available, this does not affect the core prediction task but limits the use of discharge as a secondary validation metric.
+In the DB extension period (from mid-2025 onward) only \texttt{HEIGHT\_m} is available from the hydrological stations' raw telemetry. Since discharge is derived from water level via the station rating curves during preprocessing (Section~\ref{sec:preprocessing}), \texttt{DISCHARGE} remains available throughout the record; the raw \texttt{VOLUME} and \texttt{LOAD} channels of the logger export are not continued. Because \texttt{HEIGHT\_m} is the target variable and drives all derived quantities, this does not affect the prediction task.
 
 \subsubsection{Highly intermittent flow regime}
 
@@ -191,18 +193,18 @@ Figure~\ref{fig:pipeline} summarises the end-to-end preprocessing chain implemen
     \textbf{Raw data} (Excel files + production DB) \\
     $\downarrow$ \textit{9 cleaning scripts} \\
     \textbf{Clean CSVs} (11 files, TIMESTAMP + variables + QUALITY + DATA\_TYPE) \\
-    $\downarrow$ \textit{3 extension scripts (prod\_data append)} \\
+    $\downarrow$ \textit{3 extension scripts (prod\_data append; cm$\rightarrow$m)} \\
     \textbf{Extended CSVs} (same schema, extended to 2026-08-05) \\
-    $\downarrow$ \textit{resample.py + rating\_curve.py} \\
-    \textbf{10-min grid} (parquet, 569\,089 rows $\times$ 30 columns, 2014-09-26 to 2025-07-22) \\
-    $\downarrow$ \textit{feature\_engineering.py} \\
-    \textbf{Training table} (parquet, 563\,698 rows $\times$ 142 columns, multi-horizon targets)
+    $\downarrow$ \textit{harmonize\_extension.py + resample.py + rating\_curve.py} \\
+    \textbf{10-min grid} (parquet, 618\,769 rows $\times$ 61 columns, 2014-09-26 to 2026-07-02) \\
+    $\downarrow$ \textit{impute.py + event\_detection.py + feature\_engineering.py} \\
+    \textbf{Training table} (parquet, 614\,201 rows $\times$ 289 columns, multi-horizon targets)
     }}
     \caption{End-to-end preprocessing pipeline from raw observations to the modelling-ready training table. Each stage is fully scripted and reproducible; the training table is the single input artefact for all downstream models.}
     \label{fig:pipeline}
 \end{figure}
 
-The resulting 10-minute grid contains 569\,089 timestamps over approximately 10.8~years, with 25 raw measurement columns (six \texttt{HEIGHT\_m} + six \texttt{DISCHARGE\_m$^{3}$~s$^{-1}$} + two \texttt{TEMP\_C} + six \texttt{WATER\_TEMP\_C} + five \texttt{PRECIP\_mm}) and 11 quality-flag columns. Discharge is derived from water level via station-specific piecewise-polynomial rating curves $\texttt{Q(H)} = \sum_i \text{base}_i \cdot H^{\,\text{exp}_i}$ parameterised over 1--3 segments per station using drone-based cross-section surveys. The grid is stored as a compressed Parquet file (120~MB) and constitutes the single entry point for feature engineering.
+The resulting 10-minute grid contains 618\,769 timestamps over approximately 11.8~years: 19 measured variables (six \texttt{HEIGHT\_m}, six \texttt{WATER\_TEMP\_C}, two air \texttt{TEMP\_C}, five \texttt{PRECIP\_mm}), six derived \texttt{DISCHARGE} series, eleven quality-flag columns, and per-variable provenance labels. Discharge is derived from water level via station-specific piecewise-polynomial rating curves $\texttt{Q(H)} = \sum_i \text{base}_i \cdot H^{\,\text{exp}_i}$ parameterised over 1--3 segments per station using drone-based cross-section surveys; the curves are applied over the full record, including the DB extension period. The grid is stored as a compressed Parquet file and constitutes the single entry point for imputation, event detection, and feature engineering.
 
 \subsection{Feature engineering\label{sec:features}}
 
@@ -234,62 +236,65 @@ Cyclical time features use sine--cosine encoding: $\sin(2\pi h/24)$ and $\cos(2\
 
 \subsubsection{Target definition}
 
-The prediction target is the water level at STM08, shifted forward in time to produce three multi-horizon target columns: $h(t{+}\mathrm{1h})$, $h(t{+}\mathrm{6h})$, and $h(t{+}\mathrm{24h})$. This corresponds to leads of 6, 36, and 144 time steps on the 10-minute grid. Rows where any target is undefined (the trailing 24 hours of the series) are dropped, yielding a final training table of 563\,698 rows and 142 columns (96~MB compressed).
+The prediction target is the water level at STM08, shifted forward in time to produce three multi-horizon target columns: $h(t{+}\mathrm{1h})$, $h(t{+}\mathrm{6h})$, and $h(t{+}\mathrm{24h})$. This corresponds to leads of 6, 36, and 144 time steps on the 10-minute grid. Rows where any target is undefined (the trailing 24 hours of the series) are dropped, yielding a final training table of 614\,201 rows and 289 columns (255 predictors after excluding targets, split labels, and metadata columns).
 
 \subsection{Event detection\label{sec:events}}
 
 Model evaluation is performed both on the full chronological test period and exclusively on identified flood events, to assess whether forecast skill degrades during the rare high-flow conditions that carry the greatest operational consequence.
 
-Flood events are identified using a \textbf{Peak Over Threshold} (POT) approach with an independence criterion, a standard methodology in flood frequency analysis~\cite{Claps2003, Burn2016}. The detection operates on the 10-minute discharge series at STM08 ($\texttt{DISCHARGE\_m$^{3}$\,s$^{-1}$}$) and proceeds through four stages:
+Flood events are identified using a \textbf{Peak Over Threshold} (POT) approach with an independence criterion, a standard methodology in flood frequency analysis~\cite{Claps2003, Burn2016}. The detection operates on the 10-minute discharge series at STM08 ($\texttt{DISCHARGE\_m$^{3}$\,s$^{-1}$}$) and proceeds through five stages:
 
 \begin{enumerate}
     \item \textbf{Core identification.} Timestamps where discharge exceeds $Q_{\mathrm{thresh}} = 0.2$~m$^{3}$\,s$^{-1}$ are flagged as potential event cores. Consecutive exceedances are grouped, allowing gaps of up to 3~h within a single core to accommodate the multi-peak structure of Mediterranean convective storms.
     \item \textbf{Independence filtering.} Core groups closer than 6~h are merged into a single event. Groups separated by more than 6~h are treated as independent events.
     \item \textbf{Boundary expansion.} Each event is expanded backward (up to 12~h) to capture the rising limb, and forward (up to 24~h) to capture the recession, using a lower threshold of 0.05~m$^{3}$\,s$^{-1}$ with a 1~h persistence requirement for event termination.
     \item \textbf{Duration capping.} Cores exceeding 72~h (indicative of sustained wet-season baseflow rather than discrete events) are capped to prevent multi-month event characterisation.
+    \item \textbf{Minimum peak level.} As a global validity criterion applied uniformly to the whole record, events whose peak water level at STM08 is below 0.10~m are discarded and the remaining events renumbered. This excludes sub-flood pulses such as residual sensor thermal-drift oscillations in the DB-extension period (Section~\ref{sec:harmonization}) as well as genuinely minor level fluctuations, ensuring that the event catalogue contains only hydrologically meaningful floods regardless of data source.
 \end{enumerate}
 
-The detection yields 224 events over the 11.8-year analysis window, with a mean duration of 22.3~h (median 12.3~h, maximum 108~h). The largest historical peak reaches 19.81~m$^{3}$\,s$^{-1}$ (corresponding to a water level of 1.31~m at STM08), recorded during the March~2018 storm; the harmonized extension period (2025--2026) additionally contains higher peaks, up to 176~m$^{3}$\,s$^{-1}$. Events are distributed across the chronological split as follows: 100 training events (Sep~2014--Dec~2020), 15 validation events (Jan~2021--Jun~2022), and 109 test events (Jul~2022--Jul~2026).
+The detection yields 175 valid events over the 11.8-year analysis window, with a mean duration of 34.9~h (median 20.0~h, maximum 108~h). The largest historical peak reaches 87.8~m$^{3}$\,s$^{-1}$ (corresponding to a water level of 2.83~m at STM08), recorded during the January~2017 storm. Events are distributed across the chronological split as follows: 102 training events (Sep~2014--Dec~2020), 16 validation events (Jan~2021--Jun~2022), and 57 test events (Jul~2022--Jul~2026), including 17 events observed by the DB extension after July~2025.
 
 Each event is characterised by its start, peak, and end timestamps; peak discharge and water level; duration; total accumulated precipitation across all stations; maximum hourly rainfall intensity; and its split assignment. An $\texttt{event\_id}$ column is appended to the training table (nullable integer, NaN for non-event rows), enabling per-event model evaluation without temporal leakage across event boundaries.
 
-\subsection{Extension data harmonization\label{sec:harmonization}}
+\subsection{Extension data: unit conversion and harmonization\label{sec:harmonization}}
 
-The DB extension period (mid-2025 to mid-2026) provides approximately one additional year of observations but exhibits severe quality degradation compared to the historical record: across all six hydrological stations, 35--49\,\% of extension values fall outside the physically plausible range $[-0.5, 5.0]$~m, with individual spikes reaching 177~m and negative plateaus descending to $-$51~m (see Table~\ref{tab:extension_quality}). These artefacts result from a change in data ingestion protocol -- the extension data were ingested directly from the production database before quality-control routines had been applied -- rather than sensor malfunction.
+The DB extension period (mid-2025 to mid-2026) extends the analysis window by approximately one year but required two corrections before it could be merged with the validated record.
+
+\subsubsection{Unit conversion}
+
+Cross-validation of the database export against the Excel record at identical timestamps revealed that the production database stores water level in \textbf{centimetres}: e.g.\ at the 2025-08-28 flood peak, the Excel-validated level is 0.372~m while the DB value reads 37.5. Ingesting the raw values as metres produced apparent levels of 3--5~m during dry periods and spurious discharge estimates up to 176~m$^{3}$\,s$^{-1}$ -- an artefact initially misdiagnosed as a sensor datum shift. After converting to metres ($\div 100$), extension levels agree with overlapping validated records to within a few millimetres.
+
+\subsubsection{Quality filtering}
+
+Of the extension records, 10\,026 STM05 values flagged $\texttt{QUALITY} = 2$ (erroneous) are discarded at ingestion. Records flagged $\texttt{QUALITY} = 1$ (suspicious) are retained after a continuity audit: 51\,336 STM03 records (half of its extension) form blocks continuous with neighbouring validated data (maximum level jump at segment boundaries 3~mm), and 6\,888 STM05 records behave likewise (35~mm).
+
+\subsubsection{Diurnal drift correction}
+
+Inspection of the hour-of-day level climatology revealed that the DB-only segments of four stations exhibit a spurious daily oscillation absent from the historical record -- a signature of pressure-transducer thermal drift rather than hydrology, since the level \emph{peaks} at midday whereas evaporative losses would lower it. The correction is applied uniformly to every station: the hour-of-day climatologies of quiet rows (level $< 0.1$~m) in the DB-only segment and in a season-matched historical reference are compared, their centred difference is subtracted from the DB-only rows if -- and only if -- the drift amplitude exceeds 5~mm and the DB-only diurnal range exceeds the historical range by a factor of five; otherwise the station is left untouched. Four stations trigger the correction (STM04: $5.0$ vs $0.5$~mm; STM05: $10.6$ vs $1.1$~mm; STM07: $26.1$ vs $0.8$~mm; STM08: $32.9$ vs $1.2$~mm), reducing the target station's diurnal range from 27.8~mm to 5.2~mm, while STM03 (whose 44~mm diurnal cycle is genuine evaporative signal) and STM06 pass unchanged. Corrected cells are tagged $\texttt{DATA\_TYPE} = \texttt{corrected}$ for traceability.
 
 \begin{table}[!t]
-    \caption{Quality of DB extension data before and after harmonization.}
+    \caption{DB extension data after unit conversion and harmonization.}
     \label{tab:extension_quality}
     \begin{center}
     \footnotesize
-    \begin{tabular}{@{}lrrr@{}}
+    \begin{tabular}{@{}lrrl@{}}
         \toprule
-        \textbf{Station} & \textbf{Extension rows} & \textbf{Retained} & \textbf{\% retained} \\
+        \textbf{Station} & \textbf{Extension rows} & \textbf{Retained (\%)} & \textbf{Drift correction} \\
         \midrule
-        STM03 & 102\,604 & 19\,866 & 40.9 \\
-        STM04 & 82\,759 & 64\,216 & 77.6 \\
-        STM05 & 77\,436 & 15\,054 & 22.3 \\
-        STM06 & 83\,737 & 53\,444 & 63.8 \\
-        STM07 & 42\,292 & 26\,033 & 61.6 \\
-        STM08 (target) & 46\,066 & 37\,276 & 81.1 \\
+        STM03 & 102\,604 & 100.0 & not triggered \\
+        STM04 & 82\,759 & 100.0 & corrected ($10.4\times$) \\
+        STM05 & 72\,424 & 100.0 & corrected ($10.1\times$) \\
+        STM06 & 83\,737 & 100.0 & not triggered \\
+        STM07 & 42\,292 & 100.0 & corrected ($32.2\times$) \\
+        STM08 (target) & 46\,066 & 100.0 & corrected ($26.7\times$) \\
         \midrule
-        \textbf{Total} & 434\,894 & 215\,889 & 58.2 \\
+        \textbf{Total} & 429\,882 & 100.0 & \\
         \bottomrule
     \end{tabular}
     \end{center}
 \end{table}
 
-A three-layer automated filter was designed to recover the usable signal while discarding corrupted segments:
-
-\begin{enumerate}
-    \item \textbf{Absolute bounds.} Values outside $[-0.5, 5.0]$~m are discarded. The upper bound of 5~m exceeds the highest physically plausible level at any station in this basin -- even the December~2016 extreme event at STM08 reached only 2.83~m -- while the lower bound of $-$0.5~m accommodates slight negative offsets from sensor drift or atmospheric pressure variation without classifying them as events.
-    \item \textbf{Rate-of-change cap.} Any step-to-step change exceeding 0.5~m per 10~min (equivalent to 3~m~h$^{-1}$) is discarded. This threshold is deliberately conservative: flood hydrographs in the Sant Miquel basin exhibit maximum rising-limb rates of approximately 0.3~m per 10~min during the most extreme events on record, leaving a 67\,\% margin above the physical maximum.
-    \item \textbf{Contiguous clean blocks.} After layers~1--2, the signal is segmented into contiguous valid runs. Any block lasting at least 24~hours and maintaining at least 70\,\% valid fraction is retained; all other data are discarded. This final layer eliminates the daily sawtooth oscillations and negative plateaus that survive the earlier filters because individual values fall within the absolute bounds but the temporal pattern is non-physical.
-\end{enumerate}
-
-The filter is applied exclusively to the DB extension portion of the clean CSVs (identified by the presence of a non-empty $\texttt{QUALITY}$ column); the historical Excel-derived data is left untouched. Extension rows that survive the filter retain their $\texttt{DATA\_TYPE} = \texttt{observed}$ label, while discarded values are set to \texttt{NaN}; the extension provenance remains recoverable through the non-empty $\texttt{QUALITY}$ column.
-
-After harmonization, STM08 (the target station) retains 81.1\,\% of its extension data, and the aggregate recovery across all six hydro stations is 58.2\,\%. The filtered extension extends the analysis window from 10.8~years to 11.8~years and increases the training table from 563\,698 to 611\,648 samples, adding 30 flood events to the test partition (from 80 to 110). The $\texttt{DATA\_TYPE}$ column propagates through the preprocessing pipeline into the measurements table, ensuring that derived and imputed data points can be identified and analysed separately at any stage of the modelling workflow.
+After these corrections, a residual three-layer safeguard (absolute plausibility bounds $[-0.5, 5]$~m, a rate-of-change cap of 0.5~m per 10~min, and a minimum-duration check on contiguous valid blocks) retains essentially all extension values (Table~\ref{tab:extension_quality}); the aggressive discarding required by an earlier iteration -- which operated on unconverted centimetre values and retained only 58.2~\% of them, ironically discarding the real floods -- is no longer necessary. The corrected extension extends the analysis window from 10.8 to 11.8 years, raises the training table to 614\,201 samples, and contributes 17 valid flood events to the test partition. The $\texttt{DATA\_TYPE}$ provenance labels propagate through the pipeline into the measurements table, ensuring that corrected, derived, and imputed data points can be identified at any stage of the modelling workflow.
 
 
 
@@ -303,7 +308,7 @@ For the Sant Miquel basin, the model will be delineated and parameterised using 
 
 \section{Problem Statement\label{sec:problem}}
 
-Let $h(t)$ denote the water level (m) recorded at STM08 at discrete time step $t$ on the uniform 10-minute grid. Let $\mathbf{x}(t) \in \mathbb{R}^{p}$, $p = 269$, be the vector of $p$ predictor variables at time $t$, comprising 10-minute precipitation depths, upstream water levels and discharges, air temperatures, cumulative antecedent precipitation indices, discharge-based flow features (lateral inflows and total wetland inflow), and temporal features (hour-of-day, day-of-year, and month encoding). The prediction task is defined as:
+Let $h(t)$ denote the water level (m) recorded at STM08 at discrete time step $t$ on the uniform 10-minute grid. Let $\mathbf{x}(t) \in \mathbb{R}^{p}$, $p = 255$, be the vector of $p$ predictor variables at time $t$, comprising 10-minute precipitation depths, upstream water levels and discharges, air temperatures, cumulative antecedent precipitation indices, discharge-based flow features (lateral inflows and total wetland inflow), missingness indicators, and temporal features (hour-of-day, day-of-year, and month encoding). The prediction task is defined as:
 
 \begin{equation}
     \hat{h}(t + \Delta) = f\!\left(\mathbf{x}(t),\, \mathbf{x}(t{-}1),\, \ldots,\, \mathbf{x}(t{-}L)\right)
@@ -312,14 +317,14 @@ Let $h(t)$ denote the water level (m) recorded at STM08 at discrete time step $t
 
 \noindent where $\Delta$ is the forecast horizon, an integer multiple of the 10-minute base interval, $L$ is the look-back window in time steps, and $f(\cdot)$ is the model function. Two instantiations of $f$ are investigated: (i)~the physics-based HEC-HMS model, in which $f$ encapsulates calibrated process equations for rainfall--runoff transformation and channel routing; and (ii)~a family of data-driven models, in which $f$ is learned from observations by statistical optimisation.
 
-The supervised dataset comprises 614\,201 training samples over the validated period September~2014 to July~2026, each with 269 predictor features and three multi-horizon targets $h(t{+}\mathrm{1h})$, $h(t{+}\mathrm{6h})$, and $h(t{+}\mathrm{24h})$. The dataset is partitioned chronologically to avoid temporal leakage:
+The supervised dataset comprises 614\,201 training samples over the period September~2014 to July~2026, each with 255 predictor features and three multi-horizon targets $h(t{+}\mathrm{1h})$, $h(t{+}\mathrm{6h})$, and $h(t{+}\mathrm{24h})$. The dataset is partitioned chronologically to avoid temporal leakage:
 \begin{itemize}
     \item \textbf{Training:} September~2014 -- December~2020
     \item \textbf{Validation:} January~2021 -- June~2022
     \item \textbf{Test:} July~2022 -- July~2026
 \end{itemize}
 
-A total of 224 flood events are identified across the analysis window (100 training, 15 validation, 109 test), supporting per-event evaluation in addition to aggregate time-series metrics.
+A total of 175 flood events are identified across the analysis window (102 training, 16 validation, 57 test), supporting per-event evaluation in addition to aggregate time-series metrics.
 
 Model performance is quantified using four metrics standard in operational hydrology: Nash--Sutcliffe Efficiency (NSE), Kling--Gupta Efficiency (KGE), root mean squared error (RMSE), and percent bias (PBIAS). Results are reported separately for the full test period and for identified flood events, to distinguish performance on rare high-flow conditions from overall average accuracy.
 
