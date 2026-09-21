@@ -17,6 +17,8 @@ the other baselines:
 * For every daily origin in validation/test the Kalman state is rolled
   forward with ``SARIMAXResults.apply`` over a trailing window of observed
   levels, then a multi-step forecast supplies every row of the following day.
+  Future exogenous values are carried forward from the origin; actual future
+  observations are never supplied to the forecast.
 
 Usage
 -----
@@ -156,14 +158,12 @@ def _rolling_origin_preds(df, res, horizon_steps, exog_all=None):
         exog_fut = None
         if exog_all is not None:
             exog_w = exog_all[rows_w]
-            fut_hi = min(o + FORECAST_STEPS, len(df))
-            exog_fut = exog_all[o + 1:fut_hi]
-            if len(exog_fut) == 0:
+            # Exogenous values after the origin are unavailable at forecast
+            # time. Carry the last observed origin vector forward instead of
+            # leaking actual future levels/rainfall into the forecast.
+            if o >= len(exog_all):
                 continue
-            n_missing = FORECAST_STEPS - len(exog_fut)
-            if n_missing > 0:
-                exog_fut = np.vstack([exog_fut,
-                                      np.repeat(exog_fut[-1:], n_missing, axis=0)])
+            exog_fut = np.repeat(exog_all[o:o + 1], FORECAST_STEPS, axis=0)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             try:

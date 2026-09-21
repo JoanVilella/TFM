@@ -64,19 +64,19 @@ shrink to **175 valid events** (train 102 / validation 16 / test 57);
 | random_forest | 0.982 / 0.984 / 0.973 | 0.761 / 0.753 / 0.802 | 0.292 / 0.301 / 0.241 |
 | xgboost | 0.972 / 0.973 / 0.964 | 0.721 / 0.694 / 0.866 | 0.091 / 0.017 / 0.486 |
 | arima | 0.856 / 0.852 / 0.874 | 0.777 / 0.764 / 0.845 | 0.455 / 0.417 / 0.653 |
-| **arimax** | **0.877** / 0.873 / 0.896 | **0.808** / 0.796 / 0.870 | **0.532** / 0.497 / **0.717** |
+| **arimax** | 0.855 / 0.852 / 0.874 | 0.776 / 0.763 / 0.846 | 0.454 / 0.417 / 0.654 |
 
-Median per-event NSE (57 test events): ARIMAX best at t+6h (−0.38) and
-t+24h (−1.69); persistence best at t+1h (0.18).
+Median per-event NSE (57 test events): persistence best at t+1h (0.18);
+ARIMAX is not better than ARIMA after future-exogenous leakage is removed
+(t+6h −0.73; t+24h −2.51).
 
 ### Key findings
 
-1. **ARIMAX is the strongest learned model** at t+6h/t+24h and the only one
-   whose extension performance matches or exceeds the validated window
-   (t+24h extension 0.717 > validated 0.497) — the state-space roll-forward
-   transfers better than supervised regression across the regime change.
-2. **Persistence remains the bar at t+24h** (0.563 full-test), but ARIMAX
-   closes most of the gap and wins on flood-event medians.
+1. **No learned model beats persistence in aggregate** — persistence remains
+   the strongest reference at all three horizons (test NSE 0.988/0.913/0.563).
+2. **Ridge is the strongest non-persistence model by aggregate NSE**
+   (0.987/0.876/0.472). ARIMAX is effectively identical to ARIMA when future
+   exogenous observations are not leaked into the forecast.
 3. Trees degrade sharply with horizon (RF/XGB PBIAS > 60 % at t+24h) despite
    near-perfect training fit — overfitting to the intermittent base state;
    motivates sequence models (Phase 5) rather than more tree tuning.
